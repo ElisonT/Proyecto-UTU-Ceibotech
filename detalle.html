@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mundialito 2026 — SGDM</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="nav">
+    <div class="nav-logo">
+      <img src="Imagenes/Logo_Pagina.png" alt="Logo_Página" class="nav-logo-img"/>
+      <span class="nav-logo-text">PrimeCup</span>
+    </div>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link-visible">Inicio</a>
+      <a href="busqueda.html">Torneos</a>
+      <a href="perfil.html" class="nav-avatar">EG</a>
+    </div>
+  </nav>
+
+  <!-- CABECERA DEL TORNEO -->
+  <div class="detalle-hero">
+    <div class="detalle-hero-inner">
+
+      <a href="busqueda.html" class="config-volver">
+        <i class="fa-solid fa-arrow-left"></i> Volver a torneos
+      </a>
+
+      <div class="detalle-hero-content">
+
+        <div class="detalle-hero-img resultado-img-futbol">
+          <i class="fa-solid fa-futbol"></i>
+        </div>
+
+        <div class="detalle-hero-info">
+          <div class="detalle-categoria">Fútbol 11 · Liga</div>
+          <h1 class="detalle-titulo">Mundialito 2026</h1>
+          <p class="detalle-desc">Torneo de fútbol 11 para equipos amateur. Todos contra todos, puntos por resultado. El mejor equipo al final de la temporada se lleva el título.</p>
+          <div class="detalle-meta">
+            <span><i class="fa-solid fa-user"></i> Organizado por <strong>@user</strong></span>
+            <span><i class="fa-solid fa-calendar"></i> 15 jun — 30 ago 2026</span>
+            <span><i class="fa-solid fa-users"></i> 8 equipos</span>
+            <span><i class="fa-solid fa-globe"></i> Público</span>
+          </div>
+        </div>
+
+        <div class="detalle-hero-accion">
+          <span class="badge badge-orange" style="margin-top:0; font-size: 13px; padding: 5px 14px;">
+            <i class="fa-solid fa-circle-play"></i> En curso — Fecha 4
+          </span>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <main class="detalle-main">
+
+    <!-- ESTADÍSTICAS RÁPIDAS -->
+    <div class="perfil-stats">
+      <div class="pstat">
+        <div class="pstat-num">8</div>
+        <div class="pstat-label">Equipos</div>
+      </div>
+      <div class="pstat">
+        <div class="pstat-num">12</div>
+        <div class="pstat-label">Partidos jugados</div>
+      </div>
+      <div class="pstat">
+        <div class="pstat-num">31</div>
+        <div class="pstat-label">Goles totales</div>
+      </div>
+      <div class="pstat">
+        <div class="pstat-num">4</div>
+        <div class="pstat-label">Fecha actual</div>
+      </div>
+    </div>
+
+    <!-- TABLA DE POSICIONES -->
+    <section class="perfil-seccion">
+      <div class="seccion-header">
+        <h2 class="seccion-titulo"><i class="fa-solid fa-table"></i> Tabla de posiciones</h2>
+      </div>
+      <div class="tabla-wrap">
+        <table class="tabla-posiciones">
+          <thead>
+            <tr>
+              <th class="tabla-pos">#</th>
+              <th class="tabla-equipo">Equipo</th>
+              <th>PJ</th>
+              <th>G</th>
+              <th>E</th>
+              <th>P</th>
+              <th>GF</th>
+              <th>GC</th>
+              <th>DG</th>
+              <th class="tabla-pts">PTS</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="tabla-lider">
+              <td class="tabla-pos"><span class="pos-num pos-1">1</span></td>
+              <td class="tabla-equipo"><i class="fa-solid fa-futbol tabla-deporte-icon"></i> Los Cañones FC</td>
+              <td>3</td><td>3</td><td>0</td><td>0</td><td>9</td><td>2</td><td>+7</td>
+              <td class="tabla-pts"><strong>9</strong></td>
+            </tr>
+            <tr>
+              <td class="tabla-pos"><span class="pos-num pos-2">2</span></td>
+              <td class="tabla-equipo"><i class="fa-solid fa-futbol tabla-deporte-icon"></i> Atlético Barrio Sur</td>
+              <td>3</td><td>2</td><td>1</td><td>0</td><td>7</td><td>3</td><td>+4</td>
+              <td class="tabla-pts"><strong>7</strong></td>
+            </tr>
+            <tr>
+              <td class="tabla-pos"><span class="pos-num pos-3">3</span></td>
+              <td class="tabla-equipo"><i class="fa-solid fa-futbol tabla-deporte-icon"></i> Villa Española B</td>
+              <td>3</td><td>2</td><td>0</td><td>1</td><td>5</td><td>4</td><td>+1</td>
+              <td class="tabla-pts"><strong>6</strong></td>
+            </tr>
+            <tr>
+              <td class="tabla-pos"><span class="pos-num">4</span></td>
+              <td class="tabla-equipo"><i class="fa-solid fa-futbol tabla-deporte-icon"></i> Rampla Juniors C</td>
+              <td>3</td><td>1</td><td>1</td><td>1</td><td>4</td><td>5</td><td>-1</td>
+              <td class="tabla-pts"><strong>4</strong></td>
+            </tr>
+            <tr>
+              <td class="tabla-pos"><span class="pos-num">5</span></td>
+              <td class="tabla-equipo"><i class="fa-solid fa-futbol tabla-deporte-icon"></i> Cerro de las Rosas</td>
+              <td>3</td><td>1</td><td>1</td><td>1</td><td>3</td><td>4</td><td>-1</td>
+              <td class="tabla-pts"><strong>4</strong></td>
+            </tr>
+            <tr>
+              <td class="tabla-pos"><span class="pos-num">6</span></td>
+              <td class="tabla-equipo"><i class="fa-solid fa-futbol tabla-deporte-icon"></i> Deportivo Sayago</td>
+              <td>3</td><td>1</td><td>0</td><td>2</td><td>3</td><td>6</td><td>-3</td>
+              <td class="tabla-pts"><strong>3</strong></td>
+            </tr>
+            <tr>
+              <td class="tabla-pos"><span class="pos-num">7</span></td>
+              <td class="tabla-equipo"><i class="fa-solid fa-futbol tabla-deporte-icon"></i> Unidos del Norte</td>
+              <td>3</td><td>0</td><td>1</td><td>2</td><td>2</td><td>7</td><td>-5</td>
+              <td class="tabla-pts"><strong>1</strong></td>
+            </tr>
+            <tr>
+              <td class="tabla-pos"><span class="pos-num">8</span></td>
+              <td class="tabla-equipo"><i class="fa-solid fa-futbol tabla-deporte-icon"></i> Juventud Unida FC</td>
+              <td>3</td><td>0</td><td>0</td><td>3</td><td>1</td><td>8</td><td>-7</td>
+              <td class="tabla-pts"><strong>0</strong></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="tabla-leyenda">
+        <span class="leyenda-item"><span class="leyenda-color leyenda-lider"></span> Líder</span>
+        <span class="leyenda-sep">·</span>
+        <span class="tabla-hint">PJ · G · E · P · GF · GC · DG · PTS</span>
+      </div>
+    </section>
+
+    <!-- ÚLTIMA FECHA JUGADA -->
+    <section class="perfil-seccion">
+      <div class="seccion-header">
+        <h2 class="seccion-titulo"><i class="fa-solid fa-calendar-days"></i> Última fecha jugada</h2>
+        <a href="fechas.html" class="section-link">Ver todas las fechas <i class="fa-solid fa-arrow-right"></i></a>
+      </div>
+
+      <div class="fecha-grupo">
+        <div class="fecha-titulo">
+          <span>Fecha 3</span>
+          <span class="badge badge-orange" style="margin-top:0;">Jugada</span>
+        </div>
+        <div class="partidos-lista">
+          <div class="partido">
+            <div class="partido-equipo partido-local">Los Cañones FC</div>
+            <div class="partido-resultado">
+              <span class="resultado-num">3</span>
+              <span class="resultado-sep">—</span>
+              <span class="resultado-num">1</span>
+            </div>
+            <div class="partido-equipo partido-visitante">Deportivo Sayago</div>
+          </div>
+          <div class="partido">
+            <div class="partido-equipo partido-local">Atlético Barrio Sur</div>
+            <div class="partido-resultado">
+              <span class="resultado-num">2</span>
+              <span class="resultado-sep">—</span>
+              <span class="resultado-num">2</span>
+            </div>
+            <div class="partido-equipo partido-visitante">Villa Española B</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PRÓXIMA FECHA -->
+      <div class="fecha-grupo" style="margin-top: 1.25rem;">
+        <div class="fecha-titulo">
+          <span>Fecha 4</span>
+          <span class="badge badge-green" style="margin-top:0;">Próxima · 22 jun</span>
+        </div>
+        <div class="partidos-lista">
+          <div class="partido partido-pendiente">
+            <div class="partido-equipo partido-local">Atlético Barrio Sur</div>
+            <div class="partido-resultado partido-resultado-pendiente">
+              <span class="resultado-sep">vs</span>
+            </div>
+            <div class="partido-equipo partido-visitante">Los Cañones FC</div>
+          </div>
+          <div class="partido partido-pendiente">
+            <div class="partido-equipo partido-local">Villa Española B</div>
+            <div class="partido-resultado partido-resultado-pendiente">
+              <span class="resultado-sep">vs</span>
+            </div>
+            <div class="partido-equipo partido-visitante">Rampla Juniors C</div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- PARTICIPANTES -->
+    <section class="perfil-seccion">
+      <div class="seccion-header">
+        <h2 class="seccion-titulo"><i class="fa-solid fa-users"></i> Equipos participantes</h2>
+        <span class="detalle-cupos-label">8 / 8 inscriptos</span>
+      </div>
+      <div class="participantes-grid">
+        <div class="participante-item"><i class="fa-solid fa-futbol"></i> Los Cañones FC</div>
+        <div class="participante-item"><i class="fa-solid fa-futbol"></i> Atlético Barrio Sur</div>
+        <div class="participante-item"><i class="fa-solid fa-futbol"></i> Villa Española B</div>
+        <div class="participante-item"><i class="fa-solid fa-futbol"></i> Rampla Juniors C</div>
+        <div class="participante-item"><i class="fa-solid fa-futbol"></i> Cerro de las Rosas</div>
+        <div class="participante-item"><i class="fa-solid fa-futbol"></i> Deportivo Sayago</div>
+        <div class="participante-item"><i class="fa-solid fa-futbol"></i> Unidos del Norte</div>
+        <div class="participante-item"><i class="fa-solid fa-futbol"></i> Juventud Unida FC</div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    Sistema de Gestión Deportiva Modular · Instituto Tecnológico Superior Arias-Balparda · 2026
+  </footer>
+
+</body>
+</html>

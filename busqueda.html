@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Buscar torneos — SGDM</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="nav">
+    <a href="index.html" class="nav-logo">
+      <img src="Imagenes/Logo_Pagina.png" alt="Logo_Página"    class="nav-logo-img"/>
+      <span class="nav-logo-text">PrimeCup</span>
+    </a>
+    <div class="nav-links">
+      <a href="busqueda.html">Torneos</a>
+      <a href="como-funciona.html">Cómo funciona</a>
+      <a href="login.html" class="nav-link-visible">Iniciar sesión</a>
+      <a href="register.html" class="btn-primary">Registrarse</a>
+      <a href="perfil.html" class="nav-avatar">NA</a>
+      <a href="admin.html" class="nav-admin" title="Panel de administración">
+        <i class="fa-solid fa-shield"></i>
+      </a>
+    </div>
+  </nav>
+
+  <!-- ENCABEZADO Y FILTROS -->
+  <div class="busqueda-header">
+    <div class="busqueda-header-inner">
+      <h1 class="busqueda-titulo">Buscar torneos</h1>
+
+      <!-- BARRA DE BÚSQUEDA -->
+      <div class="busqueda-barra">
+        <div class="busqueda-input-wrap">
+          <i class="fa-solid fa-magnifying-glass busqueda-icon"></i>
+          <input type="text" placeholder="Buscar por nombre de torneo..." class="busqueda-input" />
+        </div>
+        <button class="btn-primary">Buscar</button>
+      </div>
+
+      <!-- FILTROS -->
+      <div class="busqueda-filtros">
+        <select class="filtro-select">
+          <option value="">Todos los deportes</option>
+          <optgroup label="Deportes tradicionales">
+            <option>Fútbol 11</option>
+            <option>Fútbol 5</option>
+            <option>Básquetbol</option>
+            <option>Tenis</option>
+            <option>Pádel</option>
+            <option>Ping pong</option>
+          </optgroup>
+          <optgroup label="Juegos de mesa / carta">
+            <option>Ajedrez</option>
+            <option>Truco</option>
+          </optgroup>
+          <optgroup label="Videojuegos">
+            <option>CS2</option>
+            <option>League of Legends</option>
+            <option>Fortnite</option>
+            <option>Valorant</option>
+            <option>Rocket League</option>
+          </optgroup>
+        </select>
+
+        <select class="filtro-select">
+          <option value="">Todos los tipos</option>
+          <option>Liga</option>
+          <option>Eliminación directa</option>
+          <option>Sistema suizo</option>
+        </select>
+
+        <select class="filtro-select">
+          <option value="">Todos los estados</option>
+          <option>Inscripciones abiertas</option>
+          <option>En curso</option>
+          <option>Finalizado</option>
+        </select>
+      </div>
+
+      <!-- RESULTADOS COUNT -->
+      <div class="busqueda-count">
+        <span>6 torneos encontrados</span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- RESULTADOS -->
+  <main class="busqueda-main">
+
+    <!-- RESULTADO 1 -->
+    <a href="detalle.html" class="resultado-card">
+      <div class="resultado-img resultado-img-futbol">
+        <i class="fa-solid fa-futbol"></i>
+      </div>
+      <div class="resultado-info">
+        <div class="resultado-categoria">Fútbol 11 · Liga</div>
+        <h2 class="resultado-nombre">Mundialito 2026</h2>
+        <p class="resultado-desc">Torneo de fútbol 11 para equipos amateur. Todos contra todos, puntos por victoria.</p>
+        <div class="resultado-meta">
+          <span><i class="fa-solid fa-users"></i> 8 equipos</span>
+          <span><i class="fa-solid fa-calendar"></i> 15 jun — 30 ago 2026</span>
+        </div>
+      </div>
+      <div class="resultado-accion">
+        <span class="badge badge-orange">En curso · Fecha 4</span>
+        <span class="resultado-ver">Ver torneo <i class="fa-solid fa-arrow-right"></i></span>
+      </div>
+    </a>
+
+    <!-- RESULTADO 2 -->
+    <a href="detalle.html" class="resultado-card">
+      <div class="resultado-img resultado-img-ajedrez">
+        <i class="fa-solid fa-chess"></i>
+      </div>
+      <div class="resultado-info">
+        <div class="resultado-categoria">Ajedrez · Sistema suizo</div>
+        <h2 class="resultado-nombre">Torneo de ajedrez UTU</h2>
+        <p class="resultado-desc">Competencia de ajedrez por sistema suizo. Rondas semanales, clasificación acumulada.</p>
+        <div class="resultado-meta">
+          <span><i class="fa-solid fa-users"></i> 128 participantes</span>
+          <span><i class="fa-solid fa-calendar"></i> 28 jul</span>
+        </div>
+      </div>
+      <div class="resultado-accion">
+        <span class="badge badge-green">Inscripciones abiertas</span>
+        <span class="resultado-ver">Ver torneo <i class="fa-solid fa-arrow-right"></i></span>
+      </div>
+    </a>
+
+    <!-- RESULTADO 3 -->
+    <a href="detalle.html" class="resultado-card">
+      <div class="resultado-img resultado-img-cs">
+        <i class="fa-solid fa-gamepad"></i>
+      </div>
+      <div class="resultado-info">
+        <div class="resultado-categoria">CS2 · Eliminación directa</div>
+        <h2 class="resultado-nombre">CS:2 Gaming Cup</h2>
+        <p class="resultado-desc">Copa de Counter-Strike 2 en formato eliminación directa. 16 equipos, llaves automáticas.</p>
+        <div class="resultado-meta">
+          <span><i class="fa-solid fa-users"></i> 16 equipos</span>
+          <span><i class="fa-solid fa-calendar"></i> Finalizado 20 jun</span>
+        </div>
+      </div>
+      <div class="resultado-accion">
+        <span class="badge badge-red">Finalizado</span>
+        <span class="resultado-ver">Ver torneo <i class="fa-solid fa-arrow-right"></i></span>
+      </div>
+    </a>
+
+    <!-- RESULTADO 4 -->
+    <a href="detalle.html" class="resultado-card">
+      <div class="resultado-img resultado-img-basquet">
+        <i class="fa-solid fa-basketball"></i>
+      </div>
+      <div class="resultado-info">
+        <div class="resultado-categoria">Básquetbol · Liga</div>
+        <h2 class="resultado-nombre">Liga Barrial de Básquet 2026</h2>
+        <p class="resultado-desc">Liga de básquetbol barrial, abierta a equipos de todo Montevideo.</p>
+        <div class="resultado-meta">
+          <span><i class="fa-solid fa-users"></i> 8 equipos</span>
+          <span><i class="fa-solid fa-calendar"></i> 1 jul — 15 sep 2026</span>
+        </div>
+      </div>
+      <div class="resultado-accion">
+        <span class="badge badge-green">Inscripciones abiertas</span>
+        <span class="resultado-ver">Ver torneo <i class="fa-solid fa-arrow-right"></i></span>
+      </div>
+    </a>
+
+    <!-- RESULTADO 5 -->
+    <a href="detalle.html" class="resultado-card">
+      <div class="resultado-img resultado-img-valorant">
+        <i class="fa-solid fa-crosshairs"></i>
+      </div>
+      <div class="resultado-info">
+        <div class="resultado-categoria">Valorant · Eliminación directa</div>
+        <h2 class="resultado-nombre">Valorant Open UY</h2>
+        <p class="resultado-desc">Torneo abierto de Valorant para equipos uruguayos. Cupos limitados.</p>
+        <div class="resultado-meta">
+          <span><i class="fa-solid fa-users"></i> 32 equipos</span>
+          <span><i class="fa-solid fa-calendar"></i> 10 jul 2026</span>
+        </div>
+      </div>
+      <div class="resultado-accion">
+        <span class="badge badge-green">Inscripciones abiertas</span>
+        <span class="resultado-ver">Ver torneo <i class="fa-solid fa-arrow-right"></i></span>
+      </div>
+    </a>
+
+    <!-- RESULTADO 6 -->
+    <a href="detalle.html" class="resultado-card">
+      <div class="resultado-img resultado-img-tenis">
+        <i class="fa-solid fa-table-tennis-paddle-ball"></i>
+      </div>
+      <div class="resultado-info">
+        <div class="resultado-categoria">Tenis · Eliminación directa</div>
+        <h2 class="resultado-nombre">Copa Tenis Arias 2025</h2>
+        <p class="resultado-desc">Torneo de tenis individual, categorías A y B. Ya finalizado.</p>
+        <div class="resultado-meta">
+          <span><i class="fa-solid fa-users"></i> 24 participantes</span>
+          <span><i class="fa-solid fa-calendar"></i> Oct — Nov 2025</span>
+        </div>
+      </div>
+      <div class="resultado-accion">
+        <span class="badge badge-red">Finalizado</span>
+        <span class="resultado-ver">Ver torneo <i class="fa-solid fa-arrow-right"></i></span>
+      </div>
+    </a>
+
+  </main>
+
+  <footer class="footer">
+    Sistema de Gestión Deportiva Modular · Instituto Tecnológico Superior Arias-Balparda · 2026
+  </footer>
+
+</body>
+</html>

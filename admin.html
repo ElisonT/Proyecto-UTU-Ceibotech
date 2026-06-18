@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Panel de administración — SGDM</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+</head>
+<body class="admin-body">
+
+  <!-- SIDEBAR -->
+  <aside class="admin-sidebar">
+
+    <!-- LOGO -->
+    <div class="admin-sidebar-logo">
+      <img src="Imagenes/Logo_Pagina.png" alt="Logo" class="nav-logo-img" />
+      <span class="nav-logo-text">PrimeCup</span>
+    </div>
+
+    <!-- NAVEGACIÓN -->
+    <nav class="admin-nav">
+      <span class="admin-nav-label">General</span>
+      <a href="admin.html" class="admin-nav-link admin-nav-active">
+        <i class="fa-solid fa-gauge"></i> Dashboard
+      </a>
+      <a href="#usuarios" class="admin-nav-link">
+        <i class="fa-solid fa-users"></i> Usuarios
+      </a>
+      <a href="#torneos" class="admin-nav-link">
+        <i class="fa-solid fa-trophy"></i> Torneos
+      </a>
+
+      <span class="admin-nav-label">Sistema</span>
+      <a href="#modulos" class="admin-nav-link">
+        <i class="fa-solid fa-puzzle-piece"></i> Módulos
+      </a>
+      <a href="configuracion.html" class="admin-nav-link">
+        <i class="fa-solid fa-gear"></i> Configuración
+      </a>
+    </nav>
+
+    <!-- ADMIN INFO -->
+    <div class="admin-sidebar-footer">
+      <div class="admin-sidebar-user">
+        <div class="admin-sidebar-avatar">AD</div>
+        <div class="admin-sidebar-info">
+          <span class="admin-sidebar-nombre">Administrador</span>
+          <span class="admin-sidebar-rol">Super admin</span>
+        </div>
+      </div>
+      <a href="index.html" class="admin-sidebar-salir">
+        <i class="fa-solid fa-right-from-bracket"></i> Salir
+      </a>
+    </div>
+
+  </aside>
+
+  <!-- CONTENIDO PRINCIPAL -->
+  <main class="admin-main">
+
+    <!-- ENCABEZADO -->
+    <div class="admin-topbar">
+      <div>
+        <h1 class="admin-page-titulo">Dashboard</h1>
+        <p class="admin-page-subtitulo">Resumen general del sistema</p>
+      </div>
+      <div class="admin-topbar-acciones">
+        <a href="crear-torneo.html" class="btn-primary">
+          <i class="fa-solid fa-plus"></i> Nuevo torneo
+        </a>
+      </div>
+    </div>
+
+    <!-- ESTADÍSTICAS -->
+    <div class="admin-stats">
+      <div class="admin-stat-card">
+        <div class="admin-stat-icon admin-stat-icon-azul">
+          <i class="fa-solid fa-users"></i>
+        </div>
+        <div class="admin-stat-info">
+          <span class="admin-stat-num">1.4k</span>
+          <span class="admin-stat-label">Usuarios registrados</span>
+        </div>
+      </div>
+      <div class="admin-stat-card">
+        <div class="admin-stat-icon admin-stat-icon-verde">
+          <i class="fa-solid fa-trophy"></i>
+        </div>
+        <div class="admin-stat-info">
+          <span class="admin-stat-num">128</span>
+          <span class="admin-stat-label">Torneos activos</span>
+        </div>
+      </div>
+      <div class="admin-stat-card">
+        <div class="admin-stat-icon admin-stat-icon-naranja">
+          <i class="fa-solid fa-calendar-days"></i>
+        </div>
+        <div class="admin-stat-info">
+          <span class="admin-stat-num">342</span>
+          <span class="admin-stat-label">Partidos jugados</span>
+        </div>
+      </div>
+      <div class="admin-stat-card">
+        <div class="admin-stat-icon admin-stat-icon-rojo">
+          <i class="fa-solid fa-flag"></i>
+        </div>
+        <div class="admin-stat-info">
+          <span class="admin-stat-num">3</span>
+          <span class="admin-stat-label">Reportes pendientes</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- FILA: USUARIOS + TORNEOS -->
+    <div class="admin-fila">
+
+      <!-- USUARIOS RECIENTES -->
+      <section class="admin-card">
+        <div class="seccion-header">
+          <h2 class="seccion-titulo"><i class="fa-solid fa-users"></i> Usuarios recientes</h2>
+          <a href="#usuarios" class="section-link">Ver todos <i class="fa-solid fa-arrow-right"></i></a>
+        </div>
+        <div class="admin-tabla">
+          <div class="admin-tabla-header">
+            <span>Usuario</span>
+            <span>Rol</span>
+            <span>Estado</span>
+            <span>Acciones</span>
+          </div>
+
+          <div class="admin-tabla-fila">
+            <div class="admin-user-info">
+              <div class="admin-user-avatar">JG</div>
+              <div>
+                <span class="admin-user-nombre">Juan García</span>
+                <span class="admin-user-email">juan@correo.com</span>
+              </div>
+            </div>
+            <span class="admin-rol admin-rol-organizador">Organizador</span>
+            <span class="badge badge-green" style="margin-top:0;">Activo</span>
+            <div class="admin-acciones">
+              <button type="button" class="admin-btn-icono" title="Editar" aria-label="Editar"><i class="fa-solid fa-pen"></i></button>
+              <button type="button" class="admin-btn-icono admin-btn-danger" title="Suspender" aria-label="Suspender"><i class="fa-solid fa-ban"></i></button>
+            </div>
+          </div>
+
+          <div class="admin-tabla-fila">
+            <div class="admin-user-info">
+              <div class="admin-user-avatar">MP</div>
+              <div>
+                <span class="admin-user-nombre">María Pérez</span>
+                <span class="admin-user-email">maria@correo.com</span>
+              </div>
+            </div>
+            <span class="admin-rol admin-rol-participante">Participante</span>
+            <span class="badge badge-green" style="margin-top:0;">Activo</span>
+            <div class="admin-acciones">
+              <button type="button" class="admin-btn-icono" title="Editar" aria-label="Editar"><i class="fa-solid fa-pen"></i></button>
+              <button type="button" class="admin-btn-icono admin-btn-danger" title="Suspender" aria-label="Suspender"><i class="fa-solid fa-ban"></i></button>
+            </div>
+          </div>
+
+          <div class="admin-tabla-fila">
+            <div class="admin-user-info">
+              <div class="admin-user-avatar">CR</div>
+              <div>
+                <span class="admin-user-nombre">Carlos Rodríguez</span>
+                <span class="admin-user-email">carlos@correo.com</span>
+              </div>
+            </div>
+            <span class="admin-rol admin-rol-participante">Participante</span>
+            <span class="badge badge-red" style="margin-top:0;">Suspendido</span>
+            <div class="admin-acciones">
+              <button type="button" class="admin-btn-icono" title="Editar" aria-label="Editar"><i class="fa-solid fa-pen"></i></button>
+              <button type="button" class="admin-btn-icono admin-btn-danger" title="Eliminar" aria-label="Eliminar"><i class="fa-solid fa-trash"></i></button>
+            </div>
+          </div>
+
+          <div class="admin-tabla-fila">
+            <div class="admin-user-info">
+              <div class="admin-user-avatar">AL</div>
+              <div>
+                <span class="admin-user-nombre">Ana López</span>
+                <span class="admin-user-email">ana@correo.com</span>
+              </div>
+            </div>
+            <span class="admin-rol admin-rol-organizador">Organizador</span>
+            <span class="badge badge-green" style="margin-top:0;">Activo</span>
+            <div class="admin-acciones">
+              <button type="button" class="admin-btn-icono" title="Editar" aria-label="Editar"><i class="fa-solid fa-pen"></i></button>
+              <button type="button" class="admin-btn-icono admin-btn-danger" title="Suspender" aria-label="Suspender"><i class="fa-solid fa-ban"></i></button>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- TORNEOS RECIENTES -->
+      <section class="admin-card">
+        <div class="seccion-header">
+          <h2 class="seccion-titulo"><i class="fa-solid fa-trophy"></i> Torneos recientes</h2>
+          <a href="#usuarios" class="section-link">Ver todos <i class="fa-solid fa-arrow-right"></i></a>
+        </div>
+        <div class="admin-tabla">
+          <div class="admin-tabla-header admin-tabla-header-torneos">
+            <span>Torneo</span>
+            <span>Tipo</span>
+            <span>Estado</span>
+            <span>Acciones</span>
+          </div>
+
+          <div class="admin-tabla-fila">
+            <div class="admin-torneo-info">
+              <i class="fa-solid fa-futbol admin-torneo-icon"></i>
+              <span class="admin-user-nombre">Mundialito 2026</span>
+            </div>
+            <span class="admin-tipo">Liga</span>
+            <span class="badge badge-orange" style="margin-top:0;">En curso</span>
+            <div class="admin-acciones">
+              <button type="button" class="admin-btn-icono" title="Ver" aria-label="Ver"><i class="fa-solid fa-eye"></i></button>
+              <button type="button" class="admin-btn-icono admin-btn-danger" title="Eliminar" aria-label="Eliminar"><i class="fa-solid fa-trash"></i></button>
+            </div>
+          </div>
+
+          <div class="admin-tabla-fila">
+            <div class="admin-torneo-info">
+              <i class="fa-solid fa-chess admin-torneo-icon"></i>
+              <span class="admin-user-nombre">Torneo de ajedrez UTU</span>
+            </div>
+            <span class="admin-tipo">Suizo</span>
+            <span class="badge badge-orange" style="margin-top:0;">En curso</span>
+            <div class="admin-acciones">
+              <button type="button" class="admin-btn-icono" title="Ver" aria-label="Ver"><i class="fa-solid fa-eye"></i></button>
+              <button type="button" class="admin-btn-icono admin-btn-danger" title="Eliminar" aria-label="Eliminar"><i class="fa-solid fa-trash"></i></button>
+            </div>
+          </div>
+
+          <div class="admin-tabla-fila">
+            <div class="admin-torneo-info">
+              <i class="fa-solid fa-gamepad admin-torneo-icon"></i>
+              <span class="admin-user-nombre">CS:2 Gaming Cup</span>
+            </div>
+            <span class="admin-tipo">Eliminación</span>
+            <span class="badge badge-green" style="margin-top:0;">Abierto</span>
+            <div class="admin-acciones">
+              <button type="button" class="admin-btn-icono" title="Ver" aria-label="Ver"><i class="fa-solid fa-eye"></i></button>
+              <button type="button" class="admin-btn-icono admin-btn-danger" title="Eliminar" aria-label="Eliminar"><i class="fa-solid fa-trash"></i></button>
+            </div>
+          </div>
+
+          <div class="admin-tabla-fila">
+            <div class="admin-torneo-info">
+              <i class="fa-solid fa-basketball admin-torneo-icon"></i>
+              <span class="admin-user-nombre">Liga Barrial de Básquet</span>
+            </div>
+            <span class="admin-tipo">Liga</span>
+            <span class="badge badge-red" style="margin-top:0;">Finalizado</span>
+            <div class="admin-acciones">
+              <button type="button" class="admin-btn-icono" title="Ver" aria-label="Ver"><i class="fa-solid fa-eye"></i></button>
+              <button type="button" class="admin-btn-icono admin-btn-danger" title="Eliminar" aria-label="Eliminar"><i class="fa-solid fa-trash"></i></button>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+    </div>
+
+    <!-- ACCESOS RÁPIDOS -->
+    <section class="admin-card">
+      <div class="seccion-header">
+        <h2 class="seccion-titulo"><i class="fa-solid fa-bolt"></i> Accesos rápidos</h2>
+      </div>
+      <div class="admin-accesos">
+        <a href="crear-torneo.html" class="admin-acceso">
+          <i class="fa-solid fa-plus admin-acceso-icon"></i>
+          <span>Crear torneo</span>
+        </a>
+        <a href="#usuarios" class="admin-acceso">
+          <i class="fa-solid fa-user-plus admin-acceso-icon"></i>
+          <span>Agregar usuario</span>
+        </a>
+        <a href="#modulos" class="admin-acceso">
+          <i class="fa-solid fa-puzzle-piece admin-acceso-icon"></i>
+          <span>Gestionar módulos</span>
+        </a>
+        <a href="#reportes" class="admin-acceso">
+          <i class="fa-solid fa-flag admin-acceso-icon"></i>
+          <span>Ver reportes</span>
+        </a>
+        <a href="configuracion.html" class="admin-acceso">
+          <i class="fa-solid fa-gear admin-acceso-icon"></i>
+          <span>Configuración</span>
+        </a>
+        <a href="#exportar" class="admin-acceso">
+          <i class="fa-solid fa-file-export admin-acceso-icon"></i>
+          <span>Exportar datos</span>
+        </a>
+      </div>
+    </section>
+
+  </main>
+
+</body>
+</html>

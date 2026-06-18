@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Crear torneo — SGDM</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="nav">
+    <div class="nav-logo">
+      <img src="Imagenes/Logo_Pagina.png" alt="Logo_Página" class="nav-logo-img"/>
+      <span class="nav-logo-text">PrimeCup</span>
+    </div>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link-visible">Inicio</a>
+      <a href="busqueda.html">Torneos</a>
+      <a href="perfil.html" class="nav-avatar">NA</a>
+    </div>
+  </nav>
+
+  <main class="crear-main">
+
+    <!-- ENCABEZADO -->
+    <div class="config-encabezado">
+      <a href="index.html" class="config-volver">
+        <i class="fa-solid fa-arrow-left"></i> Volver al inicio
+      </a>
+      <h1 class="config-titulo">Crear torneo</h1>
+      <p class="config-subtitulo">Completá el formulario para publicar tu competencia</p>
+    </div>
+
+    <form class="crear-form" action="#" method="post" enctype="multipart/form-data">
+
+      <!-- =====================
+           SECCIÓN 1: INFO BÁSICA
+           ===================== -->
+      <section class="crear-seccion">
+        <div class="seccion-header">
+          <h2 class="seccion-titulo">
+            <i class="fa-solid fa-circle-info"></i> Información básica
+          </h2>
+        </div>
+
+        <!-- Nombre -->
+        <div class="form-group">
+          <label class="form-label-p" for="nombre-torneo">Nombre del torneo</label>
+          <input
+            type="text"
+            id="nombre-torneo"
+            name="nombre"
+            class="form-input-p"
+            placeholder="Ej: Mundialito 2026"
+            minlength="3"
+            maxlength="80"
+            required
+          />
+        </div>
+
+        <!-- Deporte -->
+        <div class="form-group">
+          <label class="form-label-p" for="deporte">Deporte o categoría</label>
+          <select id="deporte" name="deporte" class="form-input-p" required>
+            <option value="">Seleccioná un deporte...</option>
+            <optgroup label="Deportes tradicionales">
+              <option value="futbol11">Fútbol 11</option>
+              <option value="futbol5">Fútbol 5</option>
+              <option value="basquetbol">Básquetbol</option>
+              <option value="tenis">Tenis</option>
+              <option value="padel">Pádel</option>
+              <option value="pingpong">Ping pong</option>
+            </optgroup>
+            <optgroup label="Juegos de mesa / carta">
+              <option value="ajedrez">Ajedrez</option>
+              <option value="truco">Truco</option>
+              <option value="damas">Damas</option>
+            </optgroup>
+            <optgroup label="Videojuegos">
+              <option value="cs2">CS2</option>
+              <option value="lol">League of Legends</option>
+              <option value="fortnite">Fortnite</option>
+              <option value="valorant">Valorant</option>
+              <option value="rocketleague">Rocket League</option>
+            </optgroup>
+            <optgroup label="Otro">
+              <option value="otro">Otro</option>
+            </optgroup>
+          </select>
+        </div>
+
+        <!-- Descripción -->
+        <div class="form-group">
+          <label class="form-label-p" for="descripcion">Descripción corta</label>
+          <textarea
+            id="descripcion"
+            name="descripcion"
+            class="form-input-p form-textarea"
+            placeholder="Contá de qué trata el torneo en pocas palabras..."
+            maxlength="200"
+            rows="3"
+          ></textarea>
+          <span class="form-hint-p">Máximo 200 caracteres. Se muestra en los resultados de búsqueda.</span>
+        </div>
+      </section>
+
+      <!-- =====================
+           SECCIÓN 2: CONFIGURACIÓN
+           ===================== -->
+      <section class="crear-seccion">
+        <div class="seccion-header">
+          <h2 class="seccion-titulo">
+            <i class="fa-solid fa-gear"></i> Configuración del torneo
+          </h2>
+        </div>
+
+        <!-- Tipo de torneo -->
+        <div class="form-group">
+          <label class="form-label-p">Tipo de torneo</label>
+          <div class="radio-group">
+
+            <label class="radio-card">
+              <input type="radio" name="tipo" value="liga" required />
+              <div class="radio-card-inner">
+                <i class="fa-solid fa-table"></i>
+                <span class="radio-card-titulo">Liga</span>
+                <span class="radio-card-desc">Todos contra todos. Puntos por resultado.</span>
+              </div>
+            </label>
+
+            <label class="radio-card">
+              <input type="radio" name="tipo" value="eliminacion" />
+              <div class="radio-card-inner">
+                <i class="fa-solid fa-sitemap"></i>
+                <span class="radio-card-titulo">Eliminación directa</span>
+                <span class="radio-card-desc">El perdedor queda eliminado. Llaves automáticas.</span>
+              </div>
+            </label>
+
+            <label class="radio-card">
+              <input type="radio" name="tipo" value="suizo" />
+              <div class="radio-card-inner">
+                <i class="fa-solid fa-shuffle"></i>
+                <span class="radio-card-titulo">Sistema suizo</span>
+                <span class="radio-card-desc">Emparejamiento por rendimiento acumulado.</span>
+              </div>
+            </label>
+
+          </div>
+        </div>
+
+        <!-- Participantes -->
+        <div class="crear-fila">
+          <div class="form-group">
+            <label class="form-label-p" for="max-participantes">Máximo de participantes / equipos</label>
+            <input
+              type="number"
+              id="max-participantes"
+              name="max_participantes"
+              class="form-input-p"
+              placeholder="Ej: 16"
+              min="2"
+              max="512"
+              required
+            />
+            <span class="form-hint-p">Entre 2 y 512.</span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label-p">Modalidad</label>
+            <div class="radio-inline">
+              <label class="radio-opcion">
+                <input type="radio" name="modalidad" value="individual" required />
+                <span>Individual</span>
+              </label>
+              <label class="radio-opcion">
+                <input type="radio" name="modalidad" value="equipos" />
+                <span>Por equipos</span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =====================
+           SECCIÓN 3: FECHAS
+           ===================== -->
+      <section class="crear-seccion">
+        <div class="seccion-header">
+          <h2 class="seccion-titulo">
+            <i class="fa-solid fa-calendar"></i> Fechas
+          </h2>
+        </div>
+
+        <div class="crear-fila">
+          <div class="form-group">
+            <label class="form-label-p" for="fecha-inicio-inscripcion">Inicio de inscripciones</label>
+            <input
+              type="date"
+              id="fecha-inicio-inscripcion"
+              name="fecha_inicio_inscripcion"
+              class="form-input-p"
+              min="2026-06-06"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label-p" for="fecha-cierre-inscripcion">Cierre de inscripciones</label>
+            <input
+              type="date"
+              id="fecha-cierre-inscripcion"
+              name="fecha_cierre_inscripcion"
+              class="form-input-p"
+              min="2026-06-06"
+              required
+            />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label-p" for="fecha-inicio-torneo">Fecha de inicio del torneo</label>
+          <input
+            type="date"
+            id="fecha-inicio-torneo"
+            name="fecha_inicio_torneo"
+            class="form-input-p"
+            min="2026-06-06"
+            required
+          />
+        </div>
+
+        <!-- Duración estimada -->
+        <div class="form-group">
+          <label class="form-label-p">Duración estimada</label>
+          <div class="radio-duracion">
+            <label class="radio-opcion">
+              <input type="radio" name="duracion" value="1dia" required />
+              <span>1 día</span>
+            </label>
+            <label class="radio-opcion">
+              <input type="radio" name="duracion" value="variosdias" />
+              <span>Varios días</span>
+            </label>
+            <label class="radio-opcion">
+              <input type="radio" name="duracion" value="1semana" />
+              <span>1 semana</span>
+            </label>
+            <label class="radio-opcion">
+              <input type="radio" name="duracion" value="variassemanas" />
+              <span>Varias semanas</span>
+            </label>
+            <label class="radio-opcion">
+              <input type="radio" name="duracion" value="1mes" />
+              <span>1 mes o más</span>
+            </label>
+            <label class="radio-opcion">
+              <input type="radio" name="duracion" value="indefinida" />
+              <span>Indefinida</span>
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <!-- =====================
+           SECCIÓN 4: PREMIO
+           ===================== -->
+      <section class="crear-seccion">
+        <div class="seccion-header">
+          <h2 class="seccion-titulo">
+            <i class="fa-solid fa-trophy"></i> Premio o incentivo
+          </h2>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label-p">Tipo de premio</label>
+          <div class="radio-inline">
+            <label class="radio-opcion">
+              <input type="radio" name="tipo_premio" value="ninguno" checked />
+              <span>Sin premio</span>
+            </label>
+            <label class="radio-opcion">
+              <input type="radio" name="tipo_premio" value="monetario" />
+              <span>Monetario</span>
+            </label>
+            <label class="radio-opcion">
+              <input type="radio" name="tipo_premio" value="otro" />
+              <span>Otro</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Premio monetario -->
+        <div class="form-group">
+          <label class="form-label-p" for="monto-premio">
+            Monto del premio <span class="form-hint-p">(solo si es monetario)</span>
+          </label>
+          <div class="input-prefix-wrap">
+            <span class="input-prefix">$UY</span>
+            <input
+              type="number"
+              id="monto-premio"
+              name="monto_premio"
+              class="form-input-p input-with-prefix"
+              placeholder="Ej: 5000"
+              min="0"
+            />
+          </div>
+        </div>
+
+        <!-- Premio otro -->
+        <div class="form-group">
+          <label class="form-label-p" for="desc-premio">
+            Descripción del premio <span class="form-hint-p">(solo si es otro tipo)</span>
+          </label>
+          <textarea
+            id="desc-premio"
+            name="desc_premio"
+            class="form-input-p form-textarea"
+            placeholder="Ej: Medalla + remera del torneo..."
+            maxlength="300"
+            rows="2"
+          ></textarea>
+        </div>
+
+      </section>
+
+      <!-- =====================
+           SECCIÓN 5: REGLAS
+           ===================== -->
+      <section class="crear-seccion">
+        <div class="seccion-header">
+          <h2 class="seccion-titulo">
+            <i class="fa-solid fa-book"></i> Reglas del torneo
+          </h2>
+        </div>
+
+        <div class="config-aviso">
+          <i class="fa-solid fa-circle-info"></i>
+          Podés redactar las reglas acá abajo <strong>o</strong> subir un PDF. Si subís un PDF, se usará ese y se ignorará el texto.
+        </div>
+
+        <div class="form-group" style="margin-top: 1rem;">
+          <label class="form-label-p" for="reglas-texto">Redactar reglas</label>
+          <textarea
+            id="reglas-texto"
+            name="reglas_texto"
+            class="form-input-p form-textarea"
+            placeholder="Escribí las reglas del torneo acá..."
+            rows="5"
+          ></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label-p" for="reglas-pdf">O subir PDF de reglas</label>
+          <div class="file-upload-wrap">
+            <i class="fa-solid fa-file-pdf file-upload-icon"></i>
+            <span class="file-upload-texto">Seleccioná un archivo PDF</span>
+            <input
+              type="file"
+              id="reglas-pdf"
+              name="reglas_pdf"
+              accept=".pdf"
+              class="file-upload-input"
+            />
+          </div>
+          <span class="form-hint-p">Solo archivos PDF.</span>
+        </div>
+      </section>
+
+      <!-- =====================
+           SECCIÓN 6: VISIBILIDAD
+           ===================== -->
+      <section class="crear-seccion">
+        <div class="seccion-header">
+          <h2 class="seccion-titulo">
+            <i class="fa-solid fa-eye"></i> Visibilidad
+          </h2>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label-p">¿Quién puede ver este torneo?</label>
+          <div class="radio-group">
+
+            <label class="radio-card">
+              <input type="radio" name="visibilidad" value="publico" required />
+              <div class="radio-card-inner">
+                <i class="fa-solid fa-globe"></i>
+                <span class="radio-card-titulo">Público</span>
+                <span class="radio-card-desc">Aparece en búsquedas. Cualquiera puede inscribirse.</span>
+              </div>
+            </label>
+
+            <label class="radio-card">
+              <input type="radio" name="visibilidad" value="privado" />
+              <div class="radio-card-inner">
+                <i class="fa-solid fa-lock"></i>
+                <span class="radio-card-titulo">Privado</span>
+                <span class="radio-card-desc">Solo accesible con el link directo. No aparece en búsquedas.</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- BOTONES FINALES -->
+        <div class="crear-acciones">
+          <button type="submit" class="btn-primary btn-lg">
+            <i class="fa-solid fa-plus"></i> Publicar torneo
+          </button>
+          <a href="index.html" class="btn btn-lg">Cancelar</a>
+        </div>
+      </section>
+    </form>
+
+  </main>
+
+  <footer class="footer">
+    Sistema de Gestión Deportiva Modular · Instituto Tecnológico Superior Arias-Balparda · 2026
+  </footer>
+
+</body>
+</html>

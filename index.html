@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sistema de Gestión Deportiva Modular</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="nav">
+    <a href="index.html" class="nav-logo">
+      <img src="Imagenes/Logo_Pagina.png" alt="Logo_Página"    class="nav-logo-img"/>
+      <span class="nav-logo-text">PrimeCup</span>
+    </a>
+    <div class="nav-links">
+      <a href="busqueda.html">Torneos</a>
+      <a href="como-funciona.html">Cómo funciona</a>
+      <a href="login.html" class="nav-link-visible">Iniciar sesión</a>
+      <a href="register.html" class="btn-primary">Registrarse</a>
+      <a href="perfil.html" class="nav-avatar">NA</a>
+      <a href="admin.html" class="nav-admin" title="Panel de administración">
+        <i class="fa-solid fa-shield"></i>
+      </a>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <h1>Gestioná cualquier competencia desde un solo lugar</h1>
+    <p>Torneos deportivos, mentales y electrónicos. Liga, eliminación directa o sistema suizo.</p>
+    <div class="hero-actions">
+      <a href="busqueda.html" class="btn-primary btn-lg">Explorar torneos</a>
+      <a href="crear-torneo.html" class="btn btn-lg">Crear torneo</a>
+    </div>
+  </section>
+
+  <!-- BARRA DE BÚSQUEDA -->
+  <div class="search-wrap">
+    <div class="search-box">
+      <input type="text" placeholder="Buscar torneos..." />
+      <div class="search-selects">
+        <select>
+          <option value="">Seleccioná un deporte</option>
+          <optgroup label="Deportes tradicionales">
+            <option value="futbol11">Fútbol 11</option>
+            <option value="futbol5">Fútbol 5</option>
+            <option value="basquetbol">Básquetbol</option>
+            <option value="tenis">Tenis</option>
+            <option value="padel">Pádel</option>
+            <option value="pingpong">Ping pong</option>
+          </optgroup>
+          <optgroup label="Juegos de mesa / carta">
+            <option value="ajedrez">Ajedrez</option>
+            <option value="truco">Truco</option>
+          </optgroup>
+          <optgroup label="Videojuegos">
+            <option value="cs2">CS2</option>
+            <option value="lol">League of Legends</option>
+            <option value="fortnite">Fortnite</option>
+            <option value="valorant">Valorant</option>
+            <option value="rocketleague">Rocket League</option>
+          </optgroup>
+          <optgroup label="Otro">
+            <option value="otro">Otro</option>
+          </optgroup>
+        </select>
+        <select>
+          <option>Todos los tipos</option>
+          <option>Liga</option>
+          <option>Eliminación directa</option>
+          <option>Sistema suizo</option>
+        </select>
+      </div>
+      <a href="busqueda.html" class="btn-primary">
+        <i class="fa-solid fa-magnifying-glass"></i> Buscar
+      </a>
+    </div>
+  </div>
+
+  <!-- ESTADÍSTICAS -->
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-num">128</div>
+      <div class="stat-label">Torneos activos</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">1.4k</div>
+      <div class="stat-label">Participantes</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">3</div>
+      <div class="stat-label">Formatos disponibles</div>
+    </div>
+  </div>
+
+  <!-- TORNEOS ACTIVOS -->
+  <section class="section">
+    <div class="section-header">
+      <span class="section-title">Torneos activos</span>
+      <a href="busqueda.html" class="section-link">Ver todos <i class="fa-solid fa-arrow-right"></i></a>
+    </div>
+    <div class="cards">
+
+      <a href="detalle.html" class="card card-link">
+        <div class="card-sport"><i class="fa-solid fa-futbol"></i> Fútbol</div>
+        <div class="card-name">Mundialito 2026</div>
+        <div class="card-meta">
+          <div class="card-row"><i class="fa-solid fa-users"></i> 8 equipos</div>
+          <div class="card-row"><i class="fa-solid fa-calendar"></i> Inicia 20 jun</div>
+          <div class="card-row"><i class="fa-solid fa-chart-bar"></i> Liga</div>
+        </div>
+        <span class="badge badge-orange">En curso — Fecha 1</span>
+      </a>
+
+      <a href="detalle.html" class="card card-link">
+        <div class="card-sport"><i class="fa-solid fa-chess"></i> Ajedrez</div>
+        <div class="card-name">Torneo de ajedrez</div>
+        <div class="card-meta">
+          <div class="card-row"><i class="fa-solid fa-users"></i> 128 participantes</div>
+          <div class="card-row"><i class="fa-solid fa-calendar"></i> Inicia 28 jul</div>
+          <div class="card-row"><i class="fa-solid fa-chart-bar"></i> Sistema suizo</div>
+        </div>
+        <span class="badge badge-green">Inscripciones abiertas</span>
+      </a>
+
+      <a href="detalle.html" class="card card-link">
+        <div class="card-sport"><i class="fa-solid fa-gamepad"></i> Videojuegos</div>
+        <div class="card-name">CS:2 Gaming Cup</div>
+        <div class="card-meta">
+          <div class="card-row"><i class="fa-solid fa-users"></i> 16 equipos</div>
+          <div class="card-row"><i class="fa-solid fa-calendar"></i> 20 jul</div>
+          <div class="card-row"><i class="fa-solid fa-chart-bar"></i> Eliminación directa</div>
+        </div>
+        <span class="badge badge-red">Finalizado</span>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- FORMATOS -->
+  <section class="section">
+    <div class="section-header">
+      <span class="section-title">Formatos de competencia</span>
+    </div>
+    <div class="tipos">
+
+      <div class="tipo">
+        <div class="tipo-icon"><i class="fa-solid fa-table"></i></div>
+        <div class="tipo-name">Liga</div>
+        <div class="tipo-desc">Todos los equipos se enfrentan entre sí. Se acumulan puntos por resultado.</div>
+      </div>
+
+      <div class="tipo">
+        <div class="tipo-icon"><i class="fa-solid fa-sitemap"></i></div>
+        <div class="tipo-name">Eliminación directa</div>
+        <div class="tipo-desc">El perdedor queda eliminado. Se generan llaves automáticamente por ronda.</div>
+      </div>
+
+      <div class="tipo">
+        <div class="tipo-icon"><i class="fa-solid fa-shuffle"></i></div>
+        <div class="tipo-name">Sistema suizo</div>
+        <div class="tipo-desc">Emparejamiento por rendimiento acumulado. Sin eliminar a nadie hasta el final.</div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    Sistema de Gestión Deportiva Modular · Instituto Tecnológico Superior Arias-Balparda · 2026
+  </footer>
+
+</body>
+</html>

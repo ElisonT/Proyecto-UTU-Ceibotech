@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Perfil — SGDM</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="nav">
+    <div class="nav-logo">
+      <img src="Imagenes/Logo_Pagina.png" alt="Logo_Página" class="nav-logo-img"/>
+      <span class="nav-logo-text">PrimeCup</span>
+    </div>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link-visible">Inicio</a>
+      <a href="busqueda.html">Torneos</a>
+      <a href="perfil.html" class="nav-avatar">NA</a>
+    </div>
+  </nav>
+
+  <main class="perfil-main">
+
+    <!-- CABECERA DEL PERFIL -->
+    <section class="perfil-header">
+
+      <!-- AVATAR -->
+      <div class="perfil-avatar-wrap">
+        <div class="perfil-avatar">NA</div>
+        <label class="btn-foto" title="Cambiar foto">
+          <i class="fa-solid fa-camera"></i>
+          <input type="file" accept="image/*" style="display:none;" disabled />
+        </label>
+      </div>
+
+      <!-- INFO -->
+      <div class="perfil-info">
+        <h1 class="perfil-nombre">Nombe Apellido</h1>
+        <span class="perfil-usuario">@User</span>
+        <p class="perfil-sobre">Apasionado por los torneos de fútbol y ajedrez. Siempre compitiendo.</p>
+        <div class="perfil-meta">
+          <span><i class="fa-solid fa-calendar"></i> Miembro desde junio 2026</span>
+        </div>
+      </div>
+
+      <!-- ACCIONES -->
+      <div class="perfil-acciones">
+        <a href="#editar-perfil" class="btn btn-editar">
+          <i class="fa-solid fa-pen"></i> Editar perfil
+        </a>
+        <a href="configuracion.html" class="btn btn-editar">
+          <i class="fa-solid fa-gear"></i> Configuración
+        </a>
+      </div>
+
+    </section>
+
+    <!-- FORMULARIO DE EDICIÓN -->
+    <section class="perfil-edicion" id="editar-perfil">
+      <div class="seccion-header">
+        <h2 class="seccion-titulo"><i class="fa-solid fa-pen"></i> Editar perfil</h2>
+      </div>
+      <form class="editar-form" novalidate>
+        <div class="editar-fila">
+          <div class="form-group">
+            <label class="form-label-p">Nombre completo</label>
+            <input type="text" class="form-input-p" value=""
+              pattern="[A-Za-záéíóúÁÉÍÓÚñÑ]+ [A-Za-záéíóúÁÉÍÓÚñÑ].*"
+              title="Ingresá tu nombre y apellido" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label-p">Nombre de usuario</label>
+            <input type="text" class="form-input-p" value=""
+              pattern="[a-zA-Z0-9_]+"
+              title="Solo letras, números y guion bajo" required />
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label-p">Sobre mí</label>
+          <textarea class="form-input-p form-textarea" rows="3" maxlength="200"
+            placeholder="Contá algo sobre vos...">Apasionado por los torneos de fútbol y ajedrez. Siempre compitiendo.</textarea>
+          <span class="form-hint-p">Máximo 200 caracteres.</span>
+        </div>
+        <div class="editar-acciones">
+          <button type="submit" class="btn-primary">Guardar cambios</button>
+          <a href="perfil.html" class="btn">Cancelar</a>
+        </div>
+      </form>
+    </section>
+
+    <!-- ESTADÍSTICAS -->
+    <section class="perfil-stats">
+      <div class="pstat">
+        <div class="pstat-num">8</div>
+        <div class="pstat-label">Torneos jugados</div>
+      </div>
+      <div class="pstat">
+        <div class="pstat-num">3</div>
+        <div class="pstat-label">Torneos activos</div>
+      </div>
+      <div class="pstat">
+        <div class="pstat-num">2</div>
+        <div class="pstat-label">Torneos ganados</div>
+      </div>
+      <div class="pstat">
+        <div class="pstat-num">74%</div>
+        <div class="pstat-label">Victorias</div>
+      </div>
+    </section>
+
+    <!-- TORNEOS ACTIVOS -->
+    <section class="perfil-seccion">
+      <div class="seccion-header">
+        <h2 class="seccion-titulo"><i class="fa-solid fa-trophy"></i> Torneos en los que participa</h2>
+        <a href="busqueda.html" class="section-link">Ver todos <i class="fa-solid fa-arrow-right"></i></a>
+      </div>
+      <div class="cards">
+
+        <div class="card">
+          <div class="card-sport"><i class="fa-solid fa-futbol"></i> Fútbol</div>
+          <div class="card-name">Mundialito 2026</div>
+          <div class="card-meta">
+            <div class="card-row"><i class="fa-solid fa-users"></i> 16 equipos</div>
+            <div class="card-row"><i class="fa-solid fa-calendar"></i> Inicia 15 jun</div>
+            <div class="card-row"><i class="fa-solid fa-chart-bar"></i> Liga</div>
+          </div>
+          <span class="badge badge-green">Inscripciones abiertas</span>
+        </div>
+
+        <div class="card">
+          <div class="card-sport"><i class="fa-solid fa-chess"></i> Ajedrez</div>
+          <div class="card-name">Torneo de ajedrez</div>
+          <div class="card-meta">
+            <div class="card-row"><i class="fa-solid fa-users"></i> 128 participantes</div>
+            <div class="card-row"><i class="fa-solid fa-calendar"></i> En curso</div>
+            <div class="card-row"><i class="fa-solid fa-chart-bar"></i> Sistema suizo</div>
+          </div>
+          <span class="badge badge-orange">En curso — ronda 3</span>
+        </div>
+
+        <div class="card">
+          <div class="card-sport"><i class="fa-solid fa-gamepad"></i> Videojuegos</div>
+          <div class="card-name">CS:2 Gaming Cup</div>
+          <div class="card-meta">
+            <div class="card-row"><i class="fa-solid fa-users"></i> 16 equipos</div>
+            <div class="card-row"><i class="fa-solid fa-calendar"></i> 20 jun</div>
+            <div class="card-row"><i class="fa-solid fa-chart-bar"></i> Eliminación directa</div>
+          </div>
+          <span class="badge badge-green">Inscripciones abiertas</span>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- HISTORIAL -->
+    <section class="perfil-seccion">
+      <div class="seccion-header">
+        <h2 class="seccion-titulo"><i class="fa-solid fa-clock-rotate-left"></i> Historial de resultados</h2>
+      </div>
+      <div class="historial-tabla">
+        <div class="historial-header">
+          <span>Torneo</span>
+          <span>Formato</span>
+          <span>Posición</span>
+          <span>Resultado</span>
+        </div>
+
+        <div class="historial-fila">
+          <div class="historial-torneo">
+            <span class="historial-nombre">Liga Escolar 2025</span>
+            <span class="historial-deporte"><i class="fa-solid fa-futbol"></i> Fútbol</span>
+          </div>
+          <span class="historial-formato">Liga</span>
+          <span class="historial-pos">1°</span>
+          <span class="badge badge-green">Campeón</span>
+        </div>
+
+        <div class="historial-fila">
+          <div class="historial-torneo">
+            <span class="historial-nombre">Open Ajedrez UTU</span>
+            <span class="historial-deporte"><i class="fa-solid fa-chess"></i> Ajedrez</span>
+          </div>
+          <span class="historial-formato">Sistema suizo</span>
+          <span class="historial-pos">3°</span>
+          <span class="badge badge-orange">Semifinal</span>
+        </div>
+
+        <div class="historial-fila">
+          <div class="historial-torneo">
+            <span class="historial-nombre">Gaming Cup 2025</span>
+            <span class="historial-deporte"><i class="fa-solid fa-gamepad"></i> Videojuegos</span>
+          </div>
+          <span class="historial-formato">Eliminación directa</span>
+          <span class="historial-pos">2°</span>
+          <span class="badge badge-orange">Finalista</span>
+        </div>
+
+        <div class="historial-fila">
+          <div class="historial-torneo">
+            <span class="historial-nombre">Torneo Relámpago</span>
+            <span class="historial-deporte"><i class="fa-solid fa-futbol"></i> Fútbol</span>
+          </div>
+          <span class="historial-formato">Eliminación directa</span>
+          <span class="historial-pos">5°</span>
+          <span class="badge badge-red">Eliminado</span>
+        </div>
+
+        <div class="historial-fila">
+          <div class="historial-torneo">
+            <span class="historial-nombre">Copa Otoño 2025</span>
+            <span class="historial-deporte"><i class="fa-solid fa-futbol"></i> Fútbol</span>
+          </div>
+          <span class="historial-formato">Liga</span>
+          <span class="historial-pos">1°</span>
+          <span class="badge badge-green">Campeón</span>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    Sistema de Gestión Deportiva Modular · Instituto Tecnológico Superior Arias-Balparda · 2026
+  </footer>
+</body>
+</html>

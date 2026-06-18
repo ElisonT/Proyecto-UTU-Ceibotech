@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Configuración — SGDM</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="nav">
+    <div class="nav-logo">
+      <img src="Imagenes/Logo_Pagina.png" alt="Logo_Página" class="nav-logo-img"/>
+      <span class="nav-logo-text">PrimeCup</span>
+    </div>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link-visible">Inicio</a>
+      <a href="busqueda.html">Torneos</a>
+      <a href="perfil.html" class="nav-avatar">NA</a>
+    </div>
+  </nav>
+
+  <main class="perfil-main">
+
+    <!-- ENCABEZADO -->
+    <div class="config-encabezado">
+      <a href="perfil.html" class="config-volver">
+        <i class="fa-solid fa-arrow-left"></i> Volver al perfil
+      </a>
+      <h1 class="config-titulo">Configuración de cuenta</h1>
+      <p class="config-subtitulo">Administrá tu información de contacto y seguridad</p>
+    </div>
+
+    <!-- DATOS DE CONTACTO -->
+    <section class="perfil-seccion">
+      <div class="seccion-header">
+        <h2 class="seccion-titulo"><i class="fa-solid fa-address-card"></i> Datos de contacto</h2>
+      </div>
+      <form class="editar-form" action="#" method="post">
+        <div class="editar-fila">
+          <div class="form-group">
+            <label class="form-label-p" for="correo">Correo electrónico</label>
+            <input
+              type="email"
+              id="correo"
+              name="correo"
+              class="form-input-p"
+              value="user@gmail.com"
+              placeholder="ejemplo@correo.com"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label class="form-label-p" for="celular">Número de celular</label>
+            <input
+              type="tel"
+              id="celular"
+              name="celular"
+              class="form-input-p"
+              value="+598 09X XXX XXX"
+              placeholder="+598 09X XXX XXX"
+              pattern="[0-9+\s]+"
+              title="Solo números, sin letras"
+              required
+            />
+          </div>
+        </div>
+        <div class="config-aviso">
+          <i class="fa-solid fa-circle-info"></i>
+          Tu correo y celular son datos privados, no se muestran públicamente.
+        </div>
+        <div class="editar-acciones">
+          <button type="submit" class="btn-primary">Guardar cambios</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- CAMBIAR CONTRASEÑA -->
+    <section class="perfil-seccion">
+      <div class="seccion-header">
+        <h2 class="seccion-titulo"><i class="fa-solid fa-key"></i> Cambiar contraseña</h2>
+      </div>
+      <form class="editar-form" action="#" method="post">
+
+        <div class="form-group">
+          <label class="form-label-p" for="pass-actual">Contraseña actual</label>
+          <input
+            type="password"
+            id="pass-actual"
+            name="pass_actual"
+            class="form-input-p"
+            placeholder="Tu contraseña actual"
+            minlength="8"
+            required
+          />
+        </div>
+
+        <div class="editar-fila">
+          <div class="form-group">
+            <label class="form-label-p" for="pass-nueva">Nueva contraseña</label>
+            <input
+              type="password"
+              id="pass-nueva"
+              name="pass_nueva"
+              class="form-input-p"
+              placeholder="Mínimo 8 caracteres"
+              minlength="8"
+              pattern="(?=.*[A-Z])(?=.*[0-9]).{8,}"
+              title="Mínimo 8 caracteres, una mayúscula y un número"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label class="form-label-p" for="pass-confirmar">Confirmar nueva contraseña</label>
+            <input
+              type="password"
+              id="pass-confirmar"
+              name="pass_confirmar"
+              class="form-input-p"
+              placeholder="Repetí la nueva contraseña"
+              minlength="8"
+              required
+            />
+          </div>
+        </div>
+
+        <span class="form-hint-p" style="padding-left: 4px;">
+          <i class="fa-solid fa-circle-info"></i>
+          La contraseña debe tener al menos 8 caracteres, una mayúscula y un número.
+        </span>
+
+        <div class="editar-acciones">
+          <button type="submit" class="btn-primary">Cambiar contraseña</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- ZONA DE PELIGRO -->
+    <section class="perfil-seccion config-peligro">
+      <div class="seccion-header">
+        <h2 class="seccion-titulo seccion-titulo-rojo">
+          <i class="fa-solid fa-triangle-exclamation"></i> Zona de peligro
+        </h2>
+      </div>
+      <div class="peligro-contenido">
+        <div class="peligro-info">
+          <p class="peligro-titulo">Eliminar cuenta</p>
+          <p class="peligro-desc">Esta acción es permanente y no se puede deshacer. Se eliminarán todos tus datos, torneos e historial.</p>
+        </div>
+        <button type="button" class="btn-danger">
+          <i class="fa-solid fa-trash"></i> Eliminar mi cuenta
+        </button>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    Sistema de Gestión Deportiva Modular · Instituto Tecnológico Superior Arias-Balparda · 2026
+  </footer>
+
+</body>
+</html>
