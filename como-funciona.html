@@ -1,15 +1,22 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+  <!-- HEAD: contiene informacion para el navegador; no se muestra como contenido principal de la pagina. -->
+  <!-- charset define la codificacion para que tildes y eñes se lean correctamente. -->
   <meta charset="UTF-8" />
+  <!-- viewport adapta el ancho de la pagina a celulares, tablets y PC. -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- title es el texto que aparece en la pestaña del navegador. -->
   <title>Cómo funciona — SGDM</title>
+  <!-- styles.css guarda todos los estilos visuales del sitio. -->
   <link rel="stylesheet" href="styles.css" />
+  <!-- Font Awesome aporta los iconos usados en botones, tarjetas y menus. -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 </head>
 <body>
+  <!-- BODY: contiene todo lo visible de la pagina: navegacion, contenido principal y pie. -->
 
-  <!-- NAVBAR -->
+  <!-- NAVBAR: menu principal para moverse entre las pantallas del mockup. -->
   <nav class="nav">
     <div class="nav-logo">
       <img src="Imagenes/Logo_Pagina.png" alt="Logo_Página" class="nav-logo-img"/>
@@ -23,7 +30,10 @@
     </div>
   </nav>
 
-  <!-- HERO CON LOGO -->
+  <!-- =====================
+       HERO CON LOGO: presentacion de la pagina informativa.
+       Muestra marca, descripcion corta y accesos para registrarse o explorar.
+       ===================== -->
   <section class="cf-hero">
     <img src="Imagenes/Logo_Pagina.png" alt="Logo SGDM" class="cf-hero-logo" />
     <h1 class="cf-hero-titulo">Sistema de Gestión Deportiva Modular</h1>
@@ -35,8 +45,12 @@
   </section>
 
   <main class="cf-main">
+    <!-- MAIN: contenido central y especifico de esta pagina. -->
 
-    <!-- SECCIÓN 1: PASOS -->
+    <!-- =====================
+       SECCION 1: PASOS.
+       Explica el recorrido basico del usuario dentro de la plataforma.
+       ===================== -->
     <section class="cf-seccion">
       <div class="cf-seccion-titulo">
         <h2>¿Cómo funciona?</h2>
@@ -81,7 +95,10 @@
       </div>
     </section>
 
-    <!-- SECCIÓN 2: FORMATOS -->
+    <!-- =====================
+       SECCION 2: FORMATOS.
+       Describe liga, eliminacion directa y sistema suizo.
+       ===================== -->
     <section class="cf-seccion cf-seccion-alt">
       <div class="cf-seccion-titulo">
         <h2>Tres formatos de competencia</h2>
@@ -125,7 +142,10 @@
       </div>
     </section>
 
-    <!-- SECCIÓN 3: ROLES -->
+    <!-- =====================
+       SECCION 3: ROLES.
+       Muestra que pueden hacer visitantes, participantes, organizadores y administradores.
+       ===================== -->
     <section class="cf-seccion">
       <div class="cf-seccion-titulo">
         <h2>Roles de usuario</h2>
@@ -160,7 +180,10 @@
       </div>
     </section>
 
-    <!-- SECCIÓN 4: PREGUNTAS FRECUENTES -->
+    <!-- =====================
+       SECCION 4: PREGUNTAS FRECUENTES.
+       Usa etiquetas details y summary de HTML para abrir/cerrar respuestas.
+       ===================== -->
     <section class="cf-seccion">
       <div class="cf-seccion-titulo">
         <h2>Preguntas frecuentes</h2>
@@ -228,7 +251,7 @@
       </div>
     </section>
 
-    <!-- CTA FINAL -->
+    <!-- CTA FINAL: llamada final a la accion para crear cuenta o volver a explorar torneos. -->
     <div class="cta">
       <h2>¿Listo para competir?</h2>
       <p>Registrate gratis y empezá a participar en torneos hoy mismo.</p>
@@ -240,6 +263,7 @@
 
   </main>
 
+  <!-- FOOTER: informacion final comun del sistema. -->
   <footer class="footer">
     Sistema de Gestión Deportiva Modular · Instituto Tecnológico Superior Arias-Balparda · 2026
   </footer>

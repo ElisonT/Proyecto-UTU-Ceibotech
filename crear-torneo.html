@@ -1,15 +1,22 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+  <!-- HEAD: contiene informacion para el navegador; no se muestra como contenido principal de la pagina. -->
+  <!-- charset define la codificacion para que tildes y eñes se lean correctamente. -->
   <meta charset="UTF-8" />
+  <!-- viewport adapta el ancho de la pagina a celulares, tablets y PC. -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- title es el texto que aparece en la pestaña del navegador. -->
   <title>Crear torneo — SGDM</title>
+  <!-- styles.css guarda todos los estilos visuales del sitio. -->
   <link rel="stylesheet" href="styles.css" />
+  <!-- Font Awesome aporta los iconos usados en botones, tarjetas y menus. -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 </head>
 <body>
+  <!-- BODY: contiene todo lo visible de la pagina: navegacion, contenido principal y pie. -->
 
-  <!-- NAVBAR -->
+  <!-- NAVBAR: menu principal para moverse entre las pantallas del mockup. -->
   <nav class="nav">
     <div class="nav-logo">
       <img src="Imagenes/Logo_Pagina.png" alt="Logo_Página" class="nav-logo-img"/>
@@ -23,8 +30,9 @@
   </nav>
 
   <main class="crear-main">
+    <!-- MAIN: contenido central y especifico de esta pagina. -->
 
-    <!-- ENCABEZADO -->
+    <!-- ENCABEZADO: titulo de la pantalla y acciones principales de la pagina. -->
     <div class="config-encabezado">
       <a href="index.html" class="config-volver">
         <i class="fa-solid fa-arrow-left"></i> Volver al inicio
@@ -33,6 +41,7 @@
       <p class="config-subtitulo">Completá el formulario para publicar tu competencia</p>
     </div>
 
+    <!-- FORMULARIO PRINCIPAL: agrupa todos los campos necesarios para publicar un torneo. -->
     <form class="crear-form" action="#" method="post" enctype="multipart/form-data">
 
       <!-- =====================
@@ -45,7 +54,7 @@
           </h2>
         </div>
 
-        <!-- Nombre -->
+        <!-- Nombre: input obligatorio para identificar el torneo. -->
         <div class="form-group">
           <label class="form-label-p" for="nombre-torneo">Nombre del torneo</label>
           <input
@@ -60,7 +69,7 @@
           />
         </div>
 
-        <!-- Deporte -->
+        <!-- Deporte: selector con categorias y opciones de competencia. -->
         <div class="form-group">
           <label class="form-label-p" for="deporte">Deporte o categoría</label>
           <select id="deporte" name="deporte" class="form-input-p" required>
@@ -91,7 +100,7 @@
           </select>
         </div>
 
-        <!-- Descripción -->
+        <!-- Descripcion: textarea para explicar brevemente el torneo. -->
         <div class="form-group">
           <label class="form-label-p" for="descripcion">Descripción corta</label>
           <textarea
@@ -116,7 +125,7 @@
           </h2>
         </div>
 
-        <!-- Tipo de torneo -->
+        <!-- Tipo de torneo: radios para elegir liga, eliminacion directa o sistema suizo. -->
         <div class="form-group">
           <label class="form-label-p">Tipo de torneo</label>
           <div class="radio-group">
@@ -151,7 +160,7 @@
           </div>
         </div>
 
-        <!-- Participantes -->
+        <!-- Participantes: define cupos maximos y si se compite individualmente o por equipos. -->
         <div class="crear-fila">
           <div class="form-group">
             <label class="form-label-p" for="max-participantes">Máximo de participantes / equipos</label>
@@ -232,7 +241,7 @@
           />
         </div>
 
-        <!-- Duración estimada -->
+        <!-- Duracion estimada: radios para indicar cuanto duraria el torneo. -->
         <div class="form-group">
           <label class="form-label-p">Duración estimada</label>
           <div class="radio-duracion">
@@ -292,7 +301,7 @@
           </div>
         </div>
 
-        <!-- Premio monetario -->
+        <!-- Premio monetario: campo opcional para indicar monto en pesos uruguayos. -->
         <div class="form-group">
           <label class="form-label-p" for="monto-premio">
             Monto del premio <span class="form-hint-p">(solo si es monetario)</span>
@@ -310,7 +319,7 @@
           </div>
         </div>
 
-        <!-- Premio otro -->
+        <!-- Premio otro: descripcion opcional para premios no monetarios. -->
         <div class="form-group">
           <label class="form-label-p" for="desc-premio">
             Descripción del premio <span class="form-hint-p">(solo si es otro tipo)</span>
@@ -404,7 +413,7 @@
           </div>
         </div>
 
-        <!-- BOTONES FINALES -->
+        <!-- BOTONES FINALES: acciones para publicar el formulario o cancelar y volver al inicio. -->
         <div class="crear-acciones">
           <button type="submit" class="btn-primary btn-lg">
             <i class="fa-solid fa-plus"></i> Publicar torneo
@@ -416,6 +425,7 @@
 
   </main>
 
+  <!-- FOOTER: informacion final comun del sistema. -->
   <footer class="footer">
     Sistema de Gestión Deportiva Modular · Instituto Tecnológico Superior Arias-Balparda · 2026
   </footer>

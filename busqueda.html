@@ -1,15 +1,22 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+  <!-- HEAD: contiene informacion para el navegador; no se muestra como contenido principal de la pagina. -->
+  <!-- charset define la codificacion para que tildes y eñes se lean correctamente. -->
   <meta charset="UTF-8" />
+  <!-- viewport adapta el ancho de la pagina a celulares, tablets y PC. -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- title es el texto que aparece en la pestaña del navegador. -->
   <title>Buscar torneos — SGDM</title>
+  <!-- styles.css guarda todos los estilos visuales del sitio. -->
   <link rel="stylesheet" href="styles.css" />
+  <!-- Font Awesome aporta los iconos usados en botones, tarjetas y menus. -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 </head>
 <body>
+  <!-- BODY: contiene todo lo visible de la pagina: navegacion, contenido principal y pie. -->
 
-  <!-- NAVBAR -->
+  <!-- NAVBAR: menu principal para moverse entre las pantallas del mockup. -->
   <nav class="nav">
     <a href="index.html" class="nav-logo">
       <img src="Imagenes/Logo_Pagina.png" alt="Logo_Página"    class="nav-logo-img"/>
@@ -27,12 +34,15 @@
     </div>
   </nav>
 
-  <!-- ENCABEZADO Y FILTROS -->
+  <!-- =====================
+       ENCABEZADO Y FILTROS: titulo de busqueda, caja de texto y selectores.
+       Sirve para representar como el usuario encontraria torneos.
+       ===================== -->
   <div class="busqueda-header">
     <div class="busqueda-header-inner">
       <h1 class="busqueda-titulo">Buscar torneos</h1>
 
-      <!-- BARRA DE BÚSQUEDA -->
+      <!-- BARRA DE BUSQUEDA: campo principal para escribir el nombre del torneo. -->
       <div class="busqueda-barra">
         <div class="busqueda-input-wrap">
           <i class="fa-solid fa-magnifying-glass busqueda-icon"></i>
@@ -41,7 +51,7 @@
         <button class="btn-primary">Buscar</button>
       </div>
 
-      <!-- FILTROS -->
+      <!-- FILTROS: selectores para limitar resultados por deporte, tipo y estado. -->
       <div class="busqueda-filtros">
         <select class="filtro-select">
           <option value="">Todos los deportes</option>
@@ -81,7 +91,7 @@
         </select>
       </div>
 
-      <!-- RESULTADOS COUNT -->
+      <!-- CONTADOR DE RESULTADOS: texto que indica cuantos torneos coinciden con la busqueda. -->
       <div class="busqueda-count">
         <span>6 torneos encontrados</span>
       </div>
@@ -89,10 +99,14 @@
     </div>
   </div>
 
-  <!-- RESULTADOS -->
+  <!-- =====================
+       RESULTADOS: listado de tarjetas encontradas.
+       Cada resultado resume deporte, formato, fecha, cupos y estado.
+       ===================== -->
   <main class="busqueda-main">
+    <!-- MAIN: contenido central y especifico de esta pagina. -->
 
-    <!-- RESULTADO 1 -->
+    <!-- RESULTADO 1: tarjeta de ejemplo de un torneo encontrado. -->
     <a href="detalle.html" class="resultado-card">
       <div class="resultado-img resultado-img-futbol">
         <i class="fa-solid fa-futbol"></i>
@@ -112,7 +126,7 @@
       </div>
     </a>
 
-    <!-- RESULTADO 2 -->
+    <!-- RESULTADO 2: segunda tarjeta de ejemplo del listado. -->
     <a href="detalle.html" class="resultado-card">
       <div class="resultado-img resultado-img-ajedrez">
         <i class="fa-solid fa-chess"></i>
@@ -132,7 +146,7 @@
       </div>
     </a>
 
-    <!-- RESULTADO 3 -->
+    <!-- RESULTADO 3: tercera tarjeta de ejemplo del listado. -->
     <a href="detalle.html" class="resultado-card">
       <div class="resultado-img resultado-img-cs">
         <i class="fa-solid fa-gamepad"></i>
@@ -152,7 +166,7 @@
       </div>
     </a>
 
-    <!-- RESULTADO 4 -->
+    <!-- RESULTADO 4: cuarta tarjeta de ejemplo del listado. -->
     <a href="detalle.html" class="resultado-card">
       <div class="resultado-img resultado-img-basquet">
         <i class="fa-solid fa-basketball"></i>
@@ -172,7 +186,7 @@
       </div>
     </a>
 
-    <!-- RESULTADO 5 -->
+    <!-- RESULTADO 5: quinta tarjeta de ejemplo del listado. -->
     <a href="detalle.html" class="resultado-card">
       <div class="resultado-img resultado-img-valorant">
         <i class="fa-solid fa-crosshairs"></i>
@@ -192,7 +206,7 @@
       </div>
     </a>
 
-    <!-- RESULTADO 6 -->
+    <!-- RESULTADO 6: sexta tarjeta de ejemplo del listado. -->
     <a href="detalle.html" class="resultado-card">
       <div class="resultado-img resultado-img-tenis">
         <i class="fa-solid fa-table-tennis-paddle-ball"></i>
@@ -214,6 +228,7 @@
 
   </main>
 
+  <!-- FOOTER: informacion final comun del sistema. -->
   <footer class="footer">
     Sistema de Gestión Deportiva Modular · Instituto Tecnológico Superior Arias-Balparda · 2026
   </footer>

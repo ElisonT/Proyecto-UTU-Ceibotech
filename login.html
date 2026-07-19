@@ -1,14 +1,22 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+  <!-- HEAD: contiene informacion para el navegador; no se muestra como contenido principal de la pagina. -->
+  <!-- charset define la codificacion para que tildes y eñes se lean correctamente. -->
   <meta charset="UTF-8" />
+  <!-- viewport adapta el ancho de la pagina a celulares, tablets y PC. -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- title es el texto que aparece en la pestaña del navegador. -->
   <title>Iniciar sesión — SGDM</title>
+  <!-- styles.css guarda todos los estilos visuales del sitio. -->
   <link rel="stylesheet" href="styles.css" />
+  <!-- Font Awesome aporta los iconos usados en botones, tarjetas y menus. -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 </head>
 <body class="auth-body">
+  <!-- BODY: contiene todo lo visible de la pagina: navegacion, contenido principal y pie. -->
 
+  <!-- NAVBAR: navegacion simple de autenticacion; permite volver al inicio. -->
   <nav class="nav">
     <div class="nav-logo">
       <img src="Imagenes/Logo_Pagina.png" alt="Logo_Página" class="nav-logo-img"/>
@@ -20,6 +28,8 @@
   </nav>
 
   <main class="auth-main">
+    <!-- MAIN: contenido central y especifico de esta pagina. -->
+    <!-- TARJETA DE LOGIN: contenedor central del formulario de ingreso. -->
     <div class="auth-card">
 
       <div class="auth-header">
@@ -27,6 +37,7 @@
         <p class="auth-subtitle">Ingresá a tu cuenta para gestionar tus torneos</p>
       </div>
 
+      <!-- FORMULARIO DE LOGIN: campos para usuario/correo y contrasena. -->
       <form class="auth-form" id="loginForm">
 
         <div class="form-group" id="group-login">

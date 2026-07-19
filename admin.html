@@ -1,24 +1,34 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+  <!-- HEAD: contiene informacion para el navegador; no se muestra como contenido principal de la pagina. -->
+  <!-- charset define la codificacion para que tildes y eñes se lean correctamente. -->
   <meta charset="UTF-8" />
+  <!-- viewport adapta el ancho de la pagina a celulares, tablets y PC. -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- title es el texto que aparece en la pestaña del navegador. -->
   <title>Panel de administración — SGDM</title>
+  <!-- styles.css guarda todos los estilos visuales del sitio. -->
   <link rel="stylesheet" href="styles.css" />
+  <!-- Font Awesome aporta los iconos usados en botones, tarjetas y menus. -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 </head>
 <body class="admin-body">
+  <!-- BODY: contiene todo lo visible de la pagina: navegacion, contenido principal y pie. -->
 
-  <!-- SIDEBAR -->
+  <!-- =====================
+       SIDEBAR: menu lateral exclusivo del panel de administracion.
+       Permite acceder a dashboard, usuarios, torneos y configuracion.
+       ===================== -->
   <aside class="admin-sidebar">
 
-    <!-- LOGO -->
+    <!-- LOGO: muestra la imagen y el nombre de la aplicacion dentro del sidebar. -->
     <div class="admin-sidebar-logo">
       <img src="Imagenes/Logo_Pagina.png" alt="Logo" class="nav-logo-img" />
       <span class="nav-logo-text">PrimeCup</span>
     </div>
 
-    <!-- NAVEGACIÓN -->
+    <!-- NAVEGACION: enlaces internos del panel administrativo. -->
     <nav class="admin-nav">
       <span class="admin-nav-label">General</span>
       <a href="admin.html" class="admin-nav-link admin-nav-active">
@@ -40,7 +50,7 @@
       </a>
     </nav>
 
-    <!-- ADMIN INFO -->
+    <!-- ADMIN INFO: datos resumidos del usuario administrador y enlace para salir. -->
     <div class="admin-sidebar-footer">
       <div class="admin-sidebar-user">
         <div class="admin-sidebar-avatar">AD</div>
@@ -56,10 +66,11 @@
 
   </aside>
 
-  <!-- CONTENIDO PRINCIPAL -->
+  <!-- CONTENIDO PRINCIPAL: zona derecha donde se muestra la informacion del dashboard. -->
   <main class="admin-main">
+    <!-- MAIN: contenido central y especifico de esta pagina. -->
 
-    <!-- ENCABEZADO -->
+    <!-- ENCABEZADO: titulo de la pantalla y acciones principales de la pagina. -->
     <div class="admin-topbar">
       <div>
         <h1 class="admin-page-titulo">Dashboard</h1>
@@ -72,7 +83,10 @@
       </div>
     </div>
 
-    <!-- ESTADÍSTICAS -->
+    <!-- =====================
+       ESTADISTICAS: resumen visual con numeros importantes del sistema.
+       Ayuda a mostrar actividad en el mockup.
+       ===================== -->
     <div class="admin-stats">
       <div class="admin-stat-card">
         <div class="admin-stat-icon admin-stat-icon-azul">

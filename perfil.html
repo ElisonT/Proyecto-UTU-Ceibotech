@@ -1,15 +1,22 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+  <!-- HEAD: contiene informacion para el navegador; no se muestra como contenido principal de la pagina. -->
+  <!-- charset define la codificacion para que tildes y eñes se lean correctamente. -->
   <meta charset="UTF-8" />
+  <!-- viewport adapta el ancho de la pagina a celulares, tablets y PC. -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- title es el texto que aparece en la pestaña del navegador. -->
   <title>Perfil — SGDM</title>
+  <!-- styles.css guarda todos los estilos visuales del sitio. -->
   <link rel="stylesheet" href="styles.css" />
+  <!-- Font Awesome aporta los iconos usados en botones, tarjetas y menus. -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 </head>
 <body>
+  <!-- BODY: contiene todo lo visible de la pagina: navegacion, contenido principal y pie. -->
 
-  <!-- NAVBAR -->
+  <!-- NAVBAR: menu principal para moverse entre las pantallas del mockup. -->
   <nav class="nav">
     <div class="nav-logo">
       <img src="Imagenes/Logo_Pagina.png" alt="Logo_Página" class="nav-logo-img"/>
@@ -23,11 +30,15 @@
   </nav>
 
   <main class="perfil-main">
+    <!-- MAIN: contenido central y especifico de esta pagina. -->
 
-    <!-- CABECERA DEL PERFIL -->
+    <!-- =====================
+       CABECERA DEL PERFIL: muestra avatar, nombre, usuario y datos generales.
+       Tambien contiene accesos para editar perfil o ir a configuracion.
+       ===================== -->
     <section class="perfil-header">
 
-      <!-- AVATAR -->
+      <!-- AVATAR: circulo con iniciales del usuario y opcion visual para foto. -->
       <div class="perfil-avatar-wrap">
         <div class="perfil-avatar">NA</div>
         <label class="btn-foto" title="Cambiar foto">
@@ -36,7 +47,7 @@
         </label>
       </div>
 
-      <!-- INFO -->
+      <!-- INFO: datos principales del usuario mostrados en su perfil. -->
       <div class="perfil-info">
         <h1 class="perfil-nombre">Nombe Apellido</h1>
         <span class="perfil-usuario">@User</span>
@@ -46,7 +57,7 @@
         </div>
       </div>
 
-      <!-- ACCIONES -->
+      <!-- ACCIONES: enlaces para editar el perfil o abrir configuracion. -->
       <div class="perfil-acciones">
         <a href="#editar-perfil" class="btn btn-editar">
           <i class="fa-solid fa-pen"></i> Editar perfil
@@ -58,7 +69,7 @@
 
     </section>
 
-    <!-- FORMULARIO DE EDICIÓN -->
+    <!-- FORMULARIO DE EDICION: campos para modificar datos visibles del perfil. -->
     <section class="perfil-edicion" id="editar-perfil">
       <div class="seccion-header">
         <h2 class="seccion-titulo"><i class="fa-solid fa-pen"></i> Editar perfil</h2>
@@ -91,7 +102,10 @@
       </form>
     </section>
 
-    <!-- ESTADÍSTICAS -->
+    <!-- =====================
+       ESTADISTICAS: resumen visual con numeros importantes del sistema.
+       Ayuda a mostrar actividad en el mockup.
+       ===================== -->
     <section class="perfil-stats">
       <div class="pstat">
         <div class="pstat-num">8</div>
@@ -111,7 +125,10 @@
       </div>
     </section>
 
-    <!-- TORNEOS ACTIVOS -->
+    <!-- =====================
+       TORNEOS ACTIVOS: tarjetas de torneos destacados o en curso.
+       Cada tarjeta funciona como acceso al detalle del torneo.
+       ===================== -->
     <section class="perfil-seccion">
       <div class="seccion-header">
         <h2 class="seccion-titulo"><i class="fa-solid fa-trophy"></i> Torneos en los que participa</h2>
@@ -155,7 +172,10 @@
       </div>
     </section>
 
-    <!-- HISTORIAL -->
+    <!-- =====================
+       HISTORIAL: tabla con torneos ya jugados y resultados obtenidos.
+       Sirve para mostrar antecedentes del usuario dentro del sistema.
+       ===================== -->
     <section class="perfil-seccion">
       <div class="seccion-header">
         <h2 class="seccion-titulo"><i class="fa-solid fa-clock-rotate-left"></i> Historial de resultados</h2>
@@ -223,6 +243,7 @@
 
   </main>
 
+  <!-- FOOTER: informacion final comun del sistema. -->
   <footer class="footer">
     Sistema de Gestión Deportiva Modular · Instituto Tecnológico Superior Arias-Balparda · 2026
   </footer>

@@ -1,15 +1,22 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+  <!-- HEAD: contiene informacion para el navegador; no se muestra como contenido principal de la pagina. -->
+  <!-- charset define la codificacion para que tildes y eñes se lean correctamente. -->
   <meta charset="UTF-8" />
+  <!-- viewport adapta el ancho de la pagina a celulares, tablets y PC. -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- title es el texto que aparece en la pestaña del navegador. -->
   <title>Mundialito 2026 — SGDM</title>
+  <!-- styles.css guarda todos los estilos visuales del sitio. -->
   <link rel="stylesheet" href="styles.css" />
+  <!-- Font Awesome aporta los iconos usados en botones, tarjetas y menus. -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 </head>
 <body>
+  <!-- BODY: contiene todo lo visible de la pagina: navegacion, contenido principal y pie. -->
 
-  <!-- NAVBAR -->
+  <!-- NAVBAR: menu principal para moverse entre las pantallas del mockup. -->
   <nav class="nav">
     <div class="nav-logo">
       <img src="Imagenes/Logo_Pagina.png" alt="Logo_Página" class="nav-logo-img"/>
@@ -22,7 +29,10 @@
     </div>
   </nav>
 
-  <!-- CABECERA DEL TORNEO -->
+  <!-- =====================
+       CABECERA DEL TORNEO: informacion principal del torneo seleccionado.
+       Incluye icono, nombre, descripcion, datos clave y estado de cupos.
+       ===================== -->
   <div class="detalle-hero">
     <div class="detalle-hero-inner">
 
@@ -59,8 +69,9 @@
   </div>
 
   <main class="detalle-main">
+    <!-- MAIN: contenido central y especifico de esta pagina. -->
 
-    <!-- ESTADÍSTICAS RÁPIDAS -->
+    <!-- ESTADISTICAS RAPIDAS: resumen corto de equipos, fechas y progreso del torneo. -->
     <div class="perfil-stats">
       <div class="pstat">
         <div class="pstat-num">8</div>
@@ -80,7 +91,10 @@
       </div>
     </div>
 
-    <!-- TABLA DE POSICIONES -->
+    <!-- =====================
+       TABLA DE POSICIONES: ranking de equipos o participantes.
+       Muestra puntos y datos deportivos simulados para el mockup.
+       ===================== -->
     <section class="perfil-seccion">
       <div class="seccion-header">
         <h2 class="seccion-titulo"><i class="fa-solid fa-table"></i> Tabla de posiciones</h2>
@@ -160,7 +174,7 @@
       </div>
     </section>
 
-    <!-- ÚLTIMA FECHA JUGADA -->
+    <!-- ULTIMA FECHA JUGADA: partidos ya finalizados con sus resultados. -->
     <section class="perfil-seccion">
       <div class="seccion-header">
         <h2 class="seccion-titulo"><i class="fa-solid fa-calendar-days"></i> Última fecha jugada</h2>
@@ -194,7 +208,7 @@
         </div>
       </div>
 
-      <!-- PRÓXIMA FECHA -->
+      <!-- PROXIMA FECHA: muestra los partidos que todavia estan pendientes. -->
       <div class="fecha-grupo" style="margin-top: 1.25rem;">
         <div class="fecha-titulo">
           <span>Fecha 4</span>
@@ -220,7 +234,7 @@
 
     </section>
 
-    <!-- PARTICIPANTES -->
+    <!-- PARTICIPANTES: lista de equipos o jugadores inscriptos. -->
     <section class="perfil-seccion">
       <div class="seccion-header">
         <h2 class="seccion-titulo"><i class="fa-solid fa-users"></i> Equipos participantes</h2>
@@ -240,6 +254,7 @@
 
   </main>
 
+  <!-- FOOTER: informacion final comun del sistema. -->
   <footer class="footer">
     Sistema de Gestión Deportiva Modular · Instituto Tecnológico Superior Arias-Balparda · 2026
   </footer>

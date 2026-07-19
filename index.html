@@ -1,15 +1,22 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+  <!-- HEAD: contiene informacion para el navegador; no se muestra como contenido principal de la pagina. -->
+  <!-- charset define la codificacion para que tildes y eñes se lean correctamente. -->
   <meta charset="UTF-8" />
+  <!-- viewport adapta el ancho de la pagina a celulares, tablets y PC. -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- title es el texto que aparece en la pestaña del navegador. -->
   <title>Sistema de Gestión Deportiva Modular</title>
+  <!-- styles.css guarda todos los estilos visuales del sitio. -->
   <link rel="stylesheet" href="styles.css" />
+  <!-- Font Awesome aporta los iconos usados en botones, tarjetas y menus. -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 </head>
 <body>
+  <!-- BODY: contiene todo lo visible de la pagina: navegacion, contenido principal y pie. -->
 
-  <!-- NAVBAR -->
+  <!-- NAVBAR: menu principal para moverse entre las pantallas del mockup. -->
   <nav class="nav">
     <a href="index.html" class="nav-logo">
       <img src="Imagenes/Logo_Pagina.png" alt="Logo_Página"    class="nav-logo-img"/>
@@ -27,7 +34,10 @@
     </div>
   </nav>
 
-  <!-- HERO -->
+  <!-- =====================
+       HERO: primera seccion visible de la pagina de inicio.
+       Presenta el objetivo del sistema y los botones principales.
+       ===================== -->
   <section class="hero">
     <h1>Gestioná cualquier competencia desde un solo lugar</h1>
     <p>Torneos deportivos, mentales y electrónicos. Liga, eliminación directa o sistema suizo.</p>
@@ -37,7 +47,7 @@
     </div>
   </section>
 
-  <!-- BARRA DE BÚSQUEDA -->
+  <!-- BARRA DE BUSQUEDA: campo principal para escribir el nombre del torneo. -->
   <div class="search-wrap">
     <div class="search-box">
       <input type="text" placeholder="Buscar torneos..." />
@@ -80,7 +90,10 @@
     </div>
   </div>
 
-  <!-- ESTADÍSTICAS -->
+  <!-- =====================
+       ESTADISTICAS: resumen visual con numeros importantes del sistema.
+       Ayuda a mostrar actividad en el mockup.
+       ===================== -->
   <div class="stats">
     <div class="stat">
       <div class="stat-num">128</div>
@@ -96,7 +109,10 @@
     </div>
   </div>
 
-  <!-- TORNEOS ACTIVOS -->
+  <!-- =====================
+       TORNEOS ACTIVOS: tarjetas de torneos destacados o en curso.
+       Cada tarjeta funciona como acceso al detalle del torneo.
+       ===================== -->
   <section class="section">
     <div class="section-header">
       <span class="section-title">Torneos activos</span>
@@ -140,7 +156,10 @@
     </div>
   </section>
 
-  <!-- FORMATOS -->
+  <!-- =====================
+       FORMATOS: explica los tipos de competencia disponibles.
+       Se muestran como bloques informativos con icono, nombre y descripcion.
+       ===================== -->
   <section class="section">
     <div class="section-header">
       <span class="section-title">Formatos de competencia</span>
@@ -168,7 +187,8 @@
     </div>
   </section>
 
-  <!-- FOOTER -->
+  
+  <!-- FOOTER: informacion final comun del sistema. -->
   <footer class="footer">
     Sistema de Gestión Deportiva Modular · Instituto Tecnológico Superior Arias-Balparda · 2026
   </footer>
