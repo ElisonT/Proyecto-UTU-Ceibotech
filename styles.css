@@ -5,6 +5,14 @@
    ===================================================== */
 
 
+
+/* =====================================================
+   ACLARACION SOBRE LOS @
+   Los @ que aparecen en este archivo son reglas propias de CSS.
+   En este proyecto se usa @media para aplicar estilos distintos
+   segun el ancho de pantalla: celular, tablet o PC.
+   No requieren programacion extra.
+   ===================================================== */
 /* =====================
    1. RESET & BASE
    ===================== */
@@ -85,7 +93,7 @@ a {
   background: var(--color-surface-alt);
 }
 
-/* BotÃ³n primario (azul sÃ³lido) */
+/* Botón primario (azul sólido) */
 .btn-primary {
   border-color: transparent;
   background: var(--color-primary);
@@ -95,7 +103,7 @@ a {
   background: var(--color-primary-dark);
 }
 
-/* BotÃ³n de peligro (rojo) */
+/* Botón de peligro (rojo) */
 .btn-danger {
   padding: 9px 18px;
   border-color: #ffcdd2;
@@ -661,30 +669,11 @@ a {
   color: var(--color-text-subtle);
 }
 
-/* Contenedor de input con botón de ojo */
+/* Contenedor del campo de contraseña */
 .input-password-wrap {
   position: relative;
   display: flex;
   align-items: center;
-}
-.input-password-wrap .form-input {
-  padding-right: 42px;
-}
-
-/* Botón mostrar/ocultar contraseña */
-.toggle-password {
-  position: absolute;
-  right: 12px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: var(--color-text-muted);
-  font-size: 14px;
-  padding: 0;
-  transition: color 0.15s;
-}
-.toggle-password:hover {
-  color: var(--color-text);
 }
 
 /* Link de olvidé contraseña */
@@ -884,7 +873,7 @@ a {
   align-self: flex-start;
 }
 
-/* Sección de edición (se muestra/oculta con JS) */
+/* Seccion de edicion del perfil */
 .perfil-edicion {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
@@ -1927,7 +1916,7 @@ a {
 
 /* =====================
    FAQ — PREGUNTAS FRECUENTES
-   (usa <details> y <summary> sin JS)
+   (usa <details> y <summary> con HTML)
    ===================== */
 
 .faq-lista {
