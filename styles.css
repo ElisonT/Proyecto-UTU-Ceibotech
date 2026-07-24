@@ -1365,7 +1365,11 @@ a {
     padding-bottom: 4px;
   }
   .nav-avatar,
-  .nav-admin { display: none; }
+  .nav-admin {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+  }
   .nav-links a { white-space: nowrap; }
   .nav-links .btn-primary { padding: 8px 14px; color: #fff; }
 
@@ -2898,11 +2902,4 @@ a {
 a.nav-logo {
   text-decoration: none;
   color: inherit;
-}
-
-@media (max-width: 600px) {
-  .nav-avatar,
-  .nav-admin {
-    display: none !important;
-  }
 }
