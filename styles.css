@@ -16,6 +16,15 @@
 /* =====================
    1. RESET & BASE
    ===================== */
+html {
+  scroll-behavior: smooth;
+}
+
+#usuarios,
+#torneos {
+  scroll-margin-top: 20px;
+}
+
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
@@ -28,6 +37,22 @@ body {
   color: var(--color-text);
   line-height: 1.6;
   font-size: 15px;
+  /* Layout de "footer pegado abajo": si el contenido es corto, el footer
+     no queda flotando con un hueco vacío después, sino pegado al final
+     de la pantalla. Si el contenido es largo, el footer baja con él, normal. */
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* El <main> de cada página crece para ocupar el espacio libre; nav y footer
+   mantienen su tamaño natural (ver regla "flex-shrink: 0" más abajo). */
+main {
+  flex: 1 0 auto;
+}
+.nav,
+.footer {
+  flex-shrink: 0;
 }
 
 a {
@@ -177,32 +202,91 @@ a {
   letter-spacing: 0.06em;
 }
 
-/* Links del navbar */
+/* Links del navbar: panel desplegable (dropdown), oculto por defecto en cualquier tamaño de pantalla.
+   En desktop es una tarjeta angosta anclada abajo a la derecha del botón.
+   En mobile (ver media query) pasa a ocupar todo el ancho. */
 .nav-links {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 1rem;
+  width: 260px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  box-shadow: 0 12px 24px rgba(0,0,0,0.14);
   display: flex;
-  gap: 1.5rem;
-  align-items: center;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: max-height 0.25s ease, opacity 0.2s ease;
+  z-index: 101;
+}
+.nav-links.active {
+  max-height: 480px;
+  opacity: 1;
 }
 
 .nav-links a {
+  display: flex;
+  align-items: center;
+  padding: 14px 1.25rem;
   font-size: 14px;
   color: var(--color-text-muted);
-  transition: color 0.15s;
+  border-bottom: 1px solid var(--color-border);
+  transition: background 0.15s, color 0.15s;
+}
+.nav-links a:last-of-type {
+  border-bottom: none;
 }
 .nav-links a:hover {
   color: var(--color-text);
+  background: var(--color-primary-light);
 }
 .nav-links .btn-primary {
+  position: relative;
   color: #fff;
-  white-space: nowrap;
+  margin: 10px 1.25rem;
+  border-radius: 10px;
+  justify-content: center;
 }
-
+.nav-links .btn-primary .nav-link-icon {
+  position: absolute;
+  left: 14px;
+  margin-right: 0;
+  color: #fff;
+}
 .nav-links .btn-primary:hover {
   color: #fff;
+  background: var(--color-primary-dark);
+}
+
+/* Ícono y etiqueta de texto de cada link (siempre visibles: mismo diseño en toda pantalla) */
+.nav-link-icon {
+  display: inline-flex;
+  justify-content: center;
+  width: 20px;
+  margin-right: 12px;
+  color: var(--color-primary);
+  font-size: 15px;
+}
+.nav-link-label {
+  display: inline;
+  margin-left: 10px;
+  font-size: 14px;
+  color: var(--color-text);
 }
 
 /* Avatar circular con iniciales del usuario */
 .nav-avatar {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+}
+.nav-avatar-circle {
   width: 36px;
   height: 36px;
   border: 1.5px solid var(--color-primary-mid);
@@ -214,12 +298,39 @@ a {
   display: flex;
   align-items: center;
   justify-content: center;
-  text-decoration: none;
   letter-spacing: 0.05em;
   transition: opacity 0.15s;
+  flex-shrink: 0;
 }
-.nav-avatar:hover {
+.nav-avatar:hover .nav-avatar-circle {
   opacity: 0.85;
+}
+
+/* Botón hamburguesa: visible siempre (reemplaza a los links en fila en cualquier tamaño) */
+.nav-toggle {
+  display: flex;
+  align-items: center;
+  background: none;
+  border: none;
+  font-size: 22px;
+  color: var(--color-primary);
+  cursor: pointer;
+  padding: 4px 10px;
+}
+
+/* Fondo oscuro detrás del menú abierto, para que resalte sobre el resto de la página */
+.nav-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  z-index: 90;
+}
+.nav-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 
@@ -352,6 +463,7 @@ a {
    8. SECCIONES GENÉRICAS
    ===================== */
 .section {
+  width: 100%;
   padding: 2rem;
   max-width: 1100px;
   margin: 0 auto;
@@ -791,6 +903,7 @@ a {
 
 /* Layout principal del perfil */
 .perfil-main {
+  width: 100%;
   max-width: 1100px;
   margin: 0 auto;
   padding: 2rem;
@@ -1262,6 +1375,104 @@ a {
   border-color: var(--color-primary);
 }
 
+/* ===== Dropdown personalizado (reemplaza visualmente al <select> nativo) ===== */
+.custom-select {
+  position: relative;
+  flex: 1;
+  min-width: 160px;
+}
+
+/* El <select> real queda oculto pero presente: sigue guardando el valor seleccionado */
+.custom-select select {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.custom-select-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-family: inherit;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.custom-select-value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.custom-select-trigger:hover,
+.custom-select.open .custom-select-trigger {
+  border-color: var(--color-primary);
+}
+
+.custom-select-arrow {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  transition: transform 0.15s;
+}
+.custom-select.open .custom-select-arrow {
+  transform: rotate(180deg);
+}
+
+.custom-select-options {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 12px 24px rgba(0,0,0,0.12);
+  list-style: none;
+  padding: 6px 0;
+  margin: 0;
+  max-height: 260px;
+  overflow-y: auto;
+  z-index: 50;
+  display: none;
+}
+.custom-select.open .custom-select-options {
+  display: block;
+}
+
+.custom-select-options li {
+  padding: 9px 14px;
+  font-size: 13px;
+  color: var(--color-text);
+  cursor: pointer;
+}
+.custom-select-options li:hover,
+.custom-select-options li:focus {
+  background: var(--color-primary-light);
+  outline: none;
+}
+.custom-select-options li.selected {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+.custom-select-group-label {
+  padding: 8px 14px 4px !important;
+  font-size: 11px !important;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-subtle) !important;
+  font-weight: 700 !important;
+  cursor: default !important;
+}
+.custom-select-group-label:hover {
+  background: none !important;
+}
+
 /* Contador de resultados */
 .busqueda-count {
   font-size: 13px;
@@ -1270,6 +1481,7 @@ a {
 
 /* Lista de resultados */
 .busqueda-main {
+  width: 100%;
   max-width: 1100px;
   margin: 1.5rem auto 2rem;
   display: flex;
@@ -1279,6 +1491,57 @@ a {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   overflow: hidden;
+}
+
+/* Paginación: se empuja siempre al fondo del contenedor de resultados */
+.pagination {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 1.25rem;
+  background: var(--color-surface);
+}
+.pagination-numeros {
+  display: flex;
+  gap: 6px;
+}
+.pagination-btn,
+.pagination-num {
+  min-width: 36px;
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.pagination-btn:hover,
+.pagination-num:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+.pagination-num-active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
+}
+.pagination-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.pagination-btn:disabled:hover {
+  border-color: var(--color-border-strong);
+  color: var(--color-text);
 }
 
 /* Cada resultado (estilo ESL) */
@@ -1385,25 +1648,22 @@ a {
 @media (max-width: 600px) {
 
   .nav { padding: 0 1rem; }
+
+  /* En mobile, el panel pasa de "tarjeta angosta anclada a la derecha" a ocupar todo el ancho */
   .nav-links {
-    gap: 0.75rem;
-    overflow-x: auto;
-    flex-wrap: nowrap;
-    padding-bottom: 4px;
-    padding-right: 0.5rem;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
+    top: 58px;
+    left: 0;
+    right: 0;
+    width: auto;
+    border-radius: 0 0 14px 14px;
   }
-  .nav-links::-webkit-scrollbar { display: none; }
-  .nav-avatar,
-  .nav-admin { display: none !important; }
-  .nav-links a { white-space: nowrap; flex-shrink: 0; }
-  .nav-links .btn-primary { padding: 8px 14px; color: #fff; }
+  .nav-links.active { max-height: 480px; }
 
   /* GRUPOS COMPARTIDOS: mismo valor en varios componentes */
   .stats, .cards, .tipos, .form-row, .editar-fila, .crear-fila, .radio-group, .cf-formatos, .cf-roles { grid-template-columns: 1fr; }
   .search-box, .search-selects, .busqueda-barra, .crear-acciones, .detalle-hero-content { flex-direction: column; }
   .perfil-main, .crear-main, .cf-main, .detalle-hero, .detalle-main { padding: 1rem; }
+
 
   /* HERO */
   .hero h1 { font-size: 22px; }
@@ -1484,6 +1744,7 @@ a {
  
 /* Layout principal */
 .crear-main {
+  width: 100%;
   max-width: 780px;
   margin: 0 auto;
   padding: 2rem;
@@ -1720,6 +1981,7 @@ a {
 
 /* LAYOUT PRINCIPAL */
 .cf-main {
+  width: 100%;
   max-width: 1100px;
   margin: 0 auto;
   padding: 2rem;
@@ -2104,6 +2366,7 @@ a {
 
 /* LAYOUT PRINCIPAL */
 .detalle-main {
+  width: 100%;
   max-width: 1100px;
   margin: 0 auto;
   padding: 1.5rem 2rem 2rem;
@@ -2396,6 +2659,55 @@ a {
   display: flex;
   min-height: 100vh;
   background: var(--color-bg);
+}
+
+/* Botón hamburguesa del panel admin: oculto en desktop (ver media query) */
+.admin-sidebar-toggle {
+  display: none;
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 103;
+  width: 40px;
+  height: 40px;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  color: var(--color-primary);
+  font-size: 18px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+/* Aviso flotante temporal ("toast") para confirmar acciones del panel admin */
+.admin-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(10px);
+  background: var(--color-text);
+  color: #fff;
+  padding: 12px 20px;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  z-index: 200;
+}
+.admin-toast.visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Transición de salida cuando se elimina una fila de la tabla */
+.admin-tabla-fila.saliendo {
+  opacity: 0;
+  transform: scale(0.98);
+  transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
 /* =====================
@@ -2831,28 +3143,38 @@ a {
    ===================== */
 @media (max-width: 900px) {
   .admin-body { flex-direction: column; }
+
+  .admin-sidebar-toggle { display: flex; }
+
   .admin-sidebar {
-    position: static;
-    width: 100%;
-    min-height: auto;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 260px;
+    min-height: 100vh;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    z-index: 102;
   }
-  .admin-nav {
-    flex-direction: row;
-    overflow-x: auto;
-    padding: 0.75rem;
+  .admin-sidebar.open {
+    transform: translateX(0);
   }
-  .admin-nav-label,
-  .admin-sidebar-footer { display: none; }
-  .admin-nav-link { white-space: nowrap; border-radius: var(--radius-md); }
-  .admin-nav-active { border-right: none; }
-  .admin-main { margin-left: 0; padding: 1rem; }
+
+  .admin-main { margin-left: 0; padding: 1rem; padding-top: 4.5rem; }
   .admin-stats { grid-template-columns: repeat(2, 1fr); }
   .admin-fila { grid-template-columns: 1fr; }
 }
 
 .nav-admin {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+}
+.nav-admin-badge {
   width: 36px;
   height: 36px;
+  flex-shrink: 0;
   border-radius: 50%;
   background: #FDECEA;
   color: #B71C1C;
@@ -2860,12 +3182,11 @@ a {
   display: flex;
   align-items: center;
   justify-content: center;
-  text-decoration: none;
   border: 1.5px solid #ffcdd2;
   transition: opacity 0.15s;
 }
 
-.nav-admin:hover {
+.nav-admin:hover .nav-admin-badge {
   opacity: 0.85;
 }
 

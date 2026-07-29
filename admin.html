@@ -9,18 +9,23 @@
   <!-- title es el texto que aparece en la pestaña del navegador. -->
   <title>Panel de administración — SGDM</title>
   <!-- styles.css guarda todos los estilos visuales del sitio. -->
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles.css?v=10" />
   <!-- Font Awesome aporta los iconos usados en botones, tarjetas y menus. -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 </head>
 <body class="admin-body">
   <!-- BODY: contiene todo lo visible de la pagina: navegacion, contenido principal y pie. -->
 
+  <!-- Botón que abre/cierra el sidebar en pantallas angostas -->
+  <button class="admin-sidebar-toggle" id="adminSidebarToggle" aria-label="Abrir menú" aria-expanded="false">
+    <i class="fa-solid fa-bars"></i>
+  </button>
+
   <!-- =====================
        SIDEBAR: menu lateral exclusivo del panel de administracion.
        Permite acceder a dashboard, usuarios, torneos y configuracion.
        ===================== -->
-  <aside class="admin-sidebar">
+  <aside class="admin-sidebar" id="adminSidebar">
 
     <!-- LOGO: muestra la imagen y el nombre de la aplicacion dentro del sidebar. -->
     <div class="admin-sidebar-logo">
@@ -130,7 +135,7 @@
     <div class="admin-fila">
 
       <!-- USUARIOS RECIENTES -->
-      <section class="admin-card">
+      <section class="admin-card" id="usuarios">
         <div class="seccion-header">
           <h2 class="seccion-titulo"><i class="fa-solid fa-users"></i> Usuarios recientes</h2>
           <a href="#usuarios" class="section-link">Ver todos <i class="fa-solid fa-arrow-right"></i></a>
@@ -154,8 +159,8 @@
             <span class="admin-rol admin-rol-organizador">Organizador</span>
             <span class="badge estado-verde" style="margin-top:0;">Activo</span>
             <div class="admin-acciones">
-              <button type="button" class="admin-btn-icono" title="Editar" aria-label="Editar"><i class="fa-solid fa-pen"></i></button>
-              <button type="button" class="admin-btn-icono admin-btn-danger" title="Suspender" aria-label="Suspender"><i class="fa-solid fa-ban"></i></button>
+              <button type="button" class="admin-btn-icono" title="Editar" aria-label="Editar" data-action="editar-usuario"><i class="fa-solid fa-pen"></i></button>
+              <button type="button" class="admin-btn-icono admin-btn-danger" title="Suspender" aria-label="Suspender" data-action="suspender-usuario"><i class="fa-solid fa-ban"></i></button>
             </div>
           </div>
 
@@ -170,8 +175,8 @@
             <span class="admin-rol admin-rol-participante">Participante</span>
             <span class="badge estado-verde" style="margin-top:0;">Activo</span>
             <div class="admin-acciones">
-              <button type="button" class="admin-btn-icono" title="Editar" aria-label="Editar"><i class="fa-solid fa-pen"></i></button>
-              <button type="button" class="admin-btn-icono admin-btn-danger" title="Suspender" aria-label="Suspender"><i class="fa-solid fa-ban"></i></button>
+              <button type="button" class="admin-btn-icono" title="Editar" aria-label="Editar" data-action="editar-usuario"><i class="fa-solid fa-pen"></i></button>
+              <button type="button" class="admin-btn-icono admin-btn-danger" title="Suspender" aria-label="Suspender" data-action="suspender-usuario"><i class="fa-solid fa-ban"></i></button>
             </div>
           </div>
 
@@ -186,8 +191,8 @@
             <span class="admin-rol admin-rol-participante">Participante</span>
             <span class="badge estado-rojo" style="margin-top:0;">Suspendido</span>
             <div class="admin-acciones">
-              <button type="button" class="admin-btn-icono" title="Editar" aria-label="Editar"><i class="fa-solid fa-pen"></i></button>
-              <button type="button" class="admin-btn-icono admin-btn-danger" title="Eliminar" aria-label="Eliminar"><i class="fa-solid fa-trash"></i></button>
+              <button type="button" class="admin-btn-icono" title="Editar" aria-label="Editar" data-action="editar-usuario"><i class="fa-solid fa-pen"></i></button>
+              <button type="button" class="admin-btn-icono admin-btn-danger" title="Eliminar" aria-label="Eliminar" data-action="eliminar-usuario"><i class="fa-solid fa-trash"></i></button>
             </div>
           </div>
 
@@ -202,8 +207,8 @@
             <span class="admin-rol admin-rol-organizador">Organizador</span>
             <span class="badge estado-verde" style="margin-top:0;">Activo</span>
             <div class="admin-acciones">
-              <button type="button" class="admin-btn-icono" title="Editar" aria-label="Editar"><i class="fa-solid fa-pen"></i></button>
-              <button type="button" class="admin-btn-icono admin-btn-danger" title="Suspender" aria-label="Suspender"><i class="fa-solid fa-ban"></i></button>
+              <button type="button" class="admin-btn-icono" title="Editar" aria-label="Editar" data-action="editar-usuario"><i class="fa-solid fa-pen"></i></button>
+              <button type="button" class="admin-btn-icono admin-btn-danger" title="Suspender" aria-label="Suspender" data-action="suspender-usuario"><i class="fa-solid fa-ban"></i></button>
             </div>
           </div>
 
@@ -211,10 +216,10 @@
       </section>
 
       <!-- TORNEOS RECIENTES -->
-      <section class="admin-card">
+      <section class="admin-card" id="torneos">
         <div class="seccion-header">
           <h2 class="seccion-titulo"><i class="fa-solid fa-trophy"></i> Torneos recientes</h2>
-          <a href="#usuarios" class="section-link">Ver todos <i class="fa-solid fa-arrow-right"></i></a>
+          <a href="#torneos" class="section-link">Ver todos <i class="fa-solid fa-arrow-right"></i></a>
         </div>
         <div class="admin-tabla">
           <div class="admin-tabla-header admin-tabla-header-torneos">
@@ -232,8 +237,8 @@
             <span class="admin-tipo">Liga</span>
             <span class="badge estado-naranja" style="margin-top:0;">En curso</span>
             <div class="admin-acciones">
-              <button type="button" class="admin-btn-icono" title="Ver" aria-label="Ver"><i class="fa-solid fa-eye"></i></button>
-              <button type="button" class="admin-btn-icono admin-btn-danger" title="Eliminar" aria-label="Eliminar"><i class="fa-solid fa-trash"></i></button>
+              <button type="button" class="admin-btn-icono" title="Ver" aria-label="Ver" data-action="ver-torneo"><i class="fa-solid fa-eye"></i></button>
+              <button type="button" class="admin-btn-icono admin-btn-danger" title="Eliminar" aria-label="Eliminar" data-action="eliminar-torneo"><i class="fa-solid fa-trash"></i></button>
             </div>
           </div>
 
@@ -245,8 +250,8 @@
             <span class="admin-tipo">Suizo</span>
             <span class="badge estado-naranja" style="margin-top:0;">En curso</span>
             <div class="admin-acciones">
-              <button type="button" class="admin-btn-icono" title="Ver" aria-label="Ver"><i class="fa-solid fa-eye"></i></button>
-              <button type="button" class="admin-btn-icono admin-btn-danger" title="Eliminar" aria-label="Eliminar"><i class="fa-solid fa-trash"></i></button>
+              <button type="button" class="admin-btn-icono" title="Ver" aria-label="Ver" data-action="ver-torneo"><i class="fa-solid fa-eye"></i></button>
+              <button type="button" class="admin-btn-icono admin-btn-danger" title="Eliminar" aria-label="Eliminar" data-action="eliminar-torneo"><i class="fa-solid fa-trash"></i></button>
             </div>
           </div>
 
@@ -258,8 +263,8 @@
             <span class="admin-tipo">Eliminación</span>
             <span class="badge estado-verde" style="margin-top:0;">Abierto</span>
             <div class="admin-acciones">
-              <button type="button" class="admin-btn-icono" title="Ver" aria-label="Ver"><i class="fa-solid fa-eye"></i></button>
-              <button type="button" class="admin-btn-icono admin-btn-danger" title="Eliminar" aria-label="Eliminar"><i class="fa-solid fa-trash"></i></button>
+              <button type="button" class="admin-btn-icono" title="Ver" aria-label="Ver" data-action="ver-torneo"><i class="fa-solid fa-eye"></i></button>
+              <button type="button" class="admin-btn-icono admin-btn-danger" title="Eliminar" aria-label="Eliminar" data-action="eliminar-torneo"><i class="fa-solid fa-trash"></i></button>
             </div>
           </div>
 
@@ -271,8 +276,8 @@
             <span class="admin-tipo">Liga</span>
             <span class="badge estado-rojo" style="margin-top:0;">Finalizado</span>
             <div class="admin-acciones">
-              <button type="button" class="admin-btn-icono" title="Ver" aria-label="Ver"><i class="fa-solid fa-eye"></i></button>
-              <button type="button" class="admin-btn-icono admin-btn-danger" title="Eliminar" aria-label="Eliminar"><i class="fa-solid fa-trash"></i></button>
+              <button type="button" class="admin-btn-icono" title="Ver" aria-label="Ver" data-action="ver-torneo"><i class="fa-solid fa-eye"></i></button>
+              <button type="button" class="admin-btn-icono admin-btn-danger" title="Eliminar" aria-label="Eliminar" data-action="eliminar-torneo"><i class="fa-solid fa-trash"></i></button>
             </div>
           </div>
 

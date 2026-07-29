@@ -9,7 +9,7 @@
   <!-- title es el texto que aparece en la pestaña del navegador. -->
   <title>Registrarse — SGDM</title>
   <!-- styles.css guarda todos los estilos visuales del sitio. -->
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles.css?v=10" />
   <!-- Font Awesome aporta los iconos usados en botones, tarjetas y menus. -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 </head>
@@ -18,12 +18,15 @@
 
   <!-- NAVBAR: navegacion simple de autenticacion; permite volver al inicio. -->
   <nav class="nav">
-    <div class="nav-logo">
+    <a href="index.html" class="nav-logo">
       <img src="Imagenes/Logo_Pagina.png" alt="Logo_Página" class="nav-logo-img"/>
       <span class="nav-logo-text">PrimeCup</span>
-    </div>
-    <div class="nav-links">
-      <a href="index.html" class="nav-link-visible">Volver al inicio</a>
+    </a>
+    <button class="nav-toggle" id="navToggle" aria-label="Abrir menú" aria-expanded="false">
+      <i class="fa-solid fa-bars"></i>
+    </button>
+    <div class="nav-links" id="navLinks">
+      <a href="index.html" class="nav-link-visible"><i class="fa-solid fa-arrow-left nav-link-icon"></i>Volver al inicio</a>
     </div>
   </nav>
 
@@ -92,9 +95,19 @@
               <input type="password" id="password" class="form-input" placeholder="Mínimo 8 caracteres" minlength="8" autocomplete="new-password" required/>
             </div>
             <span class="form-hint">Usá al menos 8 caracteres.</span>
+            <div class="password-strength" id="passwordStrength">
+              <div class="strength-track">
+                <div class="strength-fill" id="strengthFill"></div>
+              </div>
+              <span class="strength-label" id="strengthLabel">Débil</span>
+            </div>
             <span class="form-error" id="error-password"></span>
           </div>
           <div class="form-group" id="group-confirm">
+            <label class="form-label" for="confirm">Confirmar contraseña</label>
+            <div class="input-password-wrap">
+              <input type="password" id="confirm" class="form-input" placeholder="Repetí tu contraseña" autocomplete="new-password" required/>
+            </div>
             <span class="form-error" id="error-confirm"></span>
           </div>
         </div>
@@ -115,5 +128,6 @@
     </div>
   </main>
 
+<script src="script.js?v=10"></script>
 </body>
 </html>

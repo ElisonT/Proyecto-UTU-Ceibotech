@@ -9,7 +9,7 @@
   <!-- title es el texto que aparece en la pestaña del navegador. -->
   <title>Buscar torneos — SGDM</title>
   <!-- styles.css guarda todos los estilos visuales del sitio. -->
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles.css?v=10" />
   <!-- Font Awesome aporta los iconos usados en botones, tarjetas y menus. -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 </head>
@@ -22,14 +22,21 @@
       <img src="Imagenes/Logo_Pagina.png" alt="Logo_Página"    class="nav-logo-img"/>
       <span class="nav-logo-text">PrimeCup</span>
     </a>
-    <div class="nav-links">
-      <a href="busqueda.html">Torneos</a>
-      <a href="como-funciona.html">Cómo funciona</a>
-      <a href="login.html" class="nav-link-visible">Iniciar sesión</a>
-      <a href="register.html" class="btn-primary">Registrarse</a>
-      <a href="perfil.html" class="nav-avatar">NA</a>
+    <button class="nav-toggle" id="navToggle" aria-label="Abrir menú" aria-expanded="false">
+      <i class="fa-solid fa-bars"></i>
+    </button>
+    <div class="nav-links" id="navLinks">
+      <a href="busqueda.html"><i class="fa-solid fa-trophy nav-link-icon"></i>Torneos</a>
+      <a href="como-funciona.html"><i class="fa-solid fa-circle-info nav-link-icon"></i>Cómo funciona</a>
+      <a href="login.html" class="nav-link-visible"><i class="fa-solid fa-right-to-bracket nav-link-icon"></i>Iniciar sesión</a>
+      <a href="register.html" class="btn-primary"><i class="fa-solid fa-user-plus nav-link-icon"></i>Registrarse</a>
+      <a href="perfil.html" class="nav-avatar" title="Mi perfil">
+        <span class="nav-avatar-circle">NA</span>
+        <span class="nav-link-label">Mi perfil</span>
+      </a>
       <a href="admin.html" class="nav-admin" title="Panel de administración">
-        <i class="fa-solid fa-shield"></i>
+        <span class="nav-admin-badge"><i class="fa-solid fa-shield"></i></span>
+        <span class="nav-link-label">Administración</span>
       </a>
     </div>
   </nav>
@@ -53,42 +60,48 @@
 
       <!-- FILTROS: selectores para limitar resultados por deporte, tipo y estado. -->
       <div class="busqueda-filtros">
-        <select class="filtro-select">
-          <option value="">Todos los deportes</option>
-          <optgroup label="Deportes tradicionales">
-            <option>Fútbol 11</option>
-            <option>Fútbol 5</option>
-            <option>Básquetbol</option>
-            <option>Tenis</option>
-            <option>Pádel</option>
-            <option>Ping pong</option>
-          </optgroup>
-          <optgroup label="Juegos de mesa / carta">
-            <option>Ajedrez</option>
-            <option>Truco</option>
-          </optgroup>
-          <optgroup label="Videojuegos">
-            <option>CS2</option>
-            <option>League of Legends</option>
-            <option>Fortnite</option>
-            <option>Valorant</option>
-            <option>Rocket League</option>
-          </optgroup>
-        </select>
+        <div class="custom-select">
+          <select class="filtro-select" id="filtroDeporte">
+            <option value="">Todos los deportes</option>
+            <optgroup label="Deportes tradicionales">
+              <option>Fútbol 11</option>
+              <option>Fútbol 5</option>
+              <option>Básquetbol</option>
+              <option>Tenis</option>
+              <option>Pádel</option>
+              <option>Ping pong</option>
+            </optgroup>
+            <optgroup label="Juegos de mesa / carta">
+              <option>Ajedrez</option>
+              <option>Truco</option>
+            </optgroup>
+            <optgroup label="Videojuegos">
+              <option>CS2</option>
+              <option>League of Legends</option>
+              <option>Fortnite</option>
+              <option>Valorant</option>
+              <option>Rocket League</option>
+            </optgroup>
+          </select>
+        </div>
 
-        <select class="filtro-select">
-          <option value="">Todos los tipos</option>
-          <option>Liga</option>
-          <option>Eliminación directa</option>
-          <option>Sistema suizo</option>
-        </select>
+        <div class="custom-select">
+          <select class="filtro-select" id="filtroTipo">
+            <option value="">Todos los tipos</option>
+            <option>Liga</option>
+            <option>Eliminación directa</option>
+            <option>Sistema suizo</option>
+          </select>
+        </div>
 
-        <select class="filtro-select">
-          <option value="">Todos los estados</option>
-          <option>Inscripciones abiertas</option>
-          <option>En curso</option>
-          <option>Finalizado</option>
-        </select>
+        <div class="custom-select">
+          <select class="filtro-select" id="filtroEstado">
+            <option value="">Todos los estados</option>
+            <option>Inscripciones abiertas</option>
+            <option>En curso</option>
+            <option>Finalizado</option>
+          </select>
+        </div>
       </div>
 
       <!-- CONTADOR DE RESULTADOS: texto que indica cuantos torneos coinciden con la busqueda. -->
@@ -107,7 +120,7 @@
     <!-- MAIN: contenido central y especifico de esta pagina. -->
 
     <!-- RESULTADO 1: tarjeta de ejemplo de un torneo encontrado. -->
-    <a href="detalle.html" class="resultado-card">
+    <a href="detalle.html" class="resultado-card" data-deporte="Fútbol 11" data-tipo="Liga" data-estado="En curso">
       <div class="resultado-img resultado-img-futbol">
         <i class="fa-solid fa-futbol"></i>
       </div>
@@ -127,7 +140,7 @@
     </a>
 
     <!-- RESULTADO 2: segunda tarjeta de ejemplo del listado. -->
-    <a href="detalle.html" class="resultado-card">
+    <a href="detalle.html" class="resultado-card" data-deporte="Ajedrez" data-tipo="Sistema suizo" data-estado="Inscripciones abiertas">
       <div class="resultado-img resultado-img-ajedrez">
         <i class="fa-solid fa-chess"></i>
       </div>
@@ -147,7 +160,7 @@
     </a>
 
     <!-- RESULTADO 3: tercera tarjeta de ejemplo del listado. -->
-    <a href="detalle.html" class="resultado-card">
+    <a href="detalle.html" class="resultado-card" data-deporte="CS2" data-tipo="Eliminación directa" data-estado="Finalizado">
       <div class="resultado-img resultado-img-cs">
         <i class="fa-solid fa-gamepad"></i>
       </div>
@@ -167,7 +180,7 @@
     </a>
 
     <!-- RESULTADO 4: cuarta tarjeta de ejemplo del listado. -->
-    <a href="detalle.html" class="resultado-card">
+    <a href="detalle.html" class="resultado-card" data-deporte="Básquetbol" data-tipo="Liga" data-estado="Inscripciones abiertas">
       <div class="resultado-img resultado-img-basquet">
         <i class="fa-solid fa-basketball"></i>
       </div>
@@ -187,7 +200,7 @@
     </a>
 
     <!-- RESULTADO 5: quinta tarjeta de ejemplo del listado. -->
-    <a href="detalle.html" class="resultado-card">
+    <a href="detalle.html" class="resultado-card" data-deporte="Valorant" data-tipo="Eliminación directa" data-estado="Inscripciones abiertas">
       <div class="resultado-img resultado-img-valorant">
         <i class="fa-solid fa-crosshairs"></i>
       </div>
@@ -207,7 +220,7 @@
     </a>
 
     <!-- RESULTADO 6: sexta tarjeta de ejemplo del listado. -->
-    <a href="detalle.html" class="resultado-card">
+    <a href="detalle.html" class="resultado-card" data-deporte="Tenis" data-tipo="Eliminación directa" data-estado="Finalizado">
       <div class="resultado-img resultado-img-tenis">
         <i class="fa-solid fa-table-tennis-paddle-ball"></i>
       </div>
@@ -226,6 +239,17 @@
       </div>
     </a>
 
+    <!-- PAGINACIÓN: navegación entre páginas de resultados. -->
+    <nav class="pagination" id="paginacion" aria-label="Paginación de resultados">
+      <button type="button" class="pagination-btn" id="paginaAnterior" aria-label="Página anterior">
+        <i class="fa-solid fa-chevron-left"></i>
+      </button>
+      <div id="paginacionNumeros" class="pagination-numeros"></div>
+      <button type="button" class="pagination-btn" id="paginaSiguiente" aria-label="Página siguiente">
+        <i class="fa-solid fa-chevron-right"></i>
+      </button>
+    </nav>
+
   </main>
 
   <!-- FOOTER: informacion final comun del sistema. -->
@@ -242,5 +266,6 @@
     </div>
   </footer>
 
+<script src="script.js?v=10"></script>
 </body>
 </html>

@@ -9,7 +9,7 @@
   <!-- title es el texto que aparece en la pestaña del navegador. -->
   <title>Crear torneo — SGDM</title>
   <!-- styles.css guarda todos los estilos visuales del sitio. -->
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles.css?v=10" />
   <!-- Font Awesome aporta los iconos usados en botones, tarjetas y menus. -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 </head>
@@ -18,14 +18,19 @@
 
   <!-- NAVBAR: menu principal para moverse entre las pantallas del mockup. -->
   <nav class="nav">
-    <div class="nav-logo">
+    <a href="index.html" class="nav-logo">
       <img src="Imagenes/Logo_Pagina.png" alt="Logo_Página" class="nav-logo-img"/>
       <span class="nav-logo-text">PrimeCup</span>
-    </div>
-    <div class="nav-links">
-      <a href="index.html" class="nav-link-visible">Inicio</a>
-      <a href="busqueda.html">Torneos</a>
-      <a href="perfil.html" class="nav-avatar">NA</a>
+    </a>
+    <button class="nav-toggle" id="navToggle" aria-label="Abrir menú" aria-expanded="false">
+      <i class="fa-solid fa-bars"></i>
+    </button>
+    <div class="nav-links" id="navLinks">
+      <a href="busqueda.html"><i class="fa-solid fa-trophy nav-link-icon"></i>Torneos</a>
+      <a href="perfil.html" class="nav-avatar" title="Mi perfil">
+        <span class="nav-avatar-circle">NA</span>
+        <span class="nav-link-label">Mi perfil</span>
+      </a>
     </div>
   </nav>
 
@@ -42,7 +47,7 @@
     </div>
 
     <!-- FORMULARIO PRINCIPAL: agrupa todos los campos necesarios para publicar un torneo. -->
-    <form class="crear-form" action="#" method="post" enctype="multipart/form-data">
+    <form class="crear-form" id="crearTorneoForm" action="#" method="post" enctype="multipart/form-data">
 
       <!-- =====================
            SECCIÓN 1: INFO BÁSICA
@@ -439,5 +444,6 @@
     </div>
   </footer>
 
+<script src="script.js?v=10"></script>
 </body>
 </html>
