@@ -9,7 +9,7 @@
   <!-- title es el texto que aparece en la pestaña del navegador. -->
   <title>Perfil — SGDM</title>
   <!-- styles.css guarda todos los estilos visuales del sitio. -->
-  <link rel="stylesheet" href="styles.css?v=10" />
+  <link rel="stylesheet" href="styles.css?v=25" />
   <!-- Font Awesome aporta los iconos usados en botones, tarjetas y menus. -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 </head>
@@ -45,10 +45,10 @@
 
       <!-- AVATAR: circulo con iniciales del usuario y opcion visual para foto. -->
       <div class="perfil-avatar-wrap">
-        <div class="perfil-avatar">NA</div>
+        <div class="perfil-avatar" id="perfilAvatarCirculo">NA</div>
         <label class="btn-foto" title="Cambiar foto">
           <i class="fa-solid fa-camera"></i>
-          <input type="file" accept="image/*" style="display:none;" disabled />
+          <input type="file" id="perfilFotoInput" name="avatar" accept="image/*" style="display:none;" />
         </label>
       </div>
 
@@ -79,26 +79,26 @@
       <div class="seccion-header">
         <h2 class="seccion-titulo"><i class="fa-solid fa-pen"></i> Editar perfil</h2>
       </div>
-      <form class="editar-form" novalidate>
+      <form class="editar-form" id="editarPerfilForm">
         <div class="editar-fila">
           <div class="form-group">
-            <label class="form-label-p">Nombre completo</label>
-            <input type="text" class="form-input-p" value=""
+            <label class="form-label-p" for="perfilNombreInput">Nombre completo</label>
+            <input type="text" id="perfilNombreInput" name="nombre" class="form-input-p" value="Nombe Apellido"
               pattern="[A-Za-záéíóúÁÉÍÓÚñÑ]+ [A-Za-záéíóúÁÉÍÓÚñÑ].*"
               title="Ingresá tu nombre y apellido" required />
           </div>
           <div class="form-group">
-            <label class="form-label-p">Nombre de usuario</label>
-            <input type="text" class="form-input-p" value=""
+            <label class="form-label-p" for="perfilUsuarioInput">Nombre de usuario</label>
+            <input type="text" id="perfilUsuarioInput" name="usuario" class="form-input-p" value="User"
               pattern="[a-zA-Z0-9_]+"
               title="Solo letras, números y guion bajo" required />
           </div>
         </div>
         <div class="form-group">
-          <label class="form-label-p">Sobre mí</label>
-          <textarea class="form-input-p form-textarea" rows="3" maxlength="200"
+          <label class="form-label-p" for="perfilBioInput">Sobre mí</label>
+          <textarea id="perfilBioInput" name="bio" class="form-input-p form-textarea" rows="3" maxlength="200"
             placeholder="Contá algo sobre vos...">Apasionado por los torneos de fútbol y ajedrez. Siempre compitiendo.</textarea>
-          <span class="form-hint-p">Máximo 200 caracteres.</span>
+          <span class="form-hint-p" id="perfilBioContador">200 caracteres restantes.</span>
         </div>
         <div class="editar-acciones">
           <button type="submit" class="btn-primary">Guardar cambios</button>
@@ -261,6 +261,6 @@
       <span>&copy; 2026 CeiboTech</span>
     </div>
   </footer>
-<script src="script.js?v=10"></script>
+<script src="script.js?v=25"></script>
 </body>
 </html>

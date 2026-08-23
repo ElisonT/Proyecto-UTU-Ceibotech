@@ -9,7 +9,7 @@
   <!-- title es el texto que aparece en la pestaña del navegador. -->
   <title>Sistema de Gestión Deportiva Modular</title>
   <!-- styles.css guarda todos los estilos visuales del sitio. -->
-  <link rel="stylesheet" href="styles.css?v=10" />
+  <link rel="stylesheet" href="styles.css?v=25" />
   <!-- Font Awesome aporta los iconos usados en botones, tarjetas y menus. -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 </head>
@@ -57,10 +57,10 @@
   <!-- BARRA DE BUSQUEDA: campo principal para escribir el nombre del torneo. -->
   <div class="search-wrap">
     <div class="search-box">
-      <input type="text" placeholder="Buscar torneos..." />
+      <input type="text" id="heroBusquedaTexto" placeholder="Buscar torneos..." />
       <div class="search-selects">
         <div class="custom-select">
-          <select>
+          <select id="heroSelectDeporte">
             <option value="">Seleccioná un deporte</option>
             <optgroup label="Deportes tradicionales">
               <option value="futbol11">Fútbol 11</option>
@@ -73,6 +73,7 @@
             <optgroup label="Juegos de mesa / carta">
               <option value="ajedrez">Ajedrez</option>
               <option value="truco">Truco</option>
+              <option value="damas">Damas</option>
             </optgroup>
             <optgroup label="Videojuegos">
               <option value="cs2">CS2</option>
@@ -87,7 +88,7 @@
           </select>
         </div>
         <div class="custom-select">
-          <select>
+          <select id="heroSelectTipo">
             <option>Todos los tipos</option>
             <option>Liga</option>
             <option>Eliminación directa</option>
@@ -95,7 +96,7 @@
           </select>
         </div>
       </div>
-      <a href="busqueda.html" class="btn-primary">
+      <a href="busqueda.html" id="btnBuscarHero" class="btn-primary">
         <i class="fa-solid fa-magnifying-glass"></i> Buscar
       </a>
     </div>
@@ -131,7 +132,7 @@
     </div>
     <div class="cards">
 
-      <a href="detalle.html" class="card card-link">
+      <a href="detalle.html?id=1" class="card card-link">
         <div class="card-sport"><i class="fa-solid fa-futbol"></i> Fútbol</div>
         <div class="card-name">Mundialito 2026</div>
         <div class="card-meta">
@@ -142,7 +143,7 @@
         <span class="badge estado-naranja">En curso — Fecha 1</span>
       </a>
 
-      <a href="detalle.html" class="card card-link">
+      <a href="detalle.html?id=2" class="card card-link">
         <div class="card-sport"><i class="fa-solid fa-chess"></i> Ajedrez</div>
         <div class="card-name">Torneo de ajedrez</div>
         <div class="card-meta">
@@ -153,7 +154,7 @@
         <span class="badge estado-verde">Inscripciones abiertas</span>
       </a>
 
-      <a href="detalle.html" class="card card-link">
+      <a href="detalle.html?id=3" class="card card-link">
         <div class="card-sport"><i class="fa-solid fa-gamepad"></i> Videojuegos</div>
         <div class="card-name">CS:2 Gaming Cup</div>
         <div class="card-meta">
@@ -213,6 +214,6 @@
     </div>
   </footer>
 
-<script src="script.js?v=10"></script>
+<script src="script.js?v=25"></script>
 </body>
 </html>

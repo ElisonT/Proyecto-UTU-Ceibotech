@@ -9,7 +9,7 @@
   <!-- title es el texto que aparece en la pestaña del navegador. -->
   <title>Crear torneo — SGDM</title>
   <!-- styles.css guarda todos los estilos visuales del sitio. -->
-  <link rel="stylesheet" href="styles.css?v=10" />
+  <link rel="stylesheet" href="styles.css?v=25" />
   <!-- Font Awesome aporta los iconos usados en botones, tarjetas y menus. -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 </head>
@@ -49,10 +49,38 @@
     <!-- FORMULARIO PRINCIPAL: agrupa todos los campos necesarios para publicar un torneo. -->
     <form class="crear-form" id="crearTorneoForm" action="#" method="post" enctype="multipart/form-data">
 
+      <!-- STEPPER: indicador visual de progreso a través de los 6 pasos del formulario. -->
+      <div class="crear-stepper" id="crearStepper">
+        <div class="crear-step" data-step-target="1">
+          <span class="crear-step-circulo">1</span>
+          <span class="crear-step-label">Info básica</span>
+        </div>
+        <div class="crear-step" data-step-target="2">
+          <span class="crear-step-circulo">2</span>
+          <span class="crear-step-label">Configuración</span>
+        </div>
+        <div class="crear-step" data-step-target="3">
+          <span class="crear-step-circulo">3</span>
+          <span class="crear-step-label">Fechas</span>
+        </div>
+        <div class="crear-step" data-step-target="4">
+          <span class="crear-step-circulo">4</span>
+          <span class="crear-step-label">Premio</span>
+        </div>
+        <div class="crear-step" data-step-target="5">
+          <span class="crear-step-circulo">5</span>
+          <span class="crear-step-label">Reglas</span>
+        </div>
+        <div class="crear-step" data-step-target="6">
+          <span class="crear-step-circulo">6</span>
+          <span class="crear-step-label">Visibilidad</span>
+        </div>
+      </div>
+
       <!-- =====================
            SECCIÓN 1: INFO BÁSICA
            ===================== -->
-      <section class="crear-seccion">
+      <section class="crear-seccion" data-step="1">
         <div class="seccion-header">
           <h2 class="seccion-titulo">
             <i class="fa-solid fa-circle-info"></i> Información básica
@@ -123,7 +151,7 @@
       <!-- =====================
            SECCIÓN 2: CONFIGURACIÓN
            ===================== -->
-      <section class="crear-seccion">
+      <section class="crear-seccion" data-step="2">
         <div class="seccion-header">
           <h2 class="seccion-titulo">
             <i class="fa-solid fa-gear"></i> Configuración del torneo
@@ -195,13 +223,47 @@
               </label>
             </div>
           </div>
+
+          <div class="form-group">
+            <label class="form-label-p">Categoría</label>
+            <div class="radio-inline">
+              <label class="radio-opcion">
+                <input type="radio" name="categoria_genero" value="mixto" checked />
+                <span>Mixto</span>
+              </label>
+              <label class="radio-opcion">
+                <input type="radio" name="categoria_genero" value="masculino" />
+                <span>Masculino</span>
+              </label>
+              <label class="radio-opcion">
+                <input type="radio" name="categoria_genero" value="femenino" />
+                <span>Femenino</span>
+              </label>
+            </div>
+            <span class="form-hint-p">"Mixto" si no importa el género de los participantes.</span>
+          </div>
+
+          <!-- Solo aplica si la modalidad es "equipos"; se muestra/oculta con JS. -->
+          <div class="form-group" id="grupoJugadoresPorEquipo" style="display:none;">
+            <label class="form-label-p" for="jugadores_por_equipo">Jugadores por equipo</label>
+            <input
+              type="number"
+              id="jugadores_por_equipo"
+              name="jugadores_por_equipo"
+              class="form-input-p"
+              placeholder="ej: 11"
+              min="1"
+              max="50"
+            />
+            <span class="form-hint-p">Cantidad de jugadores que necesita cada equipo.</span>
+          </div>
         </div>
       </section>
 
       <!-- =====================
            SECCIÓN 3: FECHAS
            ===================== -->
-      <section class="crear-seccion">
+      <section class="crear-seccion" data-step="3">
         <div class="seccion-header">
           <h2 class="seccion-titulo">
             <i class="fa-solid fa-calendar"></i> Fechas
@@ -246,42 +308,29 @@
           />
         </div>
 
-        <!-- Duracion estimada: radios para indicar cuanto duraria el torneo. -->
+        <!-- Duracion estimada: barra deslizante desde 1 dia hasta 1 año. -->
         <div class="form-group">
-          <label class="form-label-p">Duración estimada</label>
-          <div class="radio-duracion">
-            <label class="radio-opcion">
-              <input type="radio" name="duracion" value="1dia" required />
+          <label class="form-label-p" for="duracionRango">Duración estimada</label>
+          <input type="hidden" name="duracion_dias" id="duracionDiasReal" value="1" />
+          <div class="duracion-slider-wrap">
+            <input type="range" id="duracionRango" min="0" max="14" value="0" step="1" />
+            <div class="duracion-marcas">
               <span>1 día</span>
-            </label>
-            <label class="radio-opcion">
-              <input type="radio" name="duracion" value="variosdias" />
-              <span>Varios días</span>
-            </label>
-            <label class="radio-opcion">
-              <input type="radio" name="duracion" value="1semana" />
-              <span>1 semana</span>
-            </label>
-            <label class="radio-opcion">
-              <input type="radio" name="duracion" value="variassemanas" />
-              <span>Varias semanas</span>
-            </label>
-            <label class="radio-opcion">
-              <input type="radio" name="duracion" value="1mes" />
-              <span>1 mes o más</span>
-            </label>
-            <label class="radio-opcion">
-              <input type="radio" name="duracion" value="indefinida" />
-              <span>Indefinida</span>
-            </label>
+              <span>1 sem</span>
+              <span>1 mes</span>
+              <span>3 meses</span>
+              <span>6 meses</span>
+              <span>1 año</span>
+            </div>
           </div>
+          <div class="duracion-valor">Duración estimada: <strong id="duracionTexto">1 día</strong></div>
         </div>
       </section>
 
       <!-- =====================
            SECCIÓN 4: PREMIO
            ===================== -->
-      <section class="crear-seccion">
+      <section class="crear-seccion" data-step="4">
         <div class="seccion-header">
           <h2 class="seccion-titulo">
             <i class="fa-solid fa-trophy"></i> Premio o incentivo
@@ -344,7 +393,7 @@
       <!-- =====================
            SECCIÓN 5: REGLAS
            ===================== -->
-      <section class="crear-seccion">
+      <section class="crear-seccion" data-step="5">
         <div class="seccion-header">
           <h2 class="seccion-titulo">
             <i class="fa-solid fa-book"></i> Reglas del torneo
@@ -371,7 +420,7 @@
           <label class="form-label-p" for="reglas-pdf">O subir PDF de reglas</label>
           <div class="file-upload-wrap">
             <i class="fa-solid fa-file-pdf file-upload-icon"></i>
-            <span class="file-upload-texto">Seleccioná un archivo PDF</span>
+            <span class="file-upload-texto" id="reglasPdfTexto">Seleccioná un archivo PDF</span>
             <input
               type="file"
               id="reglas-pdf"
@@ -387,7 +436,7 @@
       <!-- =====================
            SECCIÓN 6: VISIBILIDAD
            ===================== -->
-      <section class="crear-seccion">
+      <section class="crear-seccion" data-step="6">
         <div class="seccion-header">
           <h2 class="seccion-titulo">
             <i class="fa-solid fa-eye"></i> Visibilidad
@@ -417,15 +466,21 @@
             </label>
           </div>
         </div>
-
-        <!-- BOTONES FINALES: acciones para publicar el formulario o cancelar y volver al inicio. -->
-        <div class="crear-acciones">
-          <button type="submit" class="btn-primary btn-lg">
-            <i class="fa-solid fa-plus"></i> Publicar torneo
-          </button>
-          <a href="index.html" class="btn btn-lg">Cancelar</a>
-        </div>
       </section>
+
+      <!-- BOTONES DE NAVEGACIÓN DEL WIZARD: siempre visibles, fuera de cada paso. -->
+      <div class="crear-acciones">
+        <button type="button" class="btn" id="btnPasoAnterior">
+          <i class="fa-solid fa-arrow-left"></i> Anterior
+        </button>
+        <button type="button" class="btn-primary btn-lg" id="btnPasoSiguiente">
+          Siguiente <i class="fa-solid fa-arrow-right"></i>
+        </button>
+        <button type="submit" class="btn-primary btn-lg" id="btnPublicarTorneo">
+          <i class="fa-solid fa-plus"></i> Publicar torneo
+        </button>
+        <a href="index.html" class="btn btn-lg">Cancelar</a>
+      </div>
     </form>
 
   </main>
@@ -444,6 +499,6 @@
     </div>
   </footer>
 
-<script src="script.js?v=10"></script>
+<script src="script.js?v=25"></script>
 </body>
 </html>
