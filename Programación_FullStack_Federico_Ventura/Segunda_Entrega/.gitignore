@@ -1,0 +1,4 @@
+# Las fotos que suben los usuarios no van al repositorio (son datos, no código).
+# La carpeta se versiona vacía gracias al .gitkeep de adentro.
+uploads/avatars/*
+!uploads/avatars/.gitkeep
