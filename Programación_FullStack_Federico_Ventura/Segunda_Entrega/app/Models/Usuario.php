@@ -41,7 +41,7 @@ class Usuario
         return (bool) $consulta->fetch();
     }
 
-    public function registrar(array $datos): bool
+    public function registrar(array $datos): int|false
     {
         $hash = password_hash($datos['contrasena'], PASSWORD_DEFAULT);
 
@@ -52,7 +52,7 @@ class Usuario
                 (:nombre_usuario, :nombre_completo, :email, :celular, :hash, :genero, :rol_id)'
         );
 
-        return $consulta->execute([
+        $exito = $consulta->execute([
             'nombre_usuario'  => $datos['nombre_usuario'],
             'nombre_completo' => $datos['nombre_completo'],
             'email'           => $datos['email'],
@@ -61,6 +61,8 @@ class Usuario
             'genero'          => $datos['genero'],
             'rol_id'          => self::ROL_PARTICIPANTE,
         ]);
+
+        return $exito ? (int) $this->conexion->lastInsertId() : false;
     }
 
     /**

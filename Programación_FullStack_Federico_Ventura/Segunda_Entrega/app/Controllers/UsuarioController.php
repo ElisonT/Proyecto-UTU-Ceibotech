@@ -8,14 +8,17 @@
  */
 
 require_once __DIR__ . '/../Models/Usuario.php';
+require_once __DIR__ . '/../Models/Auditoria.php';
 
 class UsuarioController
 {
     private Usuario $modeloUsuario;
+    private Auditoria $auditoria;
 
     public function __construct()
     {
         $this->modeloUsuario = new Usuario();
+        $this->auditoria     = new Auditoria();
     }
 
     /**
@@ -65,7 +68,7 @@ class UsuarioController
         }
 
         if (empty($errores)) {
-            $exito = $this->modeloUsuario->registrar([
+            $idNuevo = $this->modeloUsuario->registrar([
                 'nombre_usuario'  => $nombreUsuario,
                 'nombre_completo' => $nombreCompleto,
                 'email'           => $email,
@@ -74,8 +77,12 @@ class UsuarioController
                 'contrasena'      => $contrasena,
             ]);
 
-            if (!$exito) {
+            if ($idNuevo === false) {
                 $errores[] = 'No se pudo completar el registro. Probá de nuevo.';
+            } else {
+                // El propio usuario recién creado es "quien hizo" la acción
+                // (todavía no hay sesión iniciada en el momento del registro).
+                $this->auditoria->registrar($idNuevo, 'ALTA_USUARIO', 'usuarios', $idNuevo, "Autoregistro de '{$nombreUsuario}'");
             }
         }
 
@@ -135,6 +142,8 @@ class UsuarioController
         $exito = $this->modeloUsuario->actualizarFoto($idUsuario, 'uploads/avatars/' . $nombreArchivo);
         if (!$exito) {
             $errores[] = 'La imagen se subió pero no se pudo asociar a tu perfil.';
+        } else {
+            $this->auditoria->registrar($idUsuario, 'CAMBIO_FOTO', 'usuarios', $idUsuario);
         }
 
         return $errores;
@@ -167,6 +176,8 @@ class UsuarioController
             $exito = $this->modeloUsuario->actualizarPerfil($idUsuario, $nombreCompleto, $nombreUsuario, $genero);
             if (!$exito) {
                 $errores[] = 'No se pudo actualizar el perfil. Probá de nuevo.';
+            } else {
+                $this->auditoria->registrar($idUsuario, 'EDICION_PERFIL', 'usuarios', $idUsuario);
             }
         }
 
@@ -199,6 +210,8 @@ class UsuarioController
             $exito = $this->modeloUsuario->actualizarContacto($idUsuario, $email, $celular);
             if (!$exito) {
                 $errores[] = 'No se pudieron guardar los datos de contacto. Probá de nuevo.';
+            } else {
+                $this->auditoria->registrar($idUsuario, 'EDICION_CONTACTO', 'usuarios', $idUsuario);
             }
         }
 
@@ -233,6 +246,9 @@ class UsuarioController
             $exito = $this->modeloUsuario->actualizarContrasena($idUsuario, $nueva);
             if (!$exito) {
                 $errores[] = 'No se pudo cambiar la contraseña. Probá de nuevo.';
+            } else {
+                // Ojo: nunca se guarda la contraseña (ni la vieja ni la nueva) en la auditoría.
+                $this->auditoria->registrar($idUsuario, 'CAMBIO_CONTRASENA', 'usuarios', $idUsuario);
             }
         }
 
@@ -268,6 +284,8 @@ class UsuarioController
 
         if (!$this->modeloUsuario->anonimizarCuenta($idUsuario)) {
             $errores[] = 'No se pudo eliminar la cuenta. Probá de nuevo.';
+        } else {
+            $this->auditoria->registrar($idUsuario, 'ELIMINACION_CUENTA', 'usuarios', $idUsuario);
         }
 
         return $errores;
@@ -302,6 +320,8 @@ class UsuarioController
         $_SESSION['usuario_nombre'] = $usuario['nombre_completo'];
         $_SESSION['usuario_rol']    = (int) $usuario['rol_id'];
         $_SESSION['usuario_foto']   = $usuario['foto'];
+
+        $this->auditoria->registrar((int) $usuario['id'], 'LOGIN', 'usuarios', (int) $usuario['id']);
 
         return null;
     }

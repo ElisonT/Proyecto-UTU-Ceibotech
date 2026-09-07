@@ -1,8 +1,10 @@
 <?php
 session_start();
+require_once __DIR__ . '/app/Helpers/manejador_errores.php';
 require_once __DIR__ . '/app/Helpers/roles.php';
 require_once __DIR__ . '/app/Models/Torneo.php';
 require_once __DIR__ . '/app/Models/Usuario.php';
+require_once __DIR__ . '/app/Controllers/TorneoController.php';
 
 // Asignar un organizador a un torneo es una tarea del Administrador general
 // (ver letra 5.1): el organizador gestiona el torneo, pero no lo crea ni
@@ -21,7 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $organizadorId = ($_POST['organizador_id'] ?? '') !== '' ? (int) $_POST['organizador_id'] : null;
 
     if ($torneoId > 0) {
-        $modeloTorneo->asignarOrganizador($torneoId, $organizadorId);
+        (new TorneoController())->procesarAsignacion($torneoId, $organizadorId, (int) $_SESSION['usuario_id']);
     }
     header('Location: asignar-organizador.php?actualizado=1');
     exit;

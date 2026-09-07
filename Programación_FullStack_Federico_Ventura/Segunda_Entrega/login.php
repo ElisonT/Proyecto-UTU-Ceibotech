@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/app/Controllers/UsuarioController.php';
 session_start();
+require_once __DIR__ . '/app/Helpers/manejador_errores.php';
 
 $errorLogin = null;
 

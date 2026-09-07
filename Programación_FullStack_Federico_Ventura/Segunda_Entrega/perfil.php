@@ -1,5 +1,6 @@
 <?php
 session_start();
+require_once __DIR__ . '/app/Helpers/manejador_errores.php';
 require_once __DIR__ . '/app/Models/Usuario.php';
 require_once __DIR__ . '/app/Controllers/UsuarioController.php';
 require_once __DIR__ . '/app/Helpers/texto.php';

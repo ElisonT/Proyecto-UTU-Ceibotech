@@ -9,10 +9,12 @@
  */
 
 require_once __DIR__ . '/../Models/Torneo.php';
+require_once __DIR__ . '/../Models/Auditoria.php';
 
 class TorneoController
 {
     private Torneo $modeloTorneo;
+    private Auditoria $auditoria;
 
     // Etiquetas legibles para los códigos que manda el <select> de deporte
     // en crear-torneo.php (ver ese archivo, sección "Info básica").
@@ -37,6 +39,7 @@ class TorneoController
     public function __construct()
     {
         $this->modeloTorneo = new Torneo();
+        $this->auditoria    = new Auditoria();
     }
 
     /**
@@ -76,6 +79,26 @@ class TorneoController
             return [['No se pudo crear el torneo. Probá de nuevo.'], null];
         }
 
+        $this->auditoria->registrar($creadoPor, 'CREACION_TORNEO', 'torneos', $id, "Torneo '{$nombre}' ({$deporte}, {$formato})");
+
         return [[], $id];
+    }
+
+    /**
+     * Asigna (o quita) el organizador de un torneo. $organizadorId puede ser
+     * null para dejarlo "sin asignar" de nuevo.
+     */
+    public function procesarAsignacion(int $torneoId, ?int $organizadorId, int $actorId): bool
+    {
+        $exito = $this->modeloTorneo->asignarOrganizador($torneoId, $organizadorId);
+
+        if ($exito) {
+            $detalle = $organizadorId
+                ? "Torneo #{$torneoId} asignado al organizador #{$organizadorId}"
+                : "Torneo #{$torneoId} quedó sin organizador asignado";
+            $this->auditoria->registrar($actorId, 'ASIGNACION_ORGANIZADOR', 'torneos', $torneoId, $detalle);
+        }
+
+        return $exito;
     }
 }
