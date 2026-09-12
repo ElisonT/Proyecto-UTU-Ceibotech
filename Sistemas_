@@ -1,0 +1,268 @@
+#!/bin/bash
+#
+# gestion_usuarios.sh
+# ---------------------------------------------------------
+# Script de gestión de usuarios del sistema operativo (servidor).
+# Entrega: Administración de Sistemas Operativos - Primera entrega.
+# Proyecto: SGDM / PrimeCup - ITS Arias-Balparda
+#
+# Permite, mediante un menú interactivo:
+#   1) Agregar un usuario
+#   2) Modificar un usuario
+#   3) Eliminar un usuario
+#   4) Listar los usuarios del sistema
+#   5) Bloquear / desbloquear un usuario
+#   6) Salir
+#
+# Cada acción queda registrada en un log de auditoría
+# (LOG_FILE), con fecha, hora y usuario que ejecutó el script.
+#
+# Adaptado al sistema real donde corre el proyecto: al crear un
+# usuario, se ofrece sumarlo al grupo "apache" (el dueño de los
+# archivos del sitio en /var/www), para que un integrante del
+# equipo pueda editar el proyecto sin necesitar sudo para todo.
+# ---------------------------------------------------------
+
+# ===== CONFIGURACIÓN =====
+LOG_FILE="/var/log/gestion_usuarios.log"
+UID_MINIMO=1000   # a partir de este UID se consideran "usuarios reales" (no de sistema)
+GRUPO_PROYECTO="apache"   # grupo dueño de los archivos del sitio en el servidor
+
+# ===== COLORES (solo para que se lea mejor en la terminal) =====
+VERDE='\033[0;32m'
+ROJO='\033[0;31m'
+AMARILLO='\033[1;33m'
+SIN_COLOR='\033[0m'
+
+# ===== FUNCIONES AUXILIARES =====
+
+# Escribe una línea en el log de auditoría con fecha y usuario que ejecuta el script.
+registrar_log() {
+    local mensaje="$1"
+    echo "$(date '+%Y-%m-%d %H:%M:%S') | ejecutado por: ${SUDO_USER:-$USER} | ${mensaje}" >> "$LOG_FILE"
+}
+
+pausar() {
+    read -rp "Presioná ENTER para continuar..."
+}
+
+# Corta el script si no se está ejecutando como root (necesario para useradd/usermod/userdel).
+verificar_root() {
+    if [[ $EUID -ne 0 ]]; then
+        echo -e "${ROJO}Este script debe ejecutarse con privilegios de administrador (sudo).${SIN_COLOR}"
+        exit 1
+    fi
+}
+
+# Devuelve 0 (verdadero) si el usuario existe en el sistema.
+usuario_existe() {
+    id "$1" &>/dev/null
+}
+
+# ===== OPCIÓN 1: AGREGAR USUARIO =====
+agregar_usuario() {
+    echo -e "\n${AMARILLO}--- Agregar usuario ---${SIN_COLOR}"
+    read -rp "Nombre de usuario (sin espacios): " nombre_usuario
+
+    if [[ -z "$nombre_usuario" ]]; then
+        echo -e "${ROJO}El nombre de usuario no puede estar vacío.${SIN_COLOR}"
+        return
+    fi
+
+    if usuario_existe "$nombre_usuario"; then
+        echo -e "${ROJO}El usuario '${nombre_usuario}' ya existe.${SIN_COLOR}"
+        return
+    fi
+
+    read -rp "Nombre completo (comentario, opcional): " nombre_completo
+    read -rp "Grupo secundario a agregar (opcional, ENTER para omitir): " grupo_secundario
+
+    read -rp "¿Este usuario va a trabajar en los archivos del sitio (sumarlo al grupo '${GRUPO_PROYECTO}')? (s/n): " sumar_al_proyecto
+    if [[ "$sumar_al_proyecto" == "s" || "$sumar_al_proyecto" == "S" ]]; then
+        if [[ -n "$grupo_secundario" ]]; then
+            grupo_secundario="${grupo_secundario},${GRUPO_PROYECTO}"
+        else
+            grupo_secundario="${GRUPO_PROYECTO}"
+        fi
+    fi
+
+    # -m crea el directorio home; -c agrega el comentario con el nombre completo
+    if [[ -n "$grupo_secundario" ]]; then
+        useradd -m -c "$nombre_completo" -G "$grupo_secundario" "$nombre_usuario"
+    else
+        useradd -m -c "$nombre_completo" "$nombre_usuario"
+    fi
+
+    if [[ $? -ne 0 ]]; then
+        echo -e "${ROJO}No se pudo crear el usuario (revisá si el grupo existe).${SIN_COLOR}"
+        return
+    fi
+
+    echo "Ahora definí una contraseña para ${nombre_usuario}:"
+    passwd "$nombre_usuario"
+
+    # Fuerza el cambio de contraseña en el primer inicio de sesión (buena práctica de seguridad)
+    chage -d 0 "$nombre_usuario"
+
+    echo -e "${VERDE}Usuario '${nombre_usuario}' creado correctamente.${SIN_COLOR}"
+    registrar_log "ALTA de usuario '${nombre_usuario}' (grupo secundario: ${grupo_secundario:-ninguno})"
+}
+
+# ===== OPCIÓN 2: MODIFICAR USUARIO =====
+modificar_usuario() {
+    echo -e "\n${AMARILLO}--- Modificar usuario ---${SIN_COLOR}"
+    read -rp "Nombre de usuario a modificar: " nombre_usuario
+
+    if ! usuario_existe "$nombre_usuario"; then
+        echo -e "${ROJO}El usuario '${nombre_usuario}' no existe.${SIN_COLOR}"
+        return
+    fi
+
+    echo "¿Qué querés modificar?"
+    echo "  1) Cambiar la contraseña"
+    echo "  2) Agregar a un grupo secundario"
+    echo "  3) Cambiar el nombre completo (comentario)"
+    echo "  4) Cambiar el shell de inicio de sesión"
+    read -rp "Opción: " opcion_modificar
+
+    case "$opcion_modificar" in
+        1)
+            passwd "$nombre_usuario"
+            registrar_log "MODIFICACIÓN: se cambió la contraseña de '${nombre_usuario}'"
+            ;;
+        2)
+            read -rp "Nombre del grupo a agregar: " grupo
+            # -aG agrega el grupo sin sacar al usuario de los grupos que ya tenía
+            usermod -aG "$grupo" "$nombre_usuario" \
+                && echo -e "${VERDE}Usuario agregado al grupo '${grupo}'.${SIN_COLOR}" \
+                && registrar_log "MODIFICACIÓN: '${nombre_usuario}' agregado al grupo '${grupo}'"
+            ;;
+        3)
+            read -rp "Nuevo nombre completo: " nuevo_nombre
+            usermod -c "$nuevo_nombre" "$nombre_usuario" \
+                && echo -e "${VERDE}Nombre completo actualizado.${SIN_COLOR}" \
+                && registrar_log "MODIFICACIÓN: nombre completo de '${nombre_usuario}' actualizado"
+            ;;
+        4)
+            read -rp "Nuevo shell (ej: /bin/bash, /sbin/nologin): " nuevo_shell
+            usermod -s "$nuevo_shell" "$nombre_usuario" \
+                && echo -e "${VERDE}Shell actualizado.${SIN_COLOR}" \
+                && registrar_log "MODIFICACIÓN: shell de '${nombre_usuario}' cambiado a ${nuevo_shell}"
+            ;;
+        *)
+            echo -e "${ROJO}Opción inválida.${SIN_COLOR}"
+            ;;
+    esac
+}
+
+# ===== OPCIÓN 3: ELIMINAR USUARIO =====
+eliminar_usuario() {
+    echo -e "\n${AMARILLO}--- Eliminar usuario ---${SIN_COLOR}"
+    read -rp "Nombre de usuario a eliminar: " nombre_usuario
+
+    if ! usuario_existe "$nombre_usuario"; then
+        echo -e "${ROJO}El usuario '${nombre_usuario}' no existe.${SIN_COLOR}"
+        return
+    fi
+
+    read -rp "¿Eliminar también su directorio home? (s/n): " borrar_home
+    read -rp "Confirmá escribiendo el nombre de usuario de nuevo para eliminar '${nombre_usuario}': " confirmacion
+
+    if [[ "$confirmacion" != "$nombre_usuario" ]]; then
+        echo -e "${ROJO}La confirmación no coincide. Se cancela la operación.${SIN_COLOR}"
+        return
+    fi
+
+    if [[ "$borrar_home" == "s" || "$borrar_home" == "S" ]]; then
+        userdel -r "$nombre_usuario"
+    else
+        userdel "$nombre_usuario"
+    fi
+
+    if [[ $? -eq 0 ]]; then
+        echo -e "${VERDE}Usuario '${nombre_usuario}' eliminado.${SIN_COLOR}"
+        registrar_log "BAJA de usuario '${nombre_usuario}' (home eliminado: ${borrar_home})"
+    else
+        echo -e "${ROJO}No se pudo eliminar el usuario.${SIN_COLOR}"
+    fi
+}
+
+# ===== OPCIÓN 4: LISTAR USUARIOS =====
+listar_usuarios() {
+    echo -e "\n${AMARILLO}--- Usuarios del sistema (UID >= ${UID_MINIMO}) ---${SIN_COLOR}"
+    printf "%-20s %-8s %-30s %-20s\n" "USUARIO" "UID" "NOMBRE COMPLETO" "GRUPOS"
+    echo "---------------------------------------------------------------------------------"
+
+    # Recorre /etc/passwd y filtra por UID minimo para no mostrar usuarios de sistema (root, daemon, etc)
+    while IFS=: read -r usuario _ uid _ comentario _ _; do
+        if [[ "$uid" -ge "$UID_MINIMO" && "$uid" -lt 65534 ]]; then
+            grupos=$(id -Gn "$usuario" | tr ' ' ',')
+            printf "%-20s %-8s %-30s %-20s\n" "$usuario" "$uid" "$comentario" "$grupos"
+        fi
+    done < /etc/passwd
+}
+
+# ===== OPCIÓN 5: BLOQUEAR / DESBLOQUEAR USUARIO =====
+bloquear_usuario() {
+    echo -e "\n${AMARILLO}--- Bloquear / desbloquear usuario ---${SIN_COLOR}"
+    read -rp "Nombre de usuario: " nombre_usuario
+
+    if ! usuario_existe "$nombre_usuario"; then
+        echo -e "${ROJO}El usuario '${nombre_usuario}' no existe.${SIN_COLOR}"
+        return
+    fi
+
+    echo "  1) Bloquear (impide iniciar sesión)"
+    echo "  2) Desbloquear"
+    read -rp "Opción: " opcion_bloqueo
+
+    case "$opcion_bloqueo" in
+        1)
+            usermod -L "$nombre_usuario"
+            echo -e "${VERDE}Usuario '${nombre_usuario}' bloqueado.${SIN_COLOR}"
+            registrar_log "BLOQUEO de usuario '${nombre_usuario}'"
+            ;;
+        2)
+            usermod -U "$nombre_usuario"
+            echo -e "${VERDE}Usuario '${nombre_usuario}' desbloqueado.${SIN_COLOR}"
+            registrar_log "DESBLOQUEO de usuario '${nombre_usuario}'"
+            ;;
+        *)
+            echo -e "${ROJO}Opción inválida.${SIN_COLOR}"
+            ;;
+    esac
+}
+
+# ===== MENÚ PRINCIPAL =====
+verificar_root
+
+# Crea el archivo de log si todavía no existe
+touch "$LOG_FILE"
+
+while true; do
+    clear
+    echo "========================================="
+    echo "   GESTIÓN DE USUARIOS DEL SISTEMA"
+    echo "   SGDM / PrimeCup - Servidor"
+    echo "========================================="
+    echo "1) Agregar usuario"
+    echo "2) Modificar usuario"
+    echo "3) Eliminar usuario"
+    echo "4) Listar usuarios"
+    echo "5) Bloquear / desbloquear usuario"
+    echo "6) Salir"
+    echo "-----------------------------------------"
+    read -rp "Elegí una opción: " opcion
+
+    case "$opcion" in
+        1) agregar_usuario ;;
+        2) modificar_usuario ;;
+        3) eliminar_usuario ;;
+        4) listar_usuarios ;;
+        5) bloquear_usuario ;;
+        6) echo "Saliendo..."; exit 0 ;;
+        *) echo -e "${ROJO}Opción inválida.${SIN_COLOR}" ;;
+    esac
+
+    pausar
+done
