@@ -1,0 +1,1 @@
+ #!/bin/bash FECHA=$(date +"%Y-%m-%d_%H-%M-%S") BACKUP="/var/backups/mysql" mkdir -p $BACKUP mysqldump -u root -pParlante_121212 --all-databases > "$BACKUP/backup_$FECHA.sql" if [ $? -eq 0 ]; then echo "Respaldo realizado: $BACKUP/backup_$FECHA.sql" else echo "ERROR: el respaldo fallo" fi

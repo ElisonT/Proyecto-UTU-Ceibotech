@@ -1,0 +1,1 @@
+#!/bin/bash (crontab -l 2>/dev/null; echo "0 2 * * * /usr/local/bin/backup_mysql.sh") | crontab - echo "Cron configurado: respaldo diario a las 2:00 AM"
