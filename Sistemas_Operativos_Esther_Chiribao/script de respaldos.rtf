@@ -36117,16 +36117,22 @@ ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe6e6e6d9d9d9dddd
 dde0e0e0e2e2e2030000000000
 }\par
 El nano:\par
-#!/bin/bash\par
+
+\pard\sa200\sl276\slmult1 #!/bin/bash\par
+\par
 FECHA=$(date +"%Y-%m-%d_%H-%M-%S")\par
 BACKUP="/var/backups/mysql"\par
 \par
 mkdir -p $BACKUP\par
 \par
-mysqldump -u root -p Parlante121212--all-databases > $BACKUP/backup_$FECHA.sql\par
+mysqldump -u root -pParlante_121212 --all-databases > "$BACKUP/backup_$FECHA.sql"\par
 \par
-echo "Respaldo realizado: $BACKUP/backup_$FECHA.sql"\par
+if [ $? -eq 0 ]; then\par
+    echo "Respaldo realizado: $BACKUP/backup_$FECHA.sql"\par
+else\par
+    echo "ERROR: el respaldo fallo"\par
+fi\par
 
-\pard\sa200\sl276\slmult1\par
+\pard\sa200\sl240\slmult1\par
 }
  
