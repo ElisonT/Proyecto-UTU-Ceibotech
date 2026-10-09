@@ -1,0 +1,7 @@
+# Los scripts de shell tienen que usar saltos de línea de Linux aunque se editen en Windows;
+# si no, dentro del contenedor fallan con "bad interpreter" o "\r: command not found".
+*.sh   text eol=lf
+Dockerfile text eol=lf
+*.conf text eol=lf
+*.ini  text eol=lf
+*.yml  text eol=lf

@@ -1,0 +1,305 @@
+<?php
+session_start();
+require_once __DIR__ . '/app/Helpers/manejador_errores.php';
+require_once __DIR__ . '/app/Helpers/roles.php';
+
+$puedeCrearTorneo = !empty($_SESSION['usuario_id'])
+    && in_array((int) ($_SESSION['usuario_rol'] ?? 0), [ROL_ADMINISTRADOR], true);
+?>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <!-- HEAD: contiene informacion para el navegador; no se muestra como contenido principal de la pagina. -->
+  <!-- charset define la codificacion para que tildes y eñes se lean correctamente. -->
+  <meta charset="UTF-8" />
+  <script>
+    // Aplica el modo oscuro ANTES de que se pinte la página, para evitar el
+    // destello blanco al cargar/cambiar de página (si no, se ve un instante
+    // en claro y recién después salta a oscuro).
+    (function () {
+      if (localStorage.getItem('sgdm-tema') === 'oscuro') {
+        document.documentElement.classList.add('modo-oscuro');
+      }
+    })();
+  </script>
+  <!-- viewport adapta el ancho de la pagina a celulares, tablets y PC. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- title es el texto que aparece en la pestaña del navegador. -->
+  <title>Cómo funciona — SGDM</title>
+  <!-- styles.css guarda todos los estilos visuales del sitio. -->
+  <link rel="stylesheet" href="styles.css?v=25" />
+  <!-- Font Awesome aporta los iconos usados en botones, tarjetas y menus. -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+</head>
+<body>
+  <!-- BODY: contiene todo lo visible de la pagina: navegacion, contenido principal y pie. -->
+
+  <!-- NAVBAR: menu principal para moverse entre las pantallas del mockup. -->
+  <nav class="nav">
+    <a href="index.php" class="nav-logo">
+      <img src="Imagenes/Logo_Pagina.png" alt="Logo_Página" class="nav-logo-img"/>
+      <span class="nav-logo-text">PrimeCup</span>
+    </a>
+    <div class="nav-botones">
+      <button class="theme-toggle" id="themeToggle" aria-label="Cambiar a modo oscuro">
+        <i class="fa-solid fa-moon"></i>
+      </button>
+      <button class="nav-toggle" id="navToggle" aria-label="Abrir menú" aria-expanded="false">
+        <i class="fa-solid fa-bars"></i>
+      </button>
+    </div>
+    <?php $mostrarComoFunciona = false; include __DIR__ . '/app/Views/partials/nav_links.php'; ?>
+  </nav>
+
+  <!-- =====================
+       HERO CON LOGO: presentacion de la pagina informativa.
+       Muestra marca, descripcion corta y accesos para registrarse o explorar.
+       ===================== -->
+  <section class="cf-hero">
+    <img src="Imagenes/Logo_Pagina.png" alt="Logo SGDM" class="cf-hero-logo" />
+    <h1 class="cf-hero-titulo">Sistema de Gestión Deportiva Modular</h1>
+    <p class="cf-hero-desc">La plataforma para organizar, gestionar y participar en cualquier tipo de torneo, desde fútbol hasta videojuegos, de forma simple y ordenada.</p>
+    <div class="hero-actions">
+      <a href="register.php" class="btn-primary btn-lg">Comenzar gratis</a>
+      <a href="busqueda.php" class="btn btn-lg">Explorar torneos</a>
+    </div>
+  </section>
+
+  <main class="cf-main">
+    <!-- MAIN: contenido central y especifico de esta pagina. -->
+
+    <!-- =====================
+       SECCION 1: PASOS.
+       Explica el recorrido basico del usuario dentro de la plataforma.
+       ===================== -->
+    <section class="cf-seccion">
+      <div class="cf-seccion-titulo">
+        <h2>¿Cómo funciona?</h2>
+        <p>Empezar es muy fácil, en cuatro pasos ya estás compitiendo</p>
+      </div>
+      <div class="cf-pasos">
+
+        <div class="cf-paso">
+          <div class="cf-paso-num">1</div>
+          <div class="cf-paso-icon"><i class="fa-solid fa-user-plus"></i></div>
+          <h3 class="cf-paso-titulo">Registrate</h3>
+          <p class="cf-paso-desc">Creá tu cuenta con usuario, correo y contraseña. Es gratis y tarda menos de un minuto.</p>
+        </div>
+
+        <div class="cf-paso-flecha"><i class="fa-solid fa-arrow-right"></i></div>
+
+        <div class="cf-paso">
+          <div class="cf-paso-num">2</div>
+          <div class="cf-paso-icon"><i class="fa-solid fa-magnifying-glass"></i></div>
+          <h3 class="cf-paso-titulo">Buscá o creá un torneo</h3>
+          <p class="cf-paso-desc">Encontrá torneos existentes para unirte o creá el tuyo propio en minutos.</p>
+        </div>
+
+        <div class="cf-paso-flecha"><i class="fa-solid fa-arrow-right"></i></div>
+
+        <div class="cf-paso">
+          <div class="cf-paso-num">3</div>
+          <div class="cf-paso-icon"><i class="fa-solid fa-trophy"></i></div>
+          <h3 class="cf-paso-titulo">Competí</h3>
+          <p class="cf-paso-desc">Seguí los enfrentamientos, cargá resultados y avanzá en la competencia.</p>
+        </div>
+
+        <div class="cf-paso-flecha"><i class="fa-solid fa-arrow-right"></i></div>
+
+        <div class="cf-paso">
+          <div class="cf-paso-num">4</div>
+          <div class="cf-paso-icon"><i class="fa-solid fa-chart-bar"></i></div>
+          <h3 class="cf-paso-titulo">Seguí los resultados</h3>
+          <p class="cf-paso-desc">Consultá tablas de posiciones, historial de partidos y estadísticas en tiempo real.</p>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- =====================
+       SECCION 2: FORMATOS.
+       Describe liga, eliminacion directa y sistema suizo.
+       ===================== -->
+    <section class="cf-seccion cf-seccion-alt">
+      <div class="cf-seccion-titulo">
+        <h2>Tres formatos de competencia</h2>
+        <p>Elegí el que mejor se adapta a tu torneo</p>
+      </div>
+      <div class="cf-formatos">
+
+        <div class="cf-formato-card">
+          <div class="cf-formato-icon"><i class="fa-solid fa-table"></i></div>
+          <h3 class="cf-formato-titulo">Liga</h3>
+          <p class="cf-formato-desc">Todos los equipos se enfrentan entre sí en al menos una ocasión. Se acumulan puntos por victoria, empate o derrota. Al final gana quien más puntos tenga.</p>
+          <ul class="cf-formato-lista">
+            <li><i class="fa-solid fa-check"></i> Ideal para grupos de hasta 20 equipos</li>
+            <li><i class="fa-solid fa-check"></i> Todos juegan la misma cantidad de partidos</li>
+            <li><i class="fa-solid fa-check"></i> Resultado justo y progresivo</li>
+          </ul>
+        </div>
+
+        <div class="cf-formato-card">
+          <div class="cf-formato-icon"><i class="fa-solid fa-sitemap"></i></div>
+          <h3 class="cf-formato-titulo">Eliminación directa</h3>
+          <p class="cf-formato-desc">Los participantes se enfrentan en llaves. El perdedor queda eliminado y el ganador avanza a la siguiente ronda hasta que queda un solo campeón.</p>
+          <ul class="cf-formato-lista">
+            <li><i class="fa-solid fa-check"></i> Ideal para muchos participantes</li>
+            <li><i class="fa-solid fa-check"></i> Llaves generadas automáticamente</li>
+            <li><i class="fa-solid fa-check"></i> Rápido y emocionante</li>
+          </ul>
+        </div>
+
+        <div class="cf-formato-card">
+          <div class="cf-formato-icon"><i class="fa-solid fa-shuffle"></i></div>
+          <h3 class="cf-formato-titulo">Sistema suizo</h3>
+          <p class="cf-formato-desc">Los participantes juegan varias rondas y se emparejan según su rendimiento acumulado. Nadie queda eliminado hasta el final.</p>
+          <ul class="cf-formato-lista">
+            <li><i class="fa-solid fa-check"></i> Ideal para ajedrez y torneos mentales</li>
+            <li><i class="fa-solid fa-check"></i> Emparejamientos justos por nivel</li>
+            <li><i class="fa-solid fa-check"></i> Todos juegan hasta el final</li>
+          </ul>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- =====================
+       SECCION 3: ROLES.
+       Muestra que pueden hacer visitantes, participantes, organizadores y administradores.
+       ===================== -->
+    <section class="cf-seccion">
+      <div class="cf-seccion-titulo">
+        <h2>Roles de usuario</h2>
+        <p>Cada usuario tiene permisos según su rol en el sistema</p>
+      </div>
+      <div class="cf-roles">
+
+        <div class="cf-rol">
+          <div class="cf-rol-icon estado-gris"><i class="fa-solid fa-eye"></i></div>
+          <h3 class="cf-rol-titulo">Visitante</h3>
+          <p class="cf-rol-desc">Puede ver torneos públicos y resultados sin necesidad de registrarse.</p>
+        </div>
+
+        <div class="cf-rol">
+          <div class="cf-rol-icon estado-azul"><i class="fa-solid fa-user"></i></div>
+          <h3 class="cf-rol-titulo">Participante</h3>
+          <p class="cf-rol-desc">Usuario registrado que puede inscribirse en torneos, ver su historial y seguir su progreso.</p>
+        </div>
+
+        <div class="cf-rol">
+          <div class="cf-rol-icon estado-verde"><i class="fa-solid fa-crown"></i></div>
+          <h3 class="cf-rol-titulo">Organizador</h3>
+          <p class="cf-rol-desc">Puede crear y gestionar sus propios torneos, cargar resultados y administrar participantes.</p>
+        </div>
+
+        <div class="cf-rol">
+          <div class="cf-rol-icon estado-rojo"><i class="fa-solid fa-shield"></i></div>
+          <h3 class="cf-rol-titulo">Administrador</h3>
+          <p class="cf-rol-desc">Control total del sistema. Gestiona usuarios, torneos, módulos y configuración general.</p>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- =====================
+       SECCION 4: PREGUNTAS FRECUENTES.
+       Usa etiquetas details y summary de HTML para abrir/cerrar respuestas.
+       ===================== -->
+    <section class="cf-seccion">
+      <div class="cf-seccion-titulo">
+        <h2>Preguntas frecuentes</h2>
+        <p>Las dudas más comunes respondidas</p>
+      </div>
+
+      <div class="faq-lista">
+
+        <details class="faq-item">
+          <summary class="faq-pregunta">
+            <span>¿Es gratis usar la plataforma?</span>
+            <i class="fa-solid fa-chevron-down faq-flecha"></i>
+          </summary>
+          <p class="faq-respuesta">Sí, registrarse y participar en torneos es completamente gratis. No necesitás tarjeta de crédito ni suscripción.</p>
+        </details>
+
+        <details class="faq-item">
+          <summary class="faq-pregunta">
+            <span>¿Necesito registrarme para ver torneos?</span>
+            <i class="fa-solid fa-chevron-down faq-flecha"></i>
+          </summary>
+          <p class="faq-respuesta">No. Los torneos públicos pueden verse sin cuenta. Solo necesitás registrarte para inscribirte o crear torneos.</p>
+        </details>
+
+        <details class="faq-item">
+          <summary class="faq-pregunta">
+            <span>¿Qué tipos de deporte o juego puedo agregar?</span>
+            <i class="fa-solid fa-chevron-down faq-flecha"></i>
+          </summary>
+          <p class="faq-respuesta">Podés crear torneos de deportes tradicionales como fútbol, básquetbol o tenis, juegos de mesa como ajedrez o truco, y videojuegos como CS2, Valorant o League of Legends, entre otros.</p>
+        </details>
+
+        <details class="faq-item">
+          <summary class="faq-pregunta">
+            <span>¿Puedo crear un torneo privado?</span>
+            <i class="fa-solid fa-chevron-down faq-flecha"></i>
+          </summary>
+          <p class="faq-respuesta">Sí. Al crear un torneo podés elegir que sea privado, lo que significa que no aparece en búsquedas y solo se puede acceder con el link directo.</p>
+        </details>
+
+        <details class="faq-item">
+          <summary class="faq-pregunta">
+            <span>¿Cuántos participantes puede tener un torneo?</span>
+            <i class="fa-solid fa-chevron-down faq-flecha"></i>
+          </summary>
+          <p class="faq-respuesta">El organizador define el máximo de participantes al crear el torneo, con un límite de hasta 512 equipos o jugadores.</p>
+        </details>
+
+        <details class="faq-item">
+          <summary class="faq-pregunta">
+            <span>¿Puedo cambiar el formato del torneo una vez creado?</span>
+            <i class="fa-solid fa-chevron-down faq-flecha"></i>
+          </summary>
+          <p class="faq-respuesta">No. El formato (liga, eliminación directa o sistema suizo) se define al crear el torneo y no puede modificarse una vez que hay participantes inscriptos.</p>
+        </details>
+
+        <details class="faq-item">
+          <summary class="faq-pregunta">
+            <span>¿Cómo se cargan los resultados?</span>
+            <i class="fa-solid fa-chevron-down faq-flecha"></i>
+          </summary>
+          <p class="faq-respuesta">El organizador del torneo es quien tiene permiso para cargar y confirmar los resultados de cada enfrentamiento desde el panel del torneo.</p>
+        </details>
+
+      </div>
+    </section>
+
+    <!-- CTA FINAL: llamada final a la accion para crear cuenta o volver a explorar torneos. -->
+    <div class="cta">
+      <h2>¿Listo para competir?</h2>
+      <p>Registrate gratis y empezá a participar en torneos hoy mismo.</p>
+      <div class="hero-actions" style="justify-content:center;">
+        <a href="register.php" class="btn-primary btn-lg">Crear cuenta gratis</a>
+        <a href="busqueda.php" class="btn btn-lg">Ver torneos</a>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- FOOTER: informacion final comun del sistema. -->
+  <footer class="footer">
+    <div class="footer-links">
+      <a href="como-funciona.php">Cómo funciona</a>
+      <?php if ($puedeCrearTorneo): ?>
+        <a href="crear-torneo.php">Crear torneo</a>
+      <?php endif; ?>
+      <a href="#">Términos</a>
+      <a href="#">Privacidad</a>
+    </div>
+    <div class="footer-brand">
+      <img src="Imagenes/Logo_Pagina.png" alt="Logo PrimeCup" class="footer-logo">
+      <span>&copy; 2026 CeiboTech</span>
+    </div>
+  </footer>
+
+<script src="script.js?v=25"></script>
+</body>
+</html>

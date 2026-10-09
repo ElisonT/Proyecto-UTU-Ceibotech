@@ -1,0 +1,202 @@
+<?php
+session_start();
+require_once __DIR__ . '/app/Helpers/roles.php';
+
+// Es la configuración de la propia cuenta: sin sesión, no hay nada que configurar.
+if (empty($_SESSION['usuario_id'])) {
+    header('Location: login.php');
+    exit;
+}
+
+$puedeCrearTorneo = in_array((int) ($_SESSION['usuario_rol'] ?? 0), [ROL_ADMINISTRADOR, ROL_ORGANIZADOR], true);
+?>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <!-- HEAD: contiene informacion para el navegador; no se muestra como contenido principal de la pagina. -->
+  <!-- charset define la codificacion para que tildes y eñes se lean correctamente. -->
+  <meta charset="UTF-8" />
+  <!-- viewport adapta el ancho de la pagina a celulares, tablets y PC. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- title es el texto que aparece en la pestaña del navegador. -->
+  <title>Configuración — SGDM</title>
+  <!-- styles.css guarda todos los estilos visuales del sitio. -->
+  <link rel="stylesheet" href="styles.css?v=25" />
+  <!-- Font Awesome aporta los iconos usados en botones, tarjetas y menus. -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+</head>
+<body>
+  <!-- BODY: contiene todo lo visible de la pagina: navegacion, contenido principal y pie. -->
+
+  <!-- NAVBAR: menu principal para moverse entre las pantallas del mockup. -->
+  <nav class="nav">
+    <a href="index.php" class="nav-logo">
+      <img src="Imagenes/Logo_Pagina.png" alt="Logo_Página" class="nav-logo-img"/>
+      <span class="nav-logo-text">PrimeCup</span>
+    </a>
+    <div class="nav-botones">
+      <button class="theme-toggle" id="themeToggle" aria-label="Cambiar a modo oscuro">
+        <i class="fa-solid fa-moon"></i>
+      </button>
+      <button class="nav-toggle" id="navToggle" aria-label="Abrir menú" aria-expanded="false">
+        <i class="fa-solid fa-bars"></i>
+      </button>
+    </div>
+    <?php $mostrarComoFunciona = false; include __DIR__ . '/app/Views/partials/nav_links.php'; ?>
+  </nav>
+
+  <main class="perfil-main">
+    <!-- MAIN: contenido central y especifico de esta pagina. -->
+
+    <!-- ENCABEZADO: titulo de la pantalla y acciones principales de la pagina. -->
+    <div class="config-encabezado">
+      <a href="perfil.php" class="config-volver">
+        <i class="fa-solid fa-arrow-left"></i> Volver al perfil
+      </a>
+      <h1 class="config-titulo">Configuración de cuenta</h1>
+      <p class="config-subtitulo">Administrá tu información de contacto y seguridad</p>
+    </div>
+
+    <!-- DATOS DE CONTACTO: formulario para modificar email y celular del usuario. -->
+    <section class="perfil-seccion">
+      <div class="seccion-header">
+        <h2 class="seccion-titulo"><i class="fa-solid fa-address-card"></i> Datos de contacto</h2>
+      </div>
+      <form class="editar-form" id="formContacto" action="#" method="post">
+        <div class="editar-fila">
+          <div class="form-group">
+            <label class="form-label-p" for="correo">Correo electrónico</label>
+            <input
+              type="email"
+              id="correo"
+              name="correo"
+              class="form-input-p"
+              value="user@gmail.com"
+              placeholder="ejemplo@correo.com"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label class="form-label-p" for="celular">Número de celular</label>
+            <input
+              type="tel"
+              id="celular"
+              name="celular"
+              class="form-input-p"
+              value="+598 09X XXX XXX"
+              placeholder="+598 09X XXX XXX"
+              pattern="[0-9+\s]+"
+              title="Solo números, sin letras"
+              required
+            />
+          </div>
+        </div>
+        <div class="config-aviso">
+          <i class="fa-solid fa-circle-info"></i>
+          Tu correo y celular son datos privados, no se muestran públicamente.
+        </div>
+        <div class="editar-acciones">
+          <button type="submit" class="btn-primary">Guardar cambios</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- CAMBIAR CONTRASENA: formulario visual para actualizar la clave de la cuenta. -->
+    <section class="perfil-seccion">
+      <div class="seccion-header">
+        <h2 class="seccion-titulo"><i class="fa-solid fa-key"></i> Cambiar contraseña</h2>
+      </div>
+      <form class="editar-form" id="formPassword" action="#" method="post">
+
+        <div class="form-group">
+          <label class="form-label-p" for="pass-actual">Contraseña actual</label>
+          <input
+            type="password"
+            id="pass-actual"
+            name="pass_actual"
+            class="form-input-p"
+            placeholder="Tu contraseña actual"
+            minlength="8"
+            required
+          />
+        </div>
+
+        <div class="editar-fila">
+          <div class="form-group">
+            <label class="form-label-p" for="pass-nueva">Nueva contraseña</label>
+            <input
+              type="password"
+              id="pass-nueva"
+              name="pass_nueva"
+              class="form-input-p"
+              placeholder="Mínimo 8 caracteres"
+              minlength="8"
+              pattern="(?=.*[A-Z])(?=.*[0-9]).{8,}"
+              title="Mínimo 8 caracteres, una mayúscula y un número"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label class="form-label-p" for="pass-confirmar">Confirmar nueva contraseña</label>
+            <input
+              type="password"
+              id="pass-confirmar"
+              name="pass_confirmar"
+              class="form-input-p"
+              placeholder="Repetí la nueva contraseña"
+              minlength="8"
+              required
+            />
+          </div>
+        </div>
+
+        <span class="form-hint-p" style="padding-left: 4px;">
+          <i class="fa-solid fa-circle-info"></i>
+          La contraseña debe tener al menos 8 caracteres, una mayúscula y un número.
+        </span>
+
+        <div class="editar-acciones">
+          <button type="submit" class="btn-primary">Cambiar contraseña</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- ZONA DE PELIGRO: accion critica representada aparte para evitar confusiones. -->
+    <section class="perfil-seccion config-peligro">
+      <div class="seccion-header">
+        <h2 class="seccion-titulo seccion-titulo-rojo">
+          <i class="fa-solid fa-triangle-exclamation"></i> Zona de peligro
+        </h2>
+      </div>
+      <div class="peligro-contenido">
+        <div class="peligro-info">
+          <p class="peligro-titulo">Eliminar cuenta</p>
+          <p class="peligro-desc">Esta acción es permanente y no se puede deshacer. Se eliminarán todos tus datos, torneos e historial.</p>
+        </div>
+        <button type="button" class="btn-danger">
+          <i class="fa-solid fa-trash"></i> Eliminar mi cuenta
+        </button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- FOOTER: informacion final comun del sistema. -->
+  <footer class="footer">
+    <div class="footer-links">
+      <a href="como-funciona.php">Cómo funciona</a>
+      <?php if ($puedeCrearTorneo): ?>
+        <a href="crear-torneo.php">Crear torneo</a>
+      <?php endif; ?>
+      <a href="#">Términos</a>
+      <a href="#">Privacidad</a>
+    </div>
+    <div class="footer-brand">
+      <img src="Imagenes/Logo_Pagina.png" alt="Logo PrimeCup" class="footer-logo">
+      <span>&copy; 2026 CeiboTech</span>
+    </div>
+  </footer>
+
+<script src="script.js?v=25"></script>
+</body>
+</html>

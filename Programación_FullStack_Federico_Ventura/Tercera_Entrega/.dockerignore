@@ -1,0 +1,9 @@
+.git
+.gitignore
+.env
+bd
+docker/db
+apache
+*.zip
+uploads/avatars/*
+!uploads/avatars/.gitkeep

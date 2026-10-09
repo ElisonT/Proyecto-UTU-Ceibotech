@@ -1,0 +1,54 @@
+# PrimeCup / SGDM - levanta todo con:   docker compose up -d --build
+# Después abrir http://localhost:8080  (el puerto se cambia con WEB_PORT).
+#
+# Todo tiene un valor por defecto pensado para DESARROLLO. Para otras claves o puertos,
+# copiar .env.example a .env y editarlo (el .env no se sube al repositorio).
+
+name: primecup
+
+services:
+  db:
+    image: mariadb:11.4
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: ${SGDM_DB_ROOT_PASS:-root_dev_pass}
+      # El nombre de la base queda fijo en "sgdm": así la crean los scripts de bd/.
+      MARIADB_DATABASE: sgdm
+      MARIADB_USER: ${SGDM_DB_USER:-sgdm_app}
+      MARIADB_PASSWORD: ${SGDM_DB_PASS:-sgdm_dev_pass}
+      CARGAR_DATOS_PRUEBA: ${CARGAR_DATOS_PRUEBA:-1}
+      TZ: America/Montevideo
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
+    volumes:
+      - db_data:/var/lib/mysql
+      # ",z" hace falta en servidores con SELinux (como AlmaLinux) y no molesta en el resto.
+      - ./bd:/sql:ro,z
+      - ./docker/db/init.sh:/docker-entrypoint-initdb.d/10-sgdm.sh:ro,z
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  web:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SGDM_DB_HOST: db
+      SGDM_DB_NAME: sgdm
+      SGDM_DB_USER: ${SGDM_DB_USER:-sgdm_app}
+      SGDM_DB_PASS: ${SGDM_DB_PASS:-sgdm_dev_pass}
+      TZ: America/Montevideo
+    ports:
+      - "${WEB_PORT:-8080}:80"
+    volumes:
+      # Las fotos de perfil sobreviven a reconstruir la imagen.
+      - uploads:/var/www/html/uploads
+
+volumes:
+  db_data:
+  uploads:
