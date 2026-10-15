@@ -24,6 +24,7 @@ cargar_sgdm() {
         sgdm_migracion_inscripcion.sql
         sgdm_migracion_equipos.sql
         sgdm_migracion_fechas.sql
+        sgdm_migracion_correccion_vistas.sql
     )
 
     local archivo
@@ -42,6 +43,8 @@ cargar_sgdm() {
     if [ "${CARGAR_DATOS_PRUEBA:-1}" = "1" ]; then
         echo "[sgdm] Cargando datos de prueba"
         "${cliente[@]}" < /sql/sgdm_datos_prueba.sql || { echo "[sgdm] ERROR en los datos de prueba"; return 1; }
+        # Corre las fechas del seed al día de hoy (si no, las inscripciones "abiertas" ya vencieron).
+        "${cliente[@]}" < /sql/sgdm_datos_prueba_actualizar_fechas.sql || { echo "[sgdm] ERROR al actualizar fechas"; return 1; }
     else
         echo "[sgdm] Datos de prueba omitidos (CARGAR_DATOS_PRUEBA=0)"
     fi

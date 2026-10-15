@@ -1,6 +1,8 @@
 <?php
 session_start();
 require_once __DIR__ . '/app/Helpers/manejador_errores.php';
+require_once __DIR__ . '/app/Helpers/csrf.php';
+exigirCsrf('perfil.php');
 require_once __DIR__ . '/app/Models/Usuario.php';
 require_once __DIR__ . '/app/Controllers/UsuarioController.php';
 require_once __DIR__ . '/app/Helpers/texto.php';
@@ -158,7 +160,7 @@ $miembroDesde  = $meses[(int) $fechaRegistro->format('n')] . ' ' . $fechaRegistr
   <!-- title es el texto que aparece en la pestaña del navegador. -->
   <title>Perfil — SGDM</title>
   <!-- styles.css guarda todos los estilos visuales del sitio. -->
-  <link rel="stylesheet" href="styles.css?v=25" />
+  <link rel="stylesheet" href="styles.css?v=29" />
   <!-- Font Awesome aporta los iconos usados en botones, tarjetas y menus. -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 </head>
@@ -196,7 +198,7 @@ $miembroDesde  = $meses[(int) $fechaRegistro->format('n')] . ' ' . $fechaRegistr
         <div class="perfil-avatar" id="perfilAvatarCirculo"<?php if (!empty($usuario['foto'])): ?> style="background-image:url('<?= htmlspecialchars($usuario['foto']) ?>'); background-size:cover; background-position:center;"<?php endif; ?>><?= empty($usuario['foto']) ? htmlspecialchars($iniciales) : '' ?></div>
         <!-- Este mini-formulario se manda solo (ver script.js) apenas se elige un archivo,
              sin esperar a que se toque "Guardar cambios" del formulario de abajo. -->
-        <form id="fotoPerfilForm" method="post" action="perfil.php" enctype="multipart/form-data" style="display:contents;">
+        <form id="fotoPerfilForm" method="post" action="perfil.php" enctype="multipart/form-data" style="display:contents;"> <?= campoCsrf() ?>
           <label class="btn-foto" title="Cambiar foto" aria-label="Cambiar foto de perfil">
             <i class="fa-solid fa-camera" aria-hidden="true"></i>
             <input type="file" id="perfilFotoInput" name="foto" accept="image/jpeg,image/png,image/webp" style="display:none;" />
@@ -253,7 +255,7 @@ $miembroDesde  = $meses[(int) $fechaRegistro->format('n')] . ' ' . $fechaRegistr
         </div>
       <?php endif; ?>
 
-      <form class="editar-form" id="editarPerfilForm" method="post" action="perfil.php">
+      <form class="editar-form" id="editarPerfilForm" method="post" action="perfil.php"> <?= campoCsrf() ?>
         <div class="editar-fila">
           <div class="form-group">
             <label class="form-label-p" for="perfilNombreInput">Nombre completo</label>
@@ -477,7 +479,7 @@ $miembroDesde  = $meses[(int) $fechaRegistro->format('n')] . ' ' . $fechaRegistr
               </div>
             <?php endif; ?>
 
-            <form class="editar-form" method="post" action="perfil.php">
+            <form class="editar-form" method="post" action="perfil.php"> <?= campoCsrf() ?>
               <div class="editar-fila">
                 <div class="form-group">
                   <label class="form-label-p" for="correo">Correo electrónico</label>
@@ -523,7 +525,7 @@ $miembroDesde  = $meses[(int) $fechaRegistro->format('n')] . ' ' . $fechaRegistr
               </div>
             <?php endif; ?>
 
-            <form class="editar-form" method="post" action="perfil.php">
+            <form class="editar-form" method="post" action="perfil.php"> <?= campoCsrf() ?>
               <div class="form-group">
                 <label class="form-label-p" for="pass-actual">Contraseña actual</label>
                 <input type="password" id="pass-actual" name="pass_actual" class="form-input-p" placeholder="Tu contraseña actual" required />
@@ -572,7 +574,7 @@ $miembroDesde  = $meses[(int) $fechaRegistro->format('n')] . ' ' . $fechaRegistr
               </div>
             <?php endif; ?>
 
-            <form method="post" action="perfil.php" onsubmit="return confirm('¿Seguro que querés eliminar tu cuenta? Esta acción no se puede deshacer.');">
+            <form method="post" action="perfil.php" onsubmit="return confirm('¿Seguro que querés eliminar tu cuenta? Esta acción no se puede deshacer.');"> <?= campoCsrf() ?>
               <div class="peligro-contenido">
                 <div class="peligro-info">
                   <p class="peligro-titulo">Eliminar cuenta</p>
@@ -610,6 +612,6 @@ $miembroDesde  = $meses[(int) $fechaRegistro->format('n')] . ' ' . $fechaRegistr
       <span>&copy; 2026 CeiboTech</span>
     </div>
   </footer>
-<script src="script.js?v=25"></script>
+<script src="script.js?v=28"></script>
 </body>
 </html>

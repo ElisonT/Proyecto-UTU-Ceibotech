@@ -16,7 +16,7 @@ COPY . /var/www/html
 
 # Lo que no tiene que quedar dentro de la imagen del sitio, y la carpeta de fotos de perfil
 # con permisos para que Apache (www-data) pueda guardar archivos.
-RUN rm -rf docker apache Dockerfile docker-compose.yml .dockerignore .gitattributes LEEME-DOCKER.md .env.example \
+RUN rm -rf docker apache Dockerfile docker-compose.yml .dockerignore .gitattributes LEEME-DOCKER.md LEEME-VM-ALMALINUX.md .env.example \
  && mkdir -p uploads/avatars \
  && chown -R www-data:www-data uploads
 

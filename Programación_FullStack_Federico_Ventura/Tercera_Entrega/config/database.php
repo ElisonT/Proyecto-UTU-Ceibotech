@@ -9,13 +9,16 @@
 
 function obtenerConexion(): PDO
 {
-    $host        = 'localhost';
-    $baseDatos   = 'sgdm';
-    $usuario     = 'sgdm_app';
-    // TODO: antes de subir esto a un repositorio público, mover
-    // la contraseña a una variable de entorno en vez de dejarla
-    // escrita acá (por ejemplo con getenv('SGDM_DB_PASS')).
-    $contrasena  = 'CAMBIAR_ESTA_CONTRASEÑA';
+    // Los datos de conexión salen de variables de entorno (así Docker, y también un
+    // servidor común, pueden cambiarlos sin tocar el código). Si una variable no está
+    // definida se usa el valor de siempre, o sea que en la VM nada cambia.
+    //   SGDM_DB_HOST, SGDM_DB_NAME, SGDM_DB_USER, SGDM_DB_PASS
+    $host        = getenv('SGDM_DB_HOST') ?: 'localhost';
+    $baseDatos   = getenv('SGDM_DB_NAME') ?: 'sgdm';
+    $usuario     = getenv('SGDM_DB_USER') ?: 'sgdm_app';
+    // Ojo: si en un servidor la contraseña está escrita acá (en vez de en la variable
+    // SGDM_DB_PASS), no hay que pisar este archivo al subir una versión nueva.
+    $contrasena  = getenv('SGDM_DB_PASS') !== false ? getenv('SGDM_DB_PASS') : 'CAMBIAR_ESTA_CONTRASEÑA';
 
     $dsn = "mysql:host={$host};dbname={$baseDatos};charset=utf8mb4";
 

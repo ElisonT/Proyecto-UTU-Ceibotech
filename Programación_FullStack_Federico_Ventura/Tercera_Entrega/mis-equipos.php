@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once __DIR__ . '/app/Helpers/manejador_errores.php';
+require_once __DIR__ . '/app/Helpers/csrf.php';
 require_once __DIR__ . '/app/Helpers/roles.php';
 require_once __DIR__ . '/app/Helpers/texto.php';
 require_once __DIR__ . '/app/Models/Equipo.php';
@@ -51,7 +52,7 @@ $tituloPagina = 'Mis equipos — PrimeCup';
   </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title><?= escapar($tituloPagina) ?></title>
-  <link rel="stylesheet" href="styles.css?v=26" />
+  <link rel="stylesheet" href="styles.css?v=29" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 </head>
 <body>
@@ -103,7 +104,7 @@ $tituloPagina = 'Mis equipos — PrimeCup';
               <strong><?= escapar($inv['nombre_equipo']) ?></strong>
               <span class="tabla-hint"> · te invitó <?= escapar($inv['nombre_capitan']) ?> · <?= (int) $inv['miembros'] ?> integrante(s) hoy</span>
             </div>
-            <form method="post" action="gestionar-equipo.php" class="equipo-fila-acciones">
+            <form method="post" action="gestionar-equipo.php" class="equipo-fila-acciones"> <?= campoCsrf() ?>
               <input type="hidden" name="accion" value="responder_invitacion" />
               <input type="hidden" name="invitacion_id" value="<?= (int) $inv['id'] ?>" />
               <button type="submit" name="respuesta" value="aceptar" class="btn-primary"><i class="fa-solid fa-check"></i> Aceptar</button>
@@ -118,19 +119,27 @@ $tituloPagina = 'Mis equipos — PrimeCup';
       <div class="seccion-header">
         <h2 class="seccion-titulo"><i class="fa-solid fa-plus"></i> Crear un equipo</h2>
       </div>
-      <form method="post" action="gestionar-equipo.php" class="equipo-fila-acciones">
+      <form method="post" action="gestionar-equipo.php" class="equipo-fila-acciones"> <?= campoCsrf() ?>
         <input type="hidden" name="accion" value="crear_equipo" />
         <input type="text" name="nombre_equipo" class="form-input-p" placeholder="Nombre del equipo (ej: Los Tigres)"
                minlength="3" maxlength="100" required aria-label="Nombre del equipo" />
-        <select name="deporte_id" class="form-input-p" required aria-label="Deporte del equipo">
+        <select id="deporteEquipo" name="deporte_id" class="form-input-p" required aria-label="Deporte del equipo">
           <option value="">¿De qué deporte o juego?</option>
           <?php foreach ($deportesConEquipo as $dep): ?>
-            <option value="<?= (int) $dep['id'] ?>"><?= escapar($dep['nombre']) ?> (equipos de <?= (int) $dep['jugadores_por_equipo'] ?>)</option>
+            <option value="<?= (int) $dep['id'] ?>" data-libre="<?= (int) $dep['es_libre'] ?>">
+              <?= escapar($dep['nombre']) ?> (<?= (int) $dep['es_libre'] === 1 ? 'tamaño libre' : 'equipos de ' . (int) $dep['jugadores_por_equipo'] ?>)
+            </option>
           <?php endforeach; ?>
         </select>
+        <span id="grupoOtroEquipo" class="equipo-fila-acciones" style="display:none;">
+          <input type="text" name="deporte_otro" class="form-input-p" placeholder="Nombre del juego (igual que en el torneo)"
+                 maxlength="60" aria-label="Nombre del juego" />
+          <input type="number" name="jugadores_otro" class="form-input-p" placeholder="Jugadores por equipo"
+                 min="2" max="50" aria-label="Jugadores por equipo" />
+        </span>
         <button type="submit" class="btn-primary"><i class="fa-solid fa-check"></i> Crear equipo</button>
       </form>
-      <span class="form-hint-p">El tamaño del equipo lo define el deporte (por ejemplo, Fútbol 11 son 11 y League of Legends son 5). Un equipo solo puede inscribirse a torneos de su deporte. Ajedrez, Tenis y otros juegos individuales no llevan equipos.</span>
+      <span class="form-hint-p">El tamaño del equipo lo define el deporte (por ejemplo, Fútbol 11 son 11 y League of Legends son 5). Con "Otro" escribís el nombre del juego, tal cual figura en el torneo, y cuántos jugadores lleva cada equipo. Un equipo solo puede inscribirse a torneos de su mismo deporte. Ajedrez, Tenis y otros juegos individuales no llevan equipos.</span>
     </section>
 
     <?php if (empty($equipos)): ?>
@@ -179,7 +188,7 @@ $tituloPagina = 'Mis equipos — PrimeCup';
               </div>
               <?php if ($esCapitan && (int) $m['es_capitan'] !== 1 && !$equipo['torneo_bloqueante']): ?>
                 <form method="post" action="gestionar-equipo.php" class="equipo-fila-acciones"
-                      onsubmit="return confirm('¿Sacar a esta persona del equipo?');">
+                      onsubmit="return confirm('¿Sacar a esta persona del equipo?');"> <?= campoCsrf() ?>
                   <input type="hidden" name="accion" value="quitar_miembro" />
                   <input type="hidden" name="equipo_id" value="<?= (int) $equipo['id'] ?>" />
                   <input type="hidden" name="usuario_id" value="<?= (int) $m['usuario_id'] ?>" />
@@ -198,7 +207,7 @@ $tituloPagina = 'Mis equipos — PrimeCup';
                 <i class="fa-solid fa-hourglass-half"></i> <?= escapar($inv['nombre_completo']) ?>
                 <span class="tabla-hint">@<?= escapar($inv['nombre_usuario']) ?></span>
               </div>
-              <form method="post" action="gestionar-equipo.php" class="equipo-fila-acciones">
+              <form method="post" action="gestionar-equipo.php" class="equipo-fila-acciones"> <?= campoCsrf() ?>
                 <input type="hidden" name="accion" value="cancelar_invitacion" />
                 <input type="hidden" name="invitacion_id" value="<?= (int) $inv['id'] ?>" />
                 <button type="submit" class="btn"><i class="fa-solid fa-ban"></i> Cancelar</button>
@@ -215,7 +224,7 @@ $tituloPagina = 'Mis equipos — PrimeCup';
 
         <?php if ($esCapitan && !$equipo['torneo_bloqueante'] && !$sinLugar): ?>
           <h3 class="equipo-subtitulo">Invitar a alguien</h3>
-          <form method="post" action="gestionar-equipo.php" class="equipo-fila-acciones">
+          <form method="post" action="gestionar-equipo.php" class="equipo-fila-acciones"> <?= campoCsrf() ?>
             <input type="hidden" name="accion" value="invitar" />
             <input type="hidden" name="equipo_id" value="<?= (int) $equipo['id'] ?>" />
             <input type="text" name="nombre_usuario" class="form-input-p" placeholder="Nombre de usuario (ej: juanperez)"
@@ -227,14 +236,14 @@ $tituloPagina = 'Mis equipos — PrimeCup';
         <div class="equipo-fila-acciones" style="margin-top: 1rem;">
           <?php if ($esCapitan): ?>
             <form method="post" action="gestionar-equipo.php"
-                  onsubmit="return confirm('¿Disolver el equipo? No se puede deshacer.');">
+                  onsubmit="return confirm('¿Disolver el equipo? No se puede deshacer.');"> <?= campoCsrf() ?>
               <input type="hidden" name="accion" value="disolver_equipo" />
               <input type="hidden" name="equipo_id" value="<?= (int) $equipo['id'] ?>" />
               <button type="submit" class="btn"><i class="fa-solid fa-trash"></i> Disolver equipo</button>
             </form>
           <?php else: ?>
             <form method="post" action="gestionar-equipo.php"
-                  onsubmit="return confirm('¿Seguro que querés abandonar este equipo?');">
+                  onsubmit="return confirm('¿Seguro que querés abandonar este equipo?');"> <?= campoCsrf() ?>
               <input type="hidden" name="accion" value="salir_equipo" />
               <input type="hidden" name="equipo_id" value="<?= (int) $equipo['id'] ?>" />
               <button type="submit" class="btn"><i class="fa-solid fa-right-from-bracket"></i> Abandonar equipo</button>
@@ -261,6 +270,6 @@ $tituloPagina = 'Mis equipos — PrimeCup';
     </div>
   </footer>
 
-<script src="script.js?v=26"></script>
+<script src="script.js?v=28"></script>
 </body>
 </html>

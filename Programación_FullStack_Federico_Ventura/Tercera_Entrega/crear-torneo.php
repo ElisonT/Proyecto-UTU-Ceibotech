@@ -1,6 +1,8 @@
 <?php
 session_start();
 require_once __DIR__ . '/app/Helpers/manejador_errores.php';
+require_once __DIR__ . '/app/Helpers/csrf.php';
+exigirCsrf('crear-torneo.php');
 require_once __DIR__ . '/app/Helpers/roles.php';
 require_once __DIR__ . '/app/Models/Deporte.php';
 require_once __DIR__ . '/app/Helpers/texto.php';
@@ -37,6 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $deportes = (new Deporte())->listarTodos();
+$hoy = (new DateTimeImmutable('now', new DateTimeZone('America/Montevideo')))->format('Y-m-d');
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -59,7 +62,7 @@ $deportes = (new Deporte())->listarTodos();
   <!-- title es el texto que aparece en la pestaña del navegador. -->
   <title>Crear torneo — SGDM</title>
   <!-- styles.css guarda todos los estilos visuales del sitio. -->
-  <link rel="stylesheet" href="styles.css?v=25" />
+  <link rel="stylesheet" href="styles.css?v=29" />
   <!-- Font Awesome aporta los iconos usados en botones, tarjetas y menus. -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 </head>
@@ -96,7 +99,7 @@ $deportes = (new Deporte())->listarTodos();
     </div>
 
     <!-- FORMULARIO PRINCIPAL: agrupa todos los campos necesarios para publicar un torneo. -->
-    <form class="crear-form" id="crearTorneoForm" action="crear-torneo.php" method="post" enctype="multipart/form-data">
+    <form class="crear-form" id="crearTorneoForm" action="crear-torneo.php" method="post" enctype="multipart/form-data"> <?= campoCsrf() ?>
 
       <?php if (!empty($errores)): ?>
         <div class="form-alert form-alert-error" style="display:flex; align-items:flex-start; margin-bottom:1rem;">
@@ -175,10 +178,28 @@ $deportes = (new Deporte())->listarTodos();
                 <?php $categoriaActual = $dep['categoria']; ?>
                 <optgroup label="<?= escapar($categoriaActual) ?>">
               <?php endif; ?>
-              <option value="<?= escapar($dep['codigo']) ?>" data-jugadores="<?= (int) $dep['jugadores_por_equipo'] ?>" <?= (($valores['deporte'] ?? '') === $dep['codigo']) ? 'selected' : '' ?>><?= escapar($dep['nombre']) ?></option>
+              <option value="<?= escapar($dep['codigo']) ?>" data-jugadores="<?= (int) $dep['jugadores_por_equipo'] ?>" data-libre="<?= (int) $dep['es_libre'] ?>" <?= (($valores['deporte'] ?? '') === $dep['codigo']) ? 'selected' : '' ?>><?= escapar($dep['nombre']) ?></option>
             <?php endforeach; ?>
             <?php if ($categoriaActual !== null): ?></optgroup><?php endif; ?>
           </select>
+        </div>
+
+        <!-- Solo si el deporte es "Otro": se escribe cuál es y cuántos jugadores lleva cada equipo. -->
+        <div id="grupoDeporteOtro" style="display:none;">
+          <div class="form-group">
+            <label class="form-label-p" for="deporte_otro">Nombre del deporte o juego</label>
+            <input type="text" id="deporte_otro" name="deporte_otro" class="form-input-p"
+                   placeholder="Ej: Quemada, Mus, Brawl Stars" maxlength="60"
+                   value="<?= escapar($valores['deporte_otro'] ?? '') ?>" />
+            <span class="form-hint-p">Los equipos tienen que escribirlo igual para poder inscribirse.</span>
+          </div>
+          <div class="form-group">
+            <label class="form-label-p" for="jugadores_otro">Jugadores por equipo</label>
+            <input type="number" id="jugadores_otro" name="jugadores_otro" class="form-input-p"
+                   min="1" max="50" placeholder="1 si es individual"
+                   value="<?= escapar($valores['jugadores_otro'] ?? '') ?>" />
+            <span class="form-hint-p">Poné 1 si se juega de forma individual; 2 o más si es por equipos.</span>
+          </div>
         </div>
 
         <!-- Descripcion: textarea para explicar brevemente el torneo. -->
@@ -311,7 +332,8 @@ $deportes = (new Deporte())->listarTodos();
               id="fecha-inicio-inscripcion"
               name="fecha_inicio_inscripcion"
               class="form-input-p"
-              min="2026-06-06"
+              min="<?= $hoy ?>"
+              value="<?= escapar($valores['fecha_inicio_inscripcion'] ?? '') ?>"
               required
             />
           </div>
@@ -323,7 +345,8 @@ $deportes = (new Deporte())->listarTodos();
               id="fecha-cierre-inscripcion"
               name="fecha_cierre_inscripcion"
               class="form-input-p"
-              min="2026-06-06"
+              min="<?= $hoy ?>"
+              value="<?= escapar($valores['fecha_cierre_inscripcion'] ?? '') ?>"
               required
             />
           </div>
@@ -337,7 +360,7 @@ $deportes = (new Deporte())->listarTodos();
               id="fecha-inicio-torneo"
               name="fecha_inicio_torneo"
               class="form-input-p"
-              min="2026-06-06"
+              min="<?= $hoy ?>"
               value="<?= htmlspecialchars($valores['fecha_inicio_torneo'] ?? '') ?>"
               required
             />
@@ -350,7 +373,8 @@ $deportes = (new Deporte())->listarTodos();
               id="fecha-fin-torneo"
               name="fecha_fin_torneo"
               class="form-input-p"
-              min="2026-06-06"
+              min="<?= $hoy ?>"
+              value="<?= escapar($valores['fecha_fin_torneo'] ?? '') ?>"
               required
             />
           </div>
@@ -535,6 +559,6 @@ $deportes = (new Deporte())->listarTodos();
     </div>
   </footer>
 
-<script src="script.js?v=25"></script>
+<script src="script.js?v=28"></script>
 </body>
 </html>

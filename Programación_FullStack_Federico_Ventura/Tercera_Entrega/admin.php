@@ -3,6 +3,8 @@ session_start();
 require_once __DIR__ . '/app/Helpers/manejador_errores.php';
 require_once __DIR__ . '/app/Helpers/texto.php';
 require_once __DIR__ . '/app/Helpers/roles.php';
+require_once __DIR__ . '/app/Helpers/csrf.php';
+require_once __DIR__ . '/app/Models/Panel.php';
 
 // Solo el Administrador general puede ver este panel.
 // Si no hay sesión, o la sesión es de otro rol, se lo manda para afuera.
@@ -14,6 +16,20 @@ if (!$esAdmin) {
 
 $nombreAdmin     = $_SESSION['usuario_nombre'] ?? 'Administrador';
 $inicialesAdmin  = obtenerIniciales($nombreAdmin);
+
+// Datos reales: los números salen de la vista v_resumen_admin y las listas de recientes
+// de las tablas (ver app/Models/Panel.php). El resto lo pide script.js con fetch a api/admin.php.
+$panel           = new Panel();
+$resumen         = $panel->resumen();
+$porFormato      = $panel->torneosPorFormato();
+$usuariosRecientes = $panel->listarUsuarios('', '', 1)['filas'];
+$torneosRecientes  = $panel->listarTorneos('', '', 1)['filas'];
+$usuariosRecientes = array_slice($usuariosRecientes, 0, 5);
+$torneosRecientes  = array_slice($torneosRecientes, 0, 5);
+
+$etiquetaEstadoTorneo = ['inscripciones_abiertas' => 'Abierto', 'en_curso' => 'En curso', 'finalizado' => 'Finalizado'];
+$claseEstadoTorneo    = ['inscripciones_abiertas' => 'estado-verde', 'en_curso' => 'estado-naranja', 'finalizado' => 'estado-azul'];
+$etiquetaFormato      = ['liga' => 'Liga', 'eliminacion' => 'Eliminación', 'suizo' => 'Suizo'];
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -32,11 +48,12 @@ $inicialesAdmin  = obtenerIniciales($nombreAdmin);
     })();
   </script>
   <!-- viewport adapta el ancho de la pagina a celulares, tablets y PC. -->
+  <?= metaCsrf() ?>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <!-- title es el texto que aparece en la pestaña del navegador. -->
   <title>Panel de administración — SGDM</title>
   <!-- styles.css guarda todos los estilos visuales del sitio. -->
-  <link rel="stylesheet" href="styles.css?v=25" />
+  <link rel="stylesheet" href="styles.css?v=29" />
   <!-- Font Awesome aporta los iconos usados en botones, tarjetas y menus. -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 </head>
@@ -76,9 +93,13 @@ $inicialesAdmin  = obtenerIniciales($nombreAdmin);
         <i class="fa-solid fa-trophy"></i> Torneos
       </a>
 
+      <a href="#auditoria" class="admin-nav-link">
+        <i class="fa-solid fa-clock-rotate-left"></i> Auditoría
+      </a>
+
       <span class="admin-nav-label">Sistema</span>
       <a href="#modulos" class="admin-nav-link">
-        <i class="fa-solid fa-puzzle-piece"></i> Módulos
+        <i class="fa-solid fa-puzzle-piece"></i> Formatos
       </a>
       <a href="#configuracion" class="admin-nav-link">
         <i class="fa-solid fa-gear"></i> Configuración
@@ -102,10 +123,8 @@ $inicialesAdmin  = obtenerIniciales($nombreAdmin);
   </aside>
 
   <!-- CONTENIDO PRINCIPAL: zona derecha donde se muestra la informacion del dashboard. -->
-  <main class="admin-main">
-    <!-- MAIN: contenido central y especifico de esta pagina. -->
+  <main class="admin-main" data-yo="<?= (int) $_SESSION['usuario_id'] ?>">
 
-    <!-- ENCABEZADO: titulo de la pantalla y acciones principales de la pagina. -->
     <div class="admin-topbar">
       <div>
         <h1 class="admin-page-titulo">Dashboard</h1>
@@ -118,291 +137,199 @@ $inicialesAdmin  = obtenerIniciales($nombreAdmin);
       </div>
     </div>
 
-    <!-- =====================
-       ESTADISTICAS: resumen visual con numeros importantes del sistema.
-       Ayuda a mostrar actividad en el mockup.
-       ===================== -->
+    <!-- ESTADÍSTICAS: salen de la vista v_resumen_admin (datos reales). -->
     <div class="admin-stats" data-view="dashboard">
       <div class="admin-stat-card">
-        <div class="admin-stat-icon estado-azul">
-          <i class="fa-solid fa-users"></i>
-        </div>
+        <div class="admin-stat-icon estado-azul"><i class="fa-solid fa-users"></i></div>
         <div class="admin-stat-info">
-          <span class="admin-stat-num">1.4k</span>
-          <span class="admin-stat-label">Usuarios registrados</span>
+          <span class="admin-stat-num" data-resumen="usuarios_activos"><?= (int) $resumen['usuarios_activos'] ?></span>
+          <span class="admin-stat-label">Usuarios activos</span>
         </div>
       </div>
       <div class="admin-stat-card">
-        <div class="admin-stat-icon estado-verde">
-          <i class="fa-solid fa-trophy"></i>
-        </div>
+        <div class="admin-stat-icon estado-verde"><i class="fa-solid fa-trophy"></i></div>
         <div class="admin-stat-info">
-          <span class="admin-stat-num">128</span>
-          <span class="admin-stat-label">Torneos activos</span>
+          <span class="admin-stat-num"><?= (int) $resumen['torneos_en_curso'] ?> <small class="admin-stat-sub">de <?= (int) $resumen['torneos_total'] ?></small></span>
+          <span class="admin-stat-label">Torneos en curso</span>
         </div>
       </div>
       <div class="admin-stat-card">
-        <div class="admin-stat-icon estado-naranja">
-          <i class="fa-solid fa-calendar-days"></i>
-        </div>
+        <div class="admin-stat-icon estado-naranja"><i class="fa-solid fa-calendar-days"></i></div>
         <div class="admin-stat-info">
-          <span class="admin-stat-num">342</span>
+          <span class="admin-stat-num"><?= (int) $resumen['partidos_jugados'] ?></span>
           <span class="admin-stat-label">Partidos jugados</span>
         </div>
       </div>
       <div class="admin-stat-card">
-        <div class="admin-stat-icon estado-rojo">
-          <i class="fa-solid fa-flag"></i>
-        </div>
+        <div class="admin-stat-icon estado-rojo"><i class="fa-solid fa-hourglass-half"></i></div>
         <div class="admin-stat-info">
-          <span class="admin-stat-num">3</span>
-          <span class="admin-stat-label">Reportes pendientes</span>
+          <span class="admin-stat-num"><?= (int) $resumen['partidos_pendientes'] ?></span>
+          <span class="admin-stat-label">Partidos pendientes</span>
         </div>
       </div>
     </div>
 
-    <!-- FILA: USUARIOS + TORNEOS -->
+    <?php if ((int) $resumen['torneos_sin_organizador'] > 0): ?>
+      <div class="detalle-aviso detalle-aviso-error" data-view="dashboard" role="status">
+        <?= (int) $resumen['torneos_sin_organizador'] ?> torneo(s) sin organizador asignado.
+        <a href="asignar-organizador.php">Asignar ahora</a>
+      </div>
+    <?php endif; ?>
+
     <div class="admin-fila">
 
-      <!-- USUARIOS RECIENTES -->
-      <section class="admin-card" id="usuarios" data-view="dashboard usuarios">
+      <!-- USUARIOS RECIENTES (dashboard) -->
+      <section class="admin-card" data-view="dashboard">
         <div class="seccion-header">
           <h2 class="seccion-titulo"><i class="fa-solid fa-users"></i> Usuarios recientes</h2>
           <a href="#usuarios" class="section-link">Ver todos <i class="fa-solid fa-arrow-right"></i></a>
         </div>
-        <div class="admin-tabla">
-          <div class="admin-tabla-header">
-            <span>Usuario</span>
-            <span>Rol</span>
-            <span>Estado</span>
-            <span>Acciones</span>
-          </div>
-
-          <div class="admin-tabla-fila">
-            <div class="admin-user-info">
-              <div class="admin-user-avatar">JG</div>
-              <div>
-                <span class="admin-user-nombre">Juan García</span>
-                <span class="admin-user-email">juan@correo.com</span>
+        <div class="panel-lista">
+          <?php foreach ($usuariosRecientes as $u): ?>
+            <div class="panel-fila">
+              <div class="panel-fila-main">
+                <span class="admin-user-nombre"><?= escapar($u['nombre_completo']) ?></span>
+                <span class="admin-user-email">@<?= escapar($u['nombre_usuario']) ?></span>
               </div>
+              <span class="admin-rol <?= (int) $u['rol_id'] === 2 ? 'admin-rol-organizador' : 'admin-rol-participante' ?>"><?= escapar($u['rol']) ?></span>
+              <?php if ((int) $u['eliminado'] === 1): ?>
+                <span class="badge estado-gris" style="margin-top:0;">Baja</span>
+              <?php elseif ((int) $u['activo'] === 1): ?>
+                <span class="badge estado-verde" style="margin-top:0;">Activo</span>
+              <?php else: ?>
+                <span class="badge estado-rojo" style="margin-top:0;">Suspendido</span>
+              <?php endif; ?>
             </div>
-            <span class="admin-rol admin-rol-organizador">Organizador</span>
-            <span class="badge estado-verde" style="margin-top:0;">Activo</span>
-            <div class="admin-acciones">
-              <button type="button" class="admin-btn-icono" title="Editar" aria-label="Editar" data-action="editar-usuario"><i class="fa-solid fa-pen"></i></button>
-              <button type="button" class="admin-btn-icono admin-btn-danger" title="Suspender" aria-label="Suspender" data-action="suspender-usuario"><i class="fa-solid fa-ban"></i></button>
-            </div>
-          </div>
-
-          <div class="admin-tabla-fila">
-            <div class="admin-user-info">
-              <div class="admin-user-avatar">MP</div>
-              <div>
-                <span class="admin-user-nombre">María Pérez</span>
-                <span class="admin-user-email">maria@correo.com</span>
-              </div>
-            </div>
-            <span class="admin-rol admin-rol-participante">Participante</span>
-            <span class="badge estado-verde" style="margin-top:0;">Activo</span>
-            <div class="admin-acciones">
-              <button type="button" class="admin-btn-icono" title="Editar" aria-label="Editar" data-action="editar-usuario"><i class="fa-solid fa-pen"></i></button>
-              <button type="button" class="admin-btn-icono admin-btn-danger" title="Suspender" aria-label="Suspender" data-action="suspender-usuario"><i class="fa-solid fa-ban"></i></button>
-            </div>
-          </div>
-
-          <div class="admin-tabla-fila">
-            <div class="admin-user-info">
-              <div class="admin-user-avatar">CR</div>
-              <div>
-                <span class="admin-user-nombre">Carlos Rodríguez</span>
-                <span class="admin-user-email">carlos@correo.com</span>
-              </div>
-            </div>
-            <span class="admin-rol admin-rol-participante">Participante</span>
-            <span class="badge estado-rojo" style="margin-top:0;">Suspendido</span>
-            <div class="admin-acciones">
-              <button type="button" class="admin-btn-icono" title="Editar" aria-label="Editar" data-action="editar-usuario"><i class="fa-solid fa-pen"></i></button>
-              <button type="button" class="admin-btn-icono admin-btn-danger" title="Eliminar" aria-label="Eliminar" data-action="eliminar-usuario"><i class="fa-solid fa-trash"></i></button>
-            </div>
-          </div>
-
-          <div class="admin-tabla-fila">
-            <div class="admin-user-info">
-              <div class="admin-user-avatar">AL</div>
-              <div>
-                <span class="admin-user-nombre">Ana López</span>
-                <span class="admin-user-email">ana@correo.com</span>
-              </div>
-            </div>
-            <span class="admin-rol admin-rol-organizador">Organizador</span>
-            <span class="badge estado-verde" style="margin-top:0;">Activo</span>
-            <div class="admin-acciones">
-              <button type="button" class="admin-btn-icono" title="Editar" aria-label="Editar" data-action="editar-usuario"><i class="fa-solid fa-pen"></i></button>
-              <button type="button" class="admin-btn-icono admin-btn-danger" title="Suspender" aria-label="Suspender" data-action="suspender-usuario"><i class="fa-solid fa-ban"></i></button>
-            </div>
-          </div>
-
+          <?php endforeach; ?>
         </div>
       </section>
 
-      <!-- TORNEOS RECIENTES -->
-      <section class="admin-card" id="torneos" data-view="dashboard torneos">
+      <!-- TORNEOS RECIENTES (dashboard) -->
+      <section class="admin-card" data-view="dashboard">
         <div class="seccion-header">
           <h2 class="seccion-titulo"><i class="fa-solid fa-trophy"></i> Torneos recientes</h2>
-          <a href="asignar-organizador.php" class="section-link"><i class="fa-solid fa-user-tie"></i> Asignar organizador</a>
+          <a href="#torneos" class="section-link">Ver todos <i class="fa-solid fa-arrow-right"></i></a>
         </div>
-        <div class="admin-tabla">
-          <div class="admin-tabla-header admin-tabla-header-torneos">
-            <span>Torneo</span>
-            <span>Tipo</span>
-            <span>Estado</span>
-            <span>Acciones</span>
-          </div>
-
-          <div class="admin-tabla-fila">
-            <div class="admin-torneo-info">
-              <i class="fa-solid fa-futbol admin-torneo-icon"></i>
-              <span class="admin-user-nombre">Mundialito 2026</span>
+        <div class="panel-lista">
+          <?php foreach ($torneosRecientes as $t): ?>
+            <div class="panel-fila">
+              <div class="panel-fila-main">
+                <a class="admin-user-nombre" href="detalle.php?id=<?= (int) $t['id'] ?>"><?= escapar($t['nombre']) ?></a>
+                <span class="admin-user-email"><?= escapar($t['deporte']) ?> · <?= escapar($etiquetaFormato[$t['formato']] ?? $t['formato']) ?></span>
+              </div>
+              <span class="badge <?= $claseEstadoTorneo[$t['estado']] ?? '' ?>" style="margin-top:0;"><?= escapar($etiquetaEstadoTorneo[$t['estado']] ?? $t['estado']) ?></span>
             </div>
-            <span class="admin-tipo">Liga</span>
-            <span class="badge estado-naranja" style="margin-top:0;">En curso</span>
-            <div class="admin-acciones">
-              <button type="button" class="admin-btn-icono" title="Ver" aria-label="Ver" data-action="ver-torneo"><i class="fa-solid fa-eye"></i></button>
-              <button type="button" class="admin-btn-icono admin-btn-danger" title="Eliminar" aria-label="Eliminar" data-action="eliminar-torneo"><i class="fa-solid fa-trash"></i></button>
-            </div>
-          </div>
-
-          <div class="admin-tabla-fila">
-            <div class="admin-torneo-info">
-              <i class="fa-solid fa-chess admin-torneo-icon"></i>
-              <span class="admin-user-nombre">Torneo de ajedrez UTU</span>
-            </div>
-            <span class="admin-tipo">Suizo</span>
-            <span class="badge estado-naranja" style="margin-top:0;">En curso</span>
-            <div class="admin-acciones">
-              <button type="button" class="admin-btn-icono" title="Ver" aria-label="Ver" data-action="ver-torneo"><i class="fa-solid fa-eye"></i></button>
-              <button type="button" class="admin-btn-icono admin-btn-danger" title="Eliminar" aria-label="Eliminar" data-action="eliminar-torneo"><i class="fa-solid fa-trash"></i></button>
-            </div>
-          </div>
-
-          <div class="admin-tabla-fila">
-            <div class="admin-torneo-info">
-              <i class="fa-solid fa-gamepad admin-torneo-icon"></i>
-              <span class="admin-user-nombre">CS:2 Gaming Cup</span>
-            </div>
-            <span class="admin-tipo">Eliminación</span>
-            <span class="badge estado-verde" style="margin-top:0;">Abierto</span>
-            <div class="admin-acciones">
-              <button type="button" class="admin-btn-icono" title="Ver" aria-label="Ver" data-action="ver-torneo"><i class="fa-solid fa-eye"></i></button>
-              <button type="button" class="admin-btn-icono admin-btn-danger" title="Eliminar" aria-label="Eliminar" data-action="eliminar-torneo"><i class="fa-solid fa-trash"></i></button>
-            </div>
-          </div>
-
-          <div class="admin-tabla-fila">
-            <div class="admin-torneo-info">
-              <i class="fa-solid fa-basketball admin-torneo-icon"></i>
-              <span class="admin-user-nombre">Liga Barrial de Básquet</span>
-            </div>
-            <span class="admin-tipo">Liga</span>
-            <span class="badge estado-rojo" style="margin-top:0;">Finalizado</span>
-            <div class="admin-acciones">
-              <button type="button" class="admin-btn-icono" title="Ver" aria-label="Ver" data-action="ver-torneo"><i class="fa-solid fa-eye"></i></button>
-              <button type="button" class="admin-btn-icono admin-btn-danger" title="Eliminar" aria-label="Eliminar" data-action="eliminar-torneo"><i class="fa-solid fa-trash"></i></button>
-            </div>
-          </div>
-
+          <?php endforeach; ?>
         </div>
       </section>
 
     </div>
 
-    <!-- MÓDULOS DE COMPETENCIA: habilitar o deshabilitar formatos de torneo disponibles en la plataforma -->
+    <!-- USUARIOS: lista completa con búsqueda, filtro y paginación (se carga con fetch) -->
+    <section class="admin-card" id="usuarios" data-view="usuarios">
+      <div class="seccion-header">
+        <h2 class="seccion-titulo"><i class="fa-solid fa-users"></i> Usuarios</h2>
+      </div>
+      <div class="panel-filtros" data-panel="usuarios">
+        <input type="search" data-filtro="q" placeholder="Buscar por nombre, usuario o correo" aria-label="Buscar usuarios" />
+        <select data-filtro="estado" aria-label="Filtrar por estado">
+          <option value="">Todos</option>
+          <option value="activo">Activos</option>
+          <option value="suspendido">Suspendidos</option>
+          <option value="eliminado">Dados de baja</option>
+        </select>
+      </div>
+      <div class="panel-lista" id="listaUsuarios" aria-live="polite"></div>
+      <div class="panel-pag" data-paginacion="usuarios"></div>
+    </section>
+
+    <!-- TORNEOS -->
+    <section class="admin-card" id="torneos" data-view="torneos">
+      <div class="seccion-header">
+        <h2 class="seccion-titulo"><i class="fa-solid fa-trophy"></i> Torneos</h2>
+        <a href="asignar-organizador.php" class="section-link"><i class="fa-solid fa-user-tie"></i> Asignar organizador</a>
+      </div>
+      <div class="panel-filtros" data-panel="torneos">
+        <input type="search" data-filtro="q" placeholder="Buscar por nombre o deporte" aria-label="Buscar torneos" />
+        <select data-filtro="estado" aria-label="Filtrar por estado">
+          <option value="">Todos</option>
+          <option value="inscripciones_abiertas">Inscripciones abiertas</option>
+          <option value="en_curso">En curso</option>
+          <option value="finalizado">Finalizados</option>
+        </select>
+      </div>
+      <div class="panel-lista" id="listaTorneos" aria-live="polite"></div>
+      <div class="panel-pag" data-paginacion="torneos"></div>
+    </section>
+
+    <!-- AUDITORÍA: historial de todo lo que se modifica (letra 4.1 y 14), vista v_auditoria_detalle -->
+    <section class="admin-card" id="auditoria" data-view="auditoria">
+      <div class="seccion-header">
+        <h2 class="seccion-titulo"><i class="fa-solid fa-clock-rotate-left"></i> Historial de auditoría</h2>
+        <span class="tabla-hint"><?= (int) $resumen['acciones_hoy'] ?> acción(es) hoy · <?= (int) $resumen['resultados_corregidos'] ?> resultado(s) corregido(s)</span>
+      </div>
+      <div class="panel-filtros" data-panel="auditoria">
+        <input type="search" data-filtro="q" placeholder="Buscar en el detalle o por usuario" aria-label="Buscar en la auditoría" />
+        <select data-filtro="filtro" aria-label="Filtrar por acción">
+          <option value="">Todas las acciones</option>
+          <?php foreach ($panel->accionesDeAuditoria() as $accionAud): ?>
+            <option value="<?= escapar($accionAud) ?>"><?= escapar($accionAud) ?></option>
+          <?php endforeach; ?>
+        </select>
+      </div>
+      <div class="panel-lista" id="listaAuditoria" aria-live="polite"></div>
+      <div class="panel-pag" data-paginacion="auditoria"></div>
+    </section>
+
+    <!-- FORMATOS: cuántos torneos hay de cada formato de competencia (datos reales) -->
     <section class="admin-card" id="modulos" data-view="modulos">
       <div class="seccion-header">
-        <h2 class="seccion-titulo"><i class="fa-solid fa-puzzle-piece"></i> Módulos de competencia</h2>
+        <h2 class="seccion-titulo"><i class="fa-solid fa-puzzle-piece"></i> Formatos de competencia</h2>
       </div>
       <div class="admin-modulos-lista">
-
-        <div class="admin-modulo-fila">
-          <div class="admin-modulo-info">
-            <span class="admin-modulo-icono"><i class="fa-solid fa-table-cells"></i></span>
-            <div>
-              <span class="admin-modulo-nombre">Liga</span>
-              <span class="admin-modulo-desc">Todos los equipos se enfrentan entre sí. Se acumulan puntos por resultado.</span>
+        <?php
+        $formatos = [
+          ['liga', 'Liga', 'fa-table-cells', 'Todos contra todos. Victoria 3 puntos, empate 1.'],
+          ['eliminacion', 'Eliminación directa', 'fa-sitemap', 'El perdedor queda eliminado; se arma una ronda por vez, con byes si hace falta.'],
+          ['suizo', 'Sistema suizo', 'fa-shuffle', 'Emparejamiento por puntos sin repetir rival; cantidad de rondas fija.'],
+        ];
+        foreach ($formatos as [$clave, $nombre, $icono, $descripcion]): ?>
+          <div class="admin-modulo-fila">
+            <div class="admin-modulo-info">
+              <span class="admin-modulo-icono"><i class="fa-solid <?= $icono ?>"></i></span>
+              <div>
+                <span class="admin-modulo-nombre"><?= $nombre ?></span>
+                <span class="admin-modulo-desc"><?= $descripcion ?></span>
+              </div>
             </div>
+            <span class="badge estado-azul" style="margin-top:0;"><?= (int) ($porFormato[$clave] ?? 0) ?> torneo(s)</span>
           </div>
-          <label class="admin-toggle">
-            <input type="checkbox" checked data-modulo="Liga" aria-label="Activar módulo Liga" />
-            <span class="admin-toggle-slider"></span>
-          </label>
-        </div>
-
-        <div class="admin-modulo-fila">
-          <div class="admin-modulo-info">
-            <span class="admin-modulo-icono"><i class="fa-solid fa-sitemap"></i></span>
-            <div>
-              <span class="admin-modulo-nombre">Eliminación directa</span>
-              <span class="admin-modulo-desc">El perdedor queda eliminado. Se generan llaves automáticamente por ronda.</span>
-            </div>
-          </div>
-          <label class="admin-toggle">
-            <input type="checkbox" checked data-modulo="Eliminación directa" aria-label="Activar módulo Eliminación directa" />
-            <span class="admin-toggle-slider"></span>
-          </label>
-        </div>
-
-        <div class="admin-modulo-fila">
-          <div class="admin-modulo-info">
-            <span class="admin-modulo-icono"><i class="fa-solid fa-shuffle"></i></span>
-            <div>
-              <span class="admin-modulo-nombre">Sistema suizo</span>
-              <span class="admin-modulo-desc">Emparejamiento por rendimiento acumulado, sin eliminar a nadie hasta el final.</span>
-            </div>
-          </div>
-          <label class="admin-toggle">
-            <input type="checkbox" checked data-modulo="Sistema suizo" aria-label="Activar módulo Sistema suizo" />
-            <span class="admin-toggle-slider"></span>
-          </label>
-        </div>
-
+        <?php endforeach; ?>
       </div>
     </section>
 
-    <!-- ACCESOS RÁPIDOS -->
     <section class="admin-card" data-view="dashboard">
       <div class="seccion-header">
         <h2 class="seccion-titulo"><i class="fa-solid fa-bolt"></i> Accesos rápidos</h2>
       </div>
       <div class="admin-accesos">
         <a href="crear-torneo.php" class="admin-acceso">
-          <i class="fa-solid fa-plus admin-acceso-icon"></i>
-          <span>Crear torneo</span>
+          <i class="fa-solid fa-plus admin-acceso-icon"></i><span>Crear torneo</span>
+        </a>
+        <a href="asignar-organizador.php" class="admin-acceso">
+          <i class="fa-solid fa-user-tie admin-acceso-icon"></i><span>Asignar organizador</span>
         </a>
         <a href="#usuarios" class="admin-acceso">
-          <i class="fa-solid fa-user-plus admin-acceso-icon"></i>
-          <span>Agregar usuario</span>
+          <i class="fa-solid fa-users admin-acceso-icon"></i><span>Gestionar usuarios</span>
         </a>
-        <a href="#modulos" class="admin-acceso">
-          <i class="fa-solid fa-puzzle-piece admin-acceso-icon"></i>
-          <span>Gestionar módulos</span>
-        </a>
-        <a href="#reportes" class="admin-acceso">
-          <i class="fa-solid fa-flag admin-acceso-icon"></i>
-          <span>Ver reportes</span>
-        </a>
-        <a href="#configuracion" class="admin-acceso">
-          <i class="fa-solid fa-gear admin-acceso-icon"></i>
-          <span>Configuración</span>
-        </a>
-        <a href="#exportar" class="admin-acceso">
-          <i class="fa-solid fa-file-export admin-acceso-icon"></i>
-          <span>Exportar datos</span>
+        <a href="#auditoria" class="admin-acceso">
+          <i class="fa-solid fa-clock-rotate-left admin-acceso-icon"></i><span>Ver auditoría</span>
         </a>
       </div>
     </section>
 
   </main>
 
-  <script src="script.js?v=25"></script>
+  <script src="script.js?v=28"></script>
 </body>
 </html>

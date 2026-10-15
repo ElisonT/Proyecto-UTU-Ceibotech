@@ -10,12 +10,19 @@
 session_start();
 require_once __DIR__ . '/app/Helpers/manejador_errores.php';
 require_once __DIR__ . '/app/Helpers/roles.php';
+require_once __DIR__ . '/app/Helpers/csrf.php';
 require_once __DIR__ . '/app/Models/Torneo.php';
 require_once __DIR__ . '/app/Models/Enfrentamiento.php';
 require_once __DIR__ . '/app/Controllers/CompetenciaController.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: busqueda.php');
+    exit;
+}
+
+if (!csrfValido()) {
+    $_SESSION['flash_torneo'] = ['ok' => false, 'mensajes' => ['La página quedó desactualizada. Recargala e intentá de nuevo.']];
+    header('Location: ' . (isset($_POST['torneo_id']) ? 'detalle.php?id=' . (int) $_POST['torneo_id'] : 'index.php'));
     exit;
 }
 
@@ -45,6 +52,7 @@ switch ($accion) {
         break;
 
     case 'cargar_resultado':
+    case 'corregir_resultado':
         $enfrentamientoId = (int) ($_POST['enfrentamiento_id'] ?? 0);
         $local     = filter_var($_POST['puntaje_local'] ?? '', FILTER_VALIDATE_INT);
         $visitante = filter_var($_POST['puntaje_visitante'] ?? '', FILTER_VALIDATE_INT);
@@ -55,8 +63,13 @@ switch ($accion) {
         } elseif ($local === false || $visitante === false) {
             $errores = ['Los puntajes tienen que ser números enteros.'];
         } else {
-            $errores = $competencia->cargarResultado($enfrentamientoId, $local, $visitante, $actorId);
-            $exito   = 'Resultado guardado.';
+            if ($accion === 'corregir_resultado') {
+                $errores = $competencia->corregirResultado($enfrentamientoId, $local, $visitante, $actorId);
+                $exito   = 'Resultado corregido.';
+            } else {
+                $errores = $competencia->cargarResultado($enfrentamientoId, $local, $visitante, $actorId);
+                $exito   = 'Resultado guardado.';
+            }
         }
         break;
 

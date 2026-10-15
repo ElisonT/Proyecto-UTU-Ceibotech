@@ -14,9 +14,10 @@ class Enfrentamiento
 {
     private PDO $conexion;
 
-    public function __construct()
+    public function __construct(?PDO $conexion = null)
     {
-        $this->conexion = obtenerConexion();
+        // Se puede compartir una conexión para trabajar dentro de una misma transacción.
+        $this->conexion = $conexion ?? obtenerConexion();
     }
 
     /** Ids de las inscripciones activas de un torneo (equipo o individual, no importa cuál). */
@@ -146,7 +147,7 @@ class Enfrentamiento
                 "SELECT e.*,
                         COALESCE(ul.nombre_completo, eql.nombre_equipo) AS nombre_local,
                         COALESCE(uv.nombre_completo, eqv.nombre_equipo) AS nombre_visitante,
-                        res.puntaje_local, res.puntaje_visitante,
+                        res.puntaje_local, res.puntaje_visitante, res.fecha_correccion,
                         (res.id IS NOT NULL) AS tiene_resultado
                    FROM enfrentamientos e
               LEFT JOIN resultados res ON res.enfrentamiento_id = e.id
@@ -193,15 +194,17 @@ class Enfrentamiento
     }
 
     /** Un enfrentamiento junto con el formato de su torneo y si ya tiene resultado. */
-    public function obtenerConFormato(int $enfrentamientoId): array|false
+    public function obtenerConFormato(int $enfrentamientoId, bool $bloquear = false): array|false
     {
+        // $bloquear = true: dentro de una transacción, nadie más puede cargar o
+        // corregir este mismo partido hasta que termine (evita doble carga).
         $consulta = $this->conexion->prepare(
-            'SELECT e.*, t.formato, t.id AS torneo_id,
+            'SELECT e.*, r.numero AS ronda_numero, t.formato, t.estado AS torneo_estado, t.id AS torneo_id,
                     (SELECT COUNT(*) FROM resultados res WHERE res.enfrentamiento_id = e.id) AS tiene_resultado
                FROM enfrentamientos e
                JOIN rondas r ON r.id = e.ronda_id
                JOIN torneos t ON t.id = r.torneo_id
-              WHERE e.id = :id'
+              WHERE e.id = :id' . ($bloquear ? ' FOR UPDATE' : '')
         );
         $consulta->execute(['id' => $enfrentamientoId]);
         return $consulta->fetch();
@@ -221,6 +224,35 @@ class Enfrentamiento
 
         $this->conexion->prepare("UPDATE enfrentamientos SET estado = 'jugado' WHERE id = :id")
                        ->execute(['id' => $enfrentamientoId]);
+    }
+
+    /** El resultado guardado de un enfrentamiento (false si todavía no tiene). */
+    public function obtenerResultado(int $enfrentamientoId): array|false
+    {
+        $consulta = $this->conexion->prepare('SELECT * FROM resultados WHERE enfrentamiento_id = :id');
+        $consulta->execute(['id' => $enfrentamientoId]);
+        return $consulta->fetch();
+    }
+
+    /** Pisa el marcador de un resultado ya cargado y deja constancia de quién lo corrigió. */
+    public function actualizarResultado(int $enfrentamientoId, int $puntajeLocal, int $puntajeVisitante, ?int $ganadorId, int $actorId): void
+    {
+        $consulta = $this->conexion->prepare(
+            'UPDATE resultados
+                SET puntaje_local = :pl, puntaje_visitante = :pv, inscripcion_ganadora_id = :ganador,
+                    validado = 1, corregido_por = :actor, fecha_correccion = NOW()
+              WHERE enfrentamiento_id = :enf'
+        );
+        $consulta->execute([
+            'pl' => $puntajeLocal, 'pv' => $puntajeVisitante, 'ganador' => $ganadorId,
+            'actor' => $actorId, 'enf' => $enfrentamientoId,
+        ]);
+    }
+
+    /** true si el torneo ya tiene una ronda con número mayor al dado. */
+    public function existeRondaPosterior(int $torneoId, int $numeroRonda): bool
+    {
+        return $this->obtenerUltimaRonda($torneoId) > $numeroRonda;
     }
 
     /** Cuántos enfrentamientos (sin contar byes) del torneo todavía no tienen resultado validado. */

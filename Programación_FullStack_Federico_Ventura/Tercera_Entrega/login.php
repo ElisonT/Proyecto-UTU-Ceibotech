@@ -2,6 +2,8 @@
 require_once __DIR__ . '/app/Controllers/UsuarioController.php';
 session_start();
 require_once __DIR__ . '/app/Helpers/manejador_errores.php';
+require_once __DIR__ . '/app/Helpers/csrf.php';
+exigirCsrf('login.php');
 
 $errorLogin = null;
 
@@ -39,7 +41,7 @@ $vieneDeRegistro = isset($_GET['registrado']);
   <!-- title es el texto que aparece en la pestaña del navegador. -->
   <title>Iniciar sesión — SGDM</title>
   <!-- styles.css guarda todos los estilos visuales del sitio. -->
-  <link rel="stylesheet" href="styles.css?v=25" />
+  <link rel="stylesheet" href="styles.css?v=29" />
   <!-- Font Awesome aporta los iconos usados en botones, tarjetas y menus. -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 </head>
@@ -83,7 +85,7 @@ $vieneDeRegistro = isset($_GET['registrado']);
       <?php endif; ?>
 
       <!-- FORMULARIO DE LOGIN: campos para usuario/correo y contrasena. -->
-      <form class="auth-form" id="loginForm" method="post" action="login.php">
+      <form class="auth-form" id="loginForm" method="post" action="login.php"> <?= campoCsrf() ?>
 
         <div class="form-group" id="group-login">
           <label class="form-label" for="login">Usuario o correo electrónico</label>
@@ -119,6 +121,6 @@ $vieneDeRegistro = isset($_GET['registrado']);
     </div>
   </main>
 
-<script src="script.js?v=25"></script>
+<script src="script.js?v=28"></script>
 </body>
 </html>

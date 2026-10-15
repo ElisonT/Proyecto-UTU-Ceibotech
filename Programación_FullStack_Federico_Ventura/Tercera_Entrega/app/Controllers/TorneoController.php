@@ -50,8 +50,34 @@ class TorneoController
         if (!in_array($formato, ['liga', 'eliminacion', 'suizo'], true)) {
             $errores[] = 'Seleccioná un tipo de torneo válido.';
         }
-        if ($fechaInicio === '' || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $fechaInicio)) {
+
+        // --- Fechas: inscripciones (apertura y cierre), inicio y fin del torneo ---
+        $esFecha = static fn (string $f): bool => preg_match('/^\d{4}-\d{2}-\d{2}$/', $f) === 1
+            && checkdate((int) substr($f, 5, 2), (int) substr($f, 8, 2), (int) substr($f, 0, 4));
+        $hoy       = (new DateTimeImmutable('now', new DateTimeZone('America/Montevideo')))->format('Y-m-d');
+        $apertura  = trim($datos['fecha_inicio_inscripcion'] ?? '');
+        $cierre    = trim($datos['fecha_cierre_inscripcion'] ?? '');
+        $fechaFin  = trim($datos['fecha_fin_torneo'] ?? '');
+
+        if (!$esFecha($apertura)) {
+            $errores[] = 'Ingresá una fecha válida para el inicio de las inscripciones.';
+        } elseif ($apertura < $hoy) {
+            $errores[] = 'El inicio de las inscripciones no puede ser una fecha pasada.';
+        }
+        if (!$esFecha($cierre)) {
+            $errores[] = 'Ingresá una fecha válida para el cierre de las inscripciones.';
+        } elseif ($esFecha($apertura) && $cierre < $apertura) {
+            $errores[] = 'El cierre de las inscripciones no puede ser anterior a su inicio.';
+        }
+        if (!$esFecha($fechaInicio)) {
             $errores[] = 'Ingresá una fecha de inicio válida.';
+        } elseif ($esFecha($cierre) && $fechaInicio < $cierre) {
+            $errores[] = 'El torneo no puede empezar antes del cierre de las inscripciones.';
+        }
+        if (!$esFecha($fechaFin)) {
+            $errores[] = 'Ingresá una fecha válida para el fin del torneo.';
+        } elseif ($esFecha($fechaInicio) && $fechaFin < $fechaInicio) {
+            $errores[] = 'La fecha de fin del torneo no puede ser anterior a su inicio.';
         }
 
         $cupos = filter_var($datos['max_participantes'] ?? '', FILTER_VALIDATE_INT,
@@ -60,15 +86,36 @@ class TorneoController
             $errores[] = 'El máximo de participantes tiene que ser un número entre 2 y 512.';
         }
 
+        // Nombre del deporte y tamaño de equipo: salen del catálogo, salvo "Otro" (libre),
+        // donde el administrador escribe el nombre y cuántos jugadores lleva cada equipo.
+        $deporte            = $deporteFila ? $deporteFila['nombre'] : '';
+        $jugadoresPorEquipo = $deporteFila ? (int) $deporteFila['jugadores_por_equipo'] : 1;
+
+        if ($deporteFila && (int) $deporteFila['es_libre'] === 1) {
+            $deporte = trim(preg_replace('/\s+/', ' ', (string) ($datos['deporte_otro'] ?? '')));
+            $largo   = mb_strlen($deporte);
+            if ($largo < 3 || $largo > 60) {
+                $errores[] = 'Escribí el nombre del deporte o juego (entre 3 y 60 caracteres).';
+            } elseif ($this->modeloDeporte->existeNombre($deporte)) {
+                $errores[] = "\"{$deporte}\" ya está en la lista de deportes: elegilo ahí en lugar de \"Otro\".";
+            }
+
+            $jugadoresPorEquipo = filter_var($datos['jugadores_otro'] ?? '', FILTER_VALIDATE_INT,
+                ['options' => ['min_range' => 1, 'max_range' => 50]]);
+            if ($jugadoresPorEquipo === false) {
+                $errores[] = 'Indicá cuántos jugadores lleva cada equipo (1 si es individual, hasta 50).';
+                $jugadoresPorEquipo = 1;
+            }
+        }
+
         // Más de 1 jugador por equipo => se juega por equipos; si no, individual.
-        $modalidad = ($deporteFila && (int) $deporteFila['jugadores_por_equipo'] >= 2) ? 'equipo' : 'individual';
+        $modalidad = $jugadoresPorEquipo >= 2 ? 'equipo' : 'individual';
 
         if (!empty($errores)) {
             return [$errores, null];
         }
 
-        $deporte = $deporteFila['nombre'];
-        $id = $this->modeloTorneo->crear($nombre, $deporte, $formato, $fechaInicio, $creadoPor, $modalidad, $cupos);
+        $id = $this->modeloTorneo->crear($nombre, $deporte, $formato, $fechaInicio, $creadoPor, $modalidad, $cupos, $jugadoresPorEquipo, $apertura, $cierre, $fechaFin);
 
         if ($id === false) {
             return [['No se pudo crear el torneo. Probá de nuevo.'], null];

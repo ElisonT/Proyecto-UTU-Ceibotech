@@ -9,6 +9,8 @@
  */
 session_start();
 require_once __DIR__ . '/app/Helpers/manejador_errores.php';
+require_once __DIR__ . '/app/Helpers/csrf.php';
+exigirCsrf('mis-equipos.php');
 require_once __DIR__ . '/app/Helpers/roles.php';
 require_once __DIR__ . '/app/Controllers/EquipoController.php';
 
@@ -34,7 +36,14 @@ $exito       = '';
 
 switch ($accion) {
     case 'crear_equipo':
-        $errores = $controlador->crear((string) ($_POST['nombre_equipo'] ?? ''), $usuarioId, (int) ($_POST['deporte_id'] ?? 0));
+        $jugadoresOtro = filter_var($_POST['jugadores_otro'] ?? '', FILTER_VALIDATE_INT);
+        $errores = $controlador->crear(
+            (string) ($_POST['nombre_equipo'] ?? ''),
+            $usuarioId,
+            (int) ($_POST['deporte_id'] ?? 0),
+            (string) ($_POST['deporte_otro'] ?? ''),
+            $jugadoresOtro === false ? null : $jugadoresOtro
+        );
         $exito   = 'Equipo creado. Ahora podés invitar a tus compañeros.';
         break;
 

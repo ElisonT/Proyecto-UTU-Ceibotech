@@ -436,8 +436,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ===== VISTAS DEL PANEL ADMIN (Dashboard / Usuarios / Torneos, sin recargar la página) =====
-  const VISTAS_VALIDAS = ['dashboard', 'usuarios', 'torneos', 'modulos'];
-  const TITULOS_VISTA = { dashboard: 'Dashboard', usuarios: 'Usuarios', torneos: 'Torneos', modulos: 'Módulos de competencia' };
+  let alMostrarVista = null; // lo define el panel admin más abajo (carga las listas con fetch)
+  const VISTAS_VALIDAS = ['dashboard', 'usuarios', 'torneos', 'auditoria', 'modulos'];
+  const TITULOS_VISTA = { dashboard: 'Dashboard', usuarios: 'Usuarios', torneos: 'Torneos', auditoria: 'Auditoría', modulos: 'Formatos de competencia' };
   const tituloPagina = document.querySelector('.admin-page-titulo');
 
   function mostrarVista(vista, hacerScroll) {
@@ -450,6 +451,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (tituloPagina && TITULOS_VISTA[vista]) {
       tituloPagina.textContent = TITULOS_VISTA[vista];
     }
+
+    // Las listas del panel (usuarios, torneos, auditoría) se piden al servidor la primera vez que se abren
+    if (alMostrarVista) alMostrarVista(vista);
 
     // Resalta el link correspondiente en el sidebar
     document.querySelectorAll('.admin-nav-link').forEach((link) => {
@@ -509,107 +513,255 @@ document.addEventListener('DOMContentLoaded', () => {
     toast.classList.add('visible');
 
     clearTimeout(toastTimeout);
+    // Los avisos largos (por ejemplo una explicación del servidor) necesitan más tiempo para leerse
     toastTimeout = setTimeout(() => {
       toast.classList.remove('visible');
-    }, 2500);
+    }, Math.max(2500, mensaje.length * 70));
   }
 
-  // Resta 1 al número mostrado en una tarjeta de estadística del dashboard
-  function restarStat(selectorLabel) {
-    const tarjetas = document.querySelectorAll('.admin-stat-card');
-    tarjetas.forEach((tarjeta) => {
-      const label = tarjeta.querySelector('.admin-stat-label');
-      if (label && label.textContent.trim() === selectorLabel) {
-        const numSpan = tarjeta.querySelector('.admin-stat-num');
-        const valorActual = parseFloat(numSpan.textContent.replace('k', '')) || 0;
-        const esMiles = numSpan.textContent.includes('k');
-        const nuevoValor = Math.max(0, valorActual - (esMiles ? 0.1 : 1));
-        numSpan.textContent = esMiles ? nuevoValor.toFixed(1) + 'k' : Math.round(nuevoValor);
+  // ===== COMUNICACIÓN ASINCRÓNICA (fetch) =====
+  // Todo lo que sigue habla con el servidor sin recargar la página: se manda el pedido con
+  // fetch, el servidor (api/*.php) responde JSON y acá se actualiza solo la parte que cambió.
+  // El token CSRF sale de un <meta> que deja el PHP en la página.
+  const tokenCsrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
+
+  async function pedirJson(url, opciones = {}) {
+    try {
+      const respuesta = await fetch(url, {
+        credentials: 'same-origin',
+        headers: { 'Accept': 'application/json', 'X-CSRF-Token': tokenCsrf },
+        ...opciones,
+      });
+      const datos = await respuesta.json().catch(() => null);
+      if (!datos) return { ok: false, mensajes: ['El servidor respondió algo inesperado. Probá de nuevo.'] };
+      return datos;
+    } catch (error) {
+      return { ok: false, mensajes: ['No se pudo conectar con el servidor. Revisá tu conexión.'] };
+    }
+  }
+
+  // Crea un elemento con clase y texto (textContent: nunca interpreta HTML, evita XSS)
+  function crear(etiqueta, clase, texto) {
+    const nodo = document.createElement(etiqueta);
+    if (clase) nodo.className = clase;
+    if (texto !== undefined) nodo.textContent = texto;
+    return nodo;
+  }
+
+  // Si la página se recargó después de una acción asincrónica, se muestra el aviso pendiente
+  const avisoPendiente = sessionStorage.getItem('sgdm-aviso');
+  if (avisoPendiente) {
+    sessionStorage.removeItem('sgdm-aviso');
+    mostrarToast(avisoPendiente);
+  }
+
+  // ----- Cargar y corregir resultados (detalle.php y fechas.php) -----
+  // Los formularios .js-resultado-form funcionan solos (POST normal); acá se mandan por fetch
+  // y el servidor devuelve la ronda y la tabla ya redibujadas.
+  document.addEventListener('submit', async (evento) => {
+    const form = evento.target.closest('.js-resultado-form');
+    if (!form) return;
+    evento.preventDefault();
+
+    const boton = form.querySelector('button[type="submit"]');
+    boton.disabled = true;
+
+    const datos = new FormData(form);
+    datos.set('accion', form.dataset.accion); // 'cargar' o 'corregir'
+    const respuesta = await pedirJson('api/resultado.php', { method: 'POST', body: datos });
+    boton.disabled = false;
+
+    if (!respuesta.ok) {
+      mostrarToast(respuesta.mensajes.join(' '));
+      return;
+    }
+
+    // Cambió el estado del torneo o ya no quedan pendientes: se recarga para mostrar los botones correctos
+    if (respuesta.recargar) {
+      sessionStorage.setItem('sgdm-aviso', respuesta.mensajes[0]);
+      window.location.reload();
+      return;
+    }
+
+    const ronda = document.getElementById('ronda-' + respuesta.rondaId);
+    if (ronda) ronda.outerHTML = respuesta.rondaHtml;
+
+    const tabla = document.getElementById('tablaPosicionesContenedor');
+    if (tabla && respuesta.tablaHtml !== null) tabla.innerHTML = respuesta.tablaHtml;
+
+    document.querySelectorAll('[data-stat="jugados"]').forEach((n) => { n.textContent = respuesta.stats.jugados; });
+    document.querySelectorAll('[data-stat="pendientes"]').forEach((n) => { n.textContent = respuesta.stats.pendientes; });
+
+    mostrarToast(respuesta.mensajes[0]);
+  });
+
+  // ----- Panel de administración: listas reales con filtros y paginación -----
+  const panelAdmin = document.querySelector('.admin-main');
+
+  if (panelAdmin) {
+    const miId = panelAdmin.dataset.yo;
+    const ETIQUETA_ESTADO_TORNEO = { inscripciones_abiertas: 'Abierto', en_curso: 'En curso', finalizado: 'Finalizado' };
+    const CLASE_ESTADO_TORNEO = { inscripciones_abiertas: 'estado-verde', en_curso: 'estado-naranja', finalizado: 'estado-azul' };
+    const ETIQUETA_FORMATO = { liga: 'Liga', eliminacion: 'Eliminación', suizo: 'Suizo' };
+
+    function formatearFechaHora(texto) {
+      // 'AAAA-MM-DD HH:MM:SS' -> 'DD/MM/AAAA HH:MM'
+      const [fecha, hora = ''] = String(texto).split(' ');
+      const [a, m, d] = fecha.split('-');
+      return d + '/' + m + '/' + a + ' ' + hora.slice(0, 5);
+    }
+
+    function insignia(clase, texto) {
+      const nodo = crear('span', 'badge ' + clase, texto);
+      nodo.style.marginTop = '0';
+      return nodo;
+    }
+
+    // Cómo se dibuja cada fila de cada lista
+    function filaUsuario(u) {
+      const fila = crear('div', 'panel-fila');
+      const principal = crear('div', 'panel-fila-main');
+      principal.append(crear('span', 'admin-user-nombre', u.nombre_completo),
+                       crear('span', 'admin-user-email', '@' + u.nombre_usuario + ' · ' + u.email));
+      const rol = crear('span', 'admin-rol ' + (Number(u.rol_id) === 2 ? 'admin-rol-organizador' : 'admin-rol-participante'), u.rol);
+      let estado;
+      if (Number(u.eliminado) === 1) estado = insignia('estado-gris', 'Baja');
+      else if (Number(u.activo) === 1) estado = insignia('estado-verde', 'Activo');
+      else estado = insignia('estado-rojo', 'Suspendido');
+      fila.append(principal, rol, estado);
+
+      // Se puede suspender/reactivar a cualquiera menos a uno mismo, a otro admin o a una cuenta dada de baja
+      const esAdmin = Number(u.rol_id) === 1;
+      if (Number(u.eliminado) !== 1 && !esAdmin && String(u.id) !== miId) {
+        const activo = Number(u.activo) === 1;
+        const boton = crear('button', 'admin-btn-icono' + (activo ? ' admin-btn-danger' : ''));
+        boton.type = 'button';
+        boton.title = activo ? 'Suspender' : 'Reactivar';
+        boton.setAttribute('aria-label', boton.title + ' a ' + u.nombre_completo);
+        boton.innerHTML = activo ? '<i class="fa-solid fa-ban"></i>' : '<i class="fa-solid fa-rotate-left"></i>';
+        boton.addEventListener('click', () => cambiarEstadoUsuario(u, !activo, boton));
+        fila.append(boton);
       }
-    });
-  }
+      return fila;
+    }
 
-  // Quita una fila de la tabla con una pequeña animación de salida
-  function eliminarFila(fila) {
-    fila.classList.add('saliendo');
-    setTimeout(() => fila.remove(), 200);
-  }
+    function filaTorneo(t) {
+      const fila = crear('div', 'panel-fila');
+      const principal = crear('div', 'panel-fila-main');
+      const enlace = crear('a', 'admin-user-nombre', t.nombre);
+      enlace.href = 'detalle.php?id=' + encodeURIComponent(t.id);
+      principal.append(enlace, crear('span', 'admin-user-email',
+        t.deporte + ' · ' + (ETIQUETA_FORMATO[t.formato] || t.formato) + ' · ' + t.inscriptos + ' inscriptos · ' +
+        t.partidos_jugados + ' jugados / ' + t.partidos_pendientes + ' pendientes · ' +
+        (t.nombre_organizador ? 'Organiza: ' + t.nombre_organizador : 'Sin organizador')));
+      fila.append(principal, insignia(CLASE_ESTADO_TORNEO[t.estado] || '', ETIQUETA_ESTADO_TORNEO[t.estado] || t.estado));
+      return fila;
+    }
 
-  // ===== TABLA DE USUARIOS (editar / suspender / eliminar) =====
-  document.querySelectorAll('[data-action="editar-usuario"]').forEach((boton) => {
-    boton.addEventListener('click', () => {
-      const fila = boton.closest('.admin-tabla-fila');
-      const nombreSpan = fila.querySelector('.admin-user-nombre');
-      const nuevoNombre = prompt('Editar nombre de usuario:', nombreSpan.textContent);
-      if (nuevoNombre && nuevoNombre.trim() !== '') {
-        nombreSpan.textContent = nuevoNombre.trim();
-        mostrarToast('Usuario actualizado');
+    function filaAuditoria(a) {
+      const fila = crear('div', 'panel-fila');
+      const principal = crear('div', 'panel-fila-main');
+      principal.append(crear('span', 'admin-user-nombre', a.detalle || '(sin detalle)'),
+        crear('span', 'admin-user-email',
+          formatearFechaHora(a.fecha) + ' · ' + (a.nombre_usuario ? '@' + a.nombre_usuario : 'sistema') + (a.ip ? ' · ' + a.ip : '')));
+      fila.append(principal, insignia('estado-azul', a.accion));
+      return fila;
+    }
+
+    // Una lista de cada tipo: dónde se dibuja, a qué acción del servidor se pide y cómo se arma cada fila
+    const PANELES = {
+      usuarios:  { lista: '#listaUsuarios',  dibujar: filaUsuario,   vacio: 'No hay usuarios con ese filtro.' },
+      torneos:   { lista: '#listaTorneos',   dibujar: filaTorneo,    vacio: 'No hay torneos con ese filtro.' },
+      auditoria: { lista: '#listaAuditoria', dibujar: filaAuditoria, vacio: 'No hay registros con ese filtro.' },
+    };
+    const estadoPaneles = {};
+
+    async function cargarPanel(nombre, pagina) {
+      const config = PANELES[nombre];
+      const lista = document.querySelector(config.lista);
+      const barra = document.querySelector('[data-panel="' + nombre + '"]');
+      const pie = document.querySelector('[data-paginacion="' + nombre + '"]');
+      const estado = estadoPaneles[nombre] = estadoPaneles[nombre] || { pagina: 1 };
+      estado.pagina = pagina || estado.pagina;
+
+      const parametros = new URLSearchParams({ accion: nombre, pagina: estado.pagina });
+      barra.querySelectorAll('[data-filtro]').forEach((campo) => parametros.set(campo.dataset.filtro, campo.value.trim()));
+
+      lista.replaceChildren(crear('p', 'tabla-sin-datos', 'Cargando…'));
+      const respuesta = await pedirJson('api/admin.php?' + parametros.toString());
+
+      if (!respuesta.ok) {
+        const error = crear('p', 'tabla-sin-datos', respuesta.mensajes.join(' ') + ' ');
+        const reintentar = crear('button', 'btn', 'Reintentar');
+        reintentar.type = 'button';
+        reintentar.addEventListener('click', () => cargarPanel(nombre));
+        error.append(reintentar);
+        lista.replaceChildren(error);
+        pie.replaceChildren();
+        return;
       }
+
+      estado.pagina = respuesta.pagina;
+      lista.replaceChildren(...(respuesta.filas.length
+        ? respuesta.filas.map(config.dibujar)
+        : [crear('p', 'tabla-sin-datos', config.vacio)]));
+
+      const anterior = crear('button', 'btn', '← Anterior');
+      const siguiente = crear('button', 'btn', 'Siguiente →');
+      anterior.type = siguiente.type = 'button';
+      anterior.disabled = respuesta.pagina <= 1;
+      siguiente.disabled = respuesta.pagina >= respuesta.paginas;
+      anterior.addEventListener('click', () => cargarPanel(nombre, respuesta.pagina - 1));
+      siguiente.addEventListener('click', () => cargarPanel(nombre, respuesta.pagina + 1));
+      pie.replaceChildren(anterior,
+        crear('span', 'tabla-hint', 'Página ' + respuesta.pagina + ' de ' + respuesta.paginas + ' · ' + respuesta.total + ' en total'),
+        siguiente);
+    }
+
+    // Filtros: el texto busca mientras se escribe (con una pequeña espera), los selectores al cambiar
+    Object.keys(PANELES).forEach((nombre) => {
+      const barra = document.querySelector('[data-panel="' + nombre + '"]');
+      if (!barra) return;
+      let espera;
+      barra.querySelectorAll('[data-filtro]').forEach((campo) => {
+        campo.addEventListener(campo.tagName === 'SELECT' ? 'change' : 'input', () => {
+          clearTimeout(espera);
+          espera = setTimeout(() => cargarPanel(nombre, 1), campo.tagName === 'SELECT' ? 0 : 300);
+        });
+      });
     });
-  });
 
-  document.querySelectorAll('[data-action="suspender-usuario"]').forEach((boton) => {
-    boton.addEventListener('click', () => {
-      const fila = boton.closest('.admin-tabla-fila');
-      const nombre = fila.querySelector('.admin-user-nombre').textContent;
-      if (!confirm('¿Suspender a ' + nombre + '?')) return;
+    // Se llama desde mostrarVista(): la primera vez que se abre una lista, se pide al servidor
+    alMostrarVista = (vista) => {
+      if (PANELES[vista] && !estadoPaneles[vista]) cargarPanel(vista, 1);
+    };
 
-      const badge = fila.querySelector('.badge');
-      badge.textContent = 'Suspendido';
-      badge.classList.remove('estado-verde');
-      badge.classList.add('estado-rojo');
+    async function cambiarEstadoUsuario(usuario, activar, boton) {
+      const pregunta = activar
+        ? '¿Reactivar a ' + usuario.nombre_completo + '?'
+        : '¿Suspender a ' + usuario.nombre_completo + '? No va a poder iniciar sesión hasta que lo reactives.';
+      if (!confirm(pregunta)) return;
 
-      // Una vez suspendido, la única acción posible pasa a ser eliminar (igual que en el mockup original)
-      boton.dataset.action = 'eliminar-usuario';
-      boton.title = 'Eliminar';
-      boton.setAttribute('aria-label', 'Eliminar');
-      boton.innerHTML = '<i class="fa-solid fa-trash"></i>';
-      boton.addEventListener('click', manejarEliminarUsuario);
+      boton.disabled = true;
+      const datos = new FormData();
+      datos.set('accion', 'estado_usuario');
+      datos.set('usuario_id', usuario.id);
+      datos.set('activo', activar ? '1' : '0');
+      datos.set('csrf', tokenCsrf);
+      const respuesta = await pedirJson('api/admin.php', { method: 'POST', body: datos });
+      boton.disabled = false;
 
-      mostrarToast('Usuario suspendido');
-    });
-  });
+      mostrarToast(respuesta.mensajes.join(' '));
+      if (!respuesta.ok) return;
 
-  function manejarEliminarUsuario(evento) {
-    const boton = evento.currentTarget;
-    const fila = boton.closest('.admin-tabla-fila');
-    const nombre = fila.querySelector('.admin-user-nombre').textContent;
-    if (!confirm('¿Eliminar a ' + nombre + ' definitivamente? Esta acción no se puede deshacer.')) return;
-
-    eliminarFila(fila);
-    restarStat('Usuarios registrados');
-    mostrarToast('Usuario eliminado');
+      // Actualiza el número del dashboard y vuelve a pedir la lista (el estado quedó guardado en el servidor)
+      Object.entries(respuesta.resumen).forEach(([campo, valor]) => {
+        document.querySelectorAll('[data-resumen="' + campo + '"]').forEach((n) => { n.textContent = valor; });
+      });
+      cargarPanel('usuarios');
+      if (estadoPaneles.auditoria) estadoPaneles.auditoria = null; // la próxima vez que se abra se recarga con la acción nueva
+    }
   }
-  document.querySelectorAll('[data-action="eliminar-usuario"]').forEach((boton) => {
-    boton.addEventListener('click', manejarEliminarUsuario);
-  });
-
-  // ===== TABLA DE TORNEOS (ver / eliminar) =====
-  document.querySelectorAll('[data-action="ver-torneo"]').forEach((boton) => {
-    boton.addEventListener('click', () => {
-      window.location.href = 'detalle.php';
-    });
-  });
-
-  document.querySelectorAll('[data-action="eliminar-torneo"]').forEach((boton) => {
-    boton.addEventListener('click', () => {
-      const fila = boton.closest('.admin-tabla-fila');
-      const nombre = fila.querySelector('.admin-user-nombre').textContent;
-      if (!confirm('¿Eliminar el torneo "' + nombre + '"? Esta acción no se puede deshacer.')) return;
-
-      eliminarFila(fila);
-      restarStat('Torneos activos');
-      mostrarToast('Torneo eliminado');
-    });
-  });
-
-  // ===== MÓDULOS DE COMPETENCIA (habilitar / deshabilitar) =====
-  document.querySelectorAll('.admin-toggle input[data-modulo]').forEach((toggle) => {
-    toggle.addEventListener('change', () => {
-      const nombreModulo = toggle.dataset.modulo;
-      mostrarToast('Módulo "' + nombreModulo + '" ' + (toggle.checked ? 'activado' : 'desactivado'));
-    });
-  });
 
   // ===== FILTRADO Y PAGINACIÓN DE TORNEOS (busqueda.html) =====
   const filtroDeporte = document.querySelector('#filtroDeporte');
@@ -998,27 +1150,91 @@ document.addEventListener('DOMContentLoaded', () => {
     actualizarCategoriaGenero(); // estado inicial
   }
 
-  // La modalidad y el tamaño de los equipos salen del deporte elegido
-  // (cada <option> trae data-jugadores desde la tabla deportes).
+  // Fechas de crear torneo: apertura -> cierre de inscripciones -> inicio -> fin. Cada una
+  // no puede ser anterior a la anterior (el servidor lo vuelve a controlar).
+  const cadenaFechas = ['#fecha-inicio-inscripcion', '#fecha-cierre-inscripcion', '#fecha-inicio-torneo', '#fecha-fin-torneo']
+    .map((selector) => document.querySelector(selector));
+
+  if (cadenaFechas.every(Boolean)) {
+    const minimoOriginal = cadenaFechas.map((campo) => campo.min);
+
+    function encadenarFechas() {
+      cadenaFechas.forEach((campo, i) => {
+        if (i === 0) return;
+        const anterior = cadenaFechas[i - 1].value;
+        campo.min = anterior && anterior > minimoOriginal[i] ? anterior : minimoOriginal[i];
+        if (campo.value && campo.value < campo.min) campo.value = '';
+      });
+    }
+
+    cadenaFechas.forEach((campo) => campo.addEventListener('change', encadenarFechas));
+    encadenarFechas();
+  }
+
+  // La modalidad y el tamaño de los equipos salen del deporte elegido (cada <option> trae
+  // data-jugadores desde la tabla deportes). Con "Otro" (data-libre="1") se pide el nombre
+  // del juego y el tamaño a mano.
   const selectDeporte = document.querySelector('#deporte');
   const infoModalidad = document.querySelector('#infoModalidad');
 
   if (selectDeporte && infoModalidad) {
+    const grupoOtro   = document.querySelector('#grupoDeporteOtro');
+    const inputOtro   = document.querySelector('#deporte_otro');
+    const inputJugOtro = document.querySelector('#jugadores_otro');
+
     function actualizarInfoModalidad() {
       const opcion = selectDeporte.options[selectDeporte.selectedIndex];
-      const jugadores = opcion ? parseInt(opcion.dataset.jugadores, 10) : NaN;
+      const esLibre = !!opcion && opcion.dataset.libre === '1';
+
+      if (grupoOtro) {
+        grupoOtro.style.display = esLibre ? '' : 'none';
+        if (inputOtro) inputOtro.required = esLibre;
+        if (inputJugOtro) inputJugOtro.required = esLibre;
+      }
+
+      let jugadores = opcion ? parseInt(opcion.dataset.jugadores, 10) : NaN;
+      let nombre = opcion ? opcion.textContent.trim() : '';
+
+      if (esLibre) {
+        jugadores = inputJugOtro ? parseInt(inputJugOtro.value, 10) : NaN;
+        nombre = (inputOtro && inputOtro.value.trim()) || 'El juego';
+        if (!jugadores) {
+          infoModalidad.textContent = 'Escribí el nombre del juego e indicá cuántos jugadores lleva cada equipo.';
+          return;
+        }
+      }
+
       if (!jugadores) {
         infoModalidad.textContent = 'Se define según el deporte que elijas.';
         return;
       }
-      const nombre = opcion.textContent.trim();
       infoModalidad.textContent = jugadores === 1
         ? 'Individual: ' + nombre + ' se juega de a uno.'
         : 'Por equipos: ' + nombre + ' se juega en equipos de ' + jugadores + ' jugadores.';
     }
 
     selectDeporte.addEventListener('change', actualizarInfoModalidad);
+    if (inputOtro) inputOtro.addEventListener('input', actualizarInfoModalidad);
+    if (inputJugOtro) inputJugOtro.addEventListener('input', actualizarInfoModalidad);
     actualizarInfoModalidad(); // estado inicial
+  }
+
+  // Mis equipos: si el deporte elegido es "Otro" (tamaño libre), se piden el nombre del juego y el tamaño.
+  const selectDeporteEquipo = document.querySelector('#deporteEquipo');
+  const grupoOtroEquipo = document.querySelector('#grupoOtroEquipo');
+
+  if (selectDeporteEquipo && grupoOtroEquipo) {
+    const camposOtroEquipo = grupoOtroEquipo.querySelectorAll('input');
+
+    function actualizarOtroEquipo() {
+      const opcion = selectDeporteEquipo.options[selectDeporteEquipo.selectedIndex];
+      const esLibre = !!opcion && opcion.dataset.libre === '1';
+      grupoOtroEquipo.style.display = esLibre ? '' : 'none';
+      camposOtroEquipo.forEach((campo) => { campo.required = esLibre; });
+    }
+
+    selectDeporteEquipo.addEventListener('change', actualizarOtroEquipo);
+    actualizarOtroEquipo(); // estado inicial
   }
 
   // Formulario grande, con validación HTML5 (required, pattern) ya puesta en el markup.
@@ -1209,6 +1425,7 @@ document.addEventListener('DOMContentLoaded', () => {
     'Fútbol 5':          { icono: 'fa-futbol',                   color: '#2f8f3e' },
     'Básquetbol':        { icono: 'fa-basketball',               color: '#b84a00' },
     'Tenis':             { icono: 'fa-table-tennis-paddle-ball', color: '#3a6b1a' },
+    'Tenis dobles':      { icono: 'fa-table-tennis-paddle-ball', color: '#4a7d22' },
     'Pádel':             { icono: 'fa-table-tennis-paddle-ball', color: '#1f7a5c' },
     'Ping pong':         { icono: 'fa-table-tennis-paddle-ball', color: '#0d6e6e' },
     'Ajedrez':           { icono: 'fa-chess',                    color: '#2c2c2c' },

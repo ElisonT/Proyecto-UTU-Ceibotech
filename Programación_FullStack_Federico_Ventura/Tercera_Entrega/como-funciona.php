@@ -27,7 +27,7 @@ $puedeCrearTorneo = !empty($_SESSION['usuario_id'])
   <!-- title es el texto que aparece en la pestaña del navegador. -->
   <title>Cómo funciona — SGDM</title>
   <!-- styles.css guarda todos los estilos visuales del sitio. -->
-  <link rel="stylesheet" href="styles.css?v=25" />
+  <link rel="stylesheet" href="styles.css?v=29" />
   <!-- Font Awesome aporta los iconos usados en botones, tarjetas y menus. -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 </head>
@@ -189,13 +189,13 @@ $puedeCrearTorneo = !empty($_SESSION['usuario_id'])
         <div class="cf-rol">
           <div class="cf-rol-icon estado-verde"><i class="fa-solid fa-crown"></i></div>
           <h3 class="cf-rol-titulo">Organizador</h3>
-          <p class="cf-rol-desc">Puede crear y gestionar sus propios torneos, cargar resultados y administrar participantes.</p>
+          <p class="cf-rol-desc">Gestiona los torneos que el administrador le asigna: genera el fixture, carga y corrige resultados y hace avanzar las rondas.</p>
         </div>
 
         <div class="cf-rol">
           <div class="cf-rol-icon estado-rojo"><i class="fa-solid fa-shield"></i></div>
           <h3 class="cf-rol-titulo">Administrador</h3>
-          <p class="cf-rol-desc">Control total del sistema. Gestiona usuarios, torneos, módulos y configuración general.</p>
+          <p class="cf-rol-desc">Crea los torneos y se los asigna a un organizador. Gestiona usuarios, supervisa los torneos y revisa el historial de auditoría.</p>
         </div>
 
       </div>
@@ -250,7 +250,7 @@ $puedeCrearTorneo = !empty($_SESSION['usuario_id'])
             <span>¿Cuántos participantes puede tener un torneo?</span>
             <i class="fa-solid fa-chevron-down faq-flecha"></i>
           </summary>
-          <p class="faq-respuesta">El organizador define el máximo de participantes al crear el torneo, con un límite de hasta 512 equipos o jugadores.</p>
+          <p class="faq-respuesta">El máximo de participantes se define al crear el torneo (lo crea el administrador), con un límite de hasta 512 equipos o jugadores.</p>
         </details>
 
         <details class="faq-item">
@@ -266,7 +266,7 @@ $puedeCrearTorneo = !empty($_SESSION['usuario_id'])
             <span>¿Cómo se cargan los resultados?</span>
             <i class="fa-solid fa-chevron-down faq-flecha"></i>
           </summary>
-          <p class="faq-respuesta">El organizador del torneo es quien tiene permiso para cargar y confirmar los resultados de cada enfrentamiento desde el panel del torneo.</p>
+          <p class="faq-respuesta">El organizador asignado al torneo (o el administrador) carga los resultados desde el panel del torneo, y también puede corregirlos si hubo un error.</p>
         </details>
 
       </div>
@@ -300,6 +300,6 @@ $puedeCrearTorneo = !empty($_SESSION['usuario_id'])
     </div>
   </footer>
 
-<script src="script.js?v=25"></script>
+<script src="script.js?v=28"></script>
 </body>
 </html>

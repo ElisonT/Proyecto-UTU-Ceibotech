@@ -2,9 +2,18 @@
 session_start();
 require_once __DIR__ . '/app/Helpers/manejador_errores.php';
 require_once __DIR__ . '/app/Helpers/roles.php';
+require_once __DIR__ . '/app/Helpers/texto.php';
+require_once __DIR__ . '/app/Models/Torneo.php';
 
 $puedeCrearTorneo = !empty($_SESSION['usuario_id'])
     && in_array((int) ($_SESSION['usuario_rol'] ?? 0), [ROL_ADMINISTRADOR], true);
+
+// Torneos activos de la portada: los 6 más recientes que están en curso o con inscripciones abiertas.
+$torneosPortada = array_slice(array_values(array_filter(
+    (new Torneo())->listarParaBusqueda(),
+    fn ($t) => $t['estado'] !== 'finalizado'
+)), 0, 6);
+$etiquetaFormatoPortada = ['liga' => 'Liga', 'eliminacion' => 'Eliminación directa', 'suizo' => 'Sistema suizo'];
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -27,7 +36,7 @@ $puedeCrearTorneo = !empty($_SESSION['usuario_id'])
   <!-- title es el texto que aparece en la pestaña del navegador. -->
   <title>Sistema de Gestión Deportiva Modular</title>
   <!-- styles.css guarda todos los estilos visuales del sitio. -->
-  <link rel="stylesheet" href="styles.css?v=25" />
+  <link rel="stylesheet" href="styles.css?v=29" />
   <!-- Font Awesome aporta los iconos usados en botones, tarjetas y menus. -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 </head>
@@ -55,16 +64,24 @@ $puedeCrearTorneo = !empty($_SESSION['usuario_id'])
        HERO: primera seccion visible de la pagina de inicio.
        Presenta el objetivo del sistema y los botones principales.
        ===================== -->
-  <section class="hero">
-    <h1>Gestioná cualquier competencia desde un solo lugar</h1>
-    <p>Torneos deportivos, mentales y electrónicos. Liga, eliminación directa o sistema suizo.</p>
-    <div class="hero-actions">
-      <a href="busqueda.php" class="btn-primary btn-lg">Explorar torneos</a>
-      <?php if ($puedeCrearTorneo): ?>
-        <a href="crear-torneo.php" class="btn btn-lg">Crear torneo</a>
-      <?php else: ?>
-        <a href="busqueda.php" class="btn btn-lg">Unirse a torneos</a>
-      <?php endif; ?>
+  <section class="hero hero-con-imagen">
+    <div class="hero-texto">
+      <h1>Gestioná cualquier competencia desde un solo lugar</h1>
+      <p>Torneos deportivos, mentales y electrónicos. Liga, eliminación directa o sistema suizo.</p>
+      <div class="hero-actions">
+        <a href="busqueda.php" class="btn-primary btn-lg">Explorar torneos</a>
+        <?php if ($puedeCrearTorneo): ?>
+          <a href="crear-torneo.php" class="btn btn-lg">Crear torneo</a>
+        <?php else: ?>
+          <a href="busqueda.php" class="btn btn-lg">Unirse a torneos</a>
+        <?php endif; ?>
+      </div>
+    </div>
+    <!-- Ilustración propia (SVG): liviana, se ve nítida en cualquier pantalla y no depende de derechos de autor.
+         width/height evitan que la página "salte" mientras carga; alt describe la imagen para lectores de pantalla. -->
+    <div class="hero-imagen">
+      <img src="Imagenes/hero-torneo.svg" width="560" height="420" fetchpriority="high" decoding="async"
+           alt="Ilustración de un cuadro de torneo con cuatro participantes que avanza hasta un trofeo dorado sobre un podio" />
     </div>
   </section>
 
@@ -213,38 +230,25 @@ $puedeCrearTorneo = !empty($_SESSION['usuario_id'])
       </button>
       <div class="tarjetas-carrusel">
 
-        <a href="detalle.php?id=1" class="card card-link">
-          <div class="card-sport"><i class="fa-solid fa-futbol"></i> Fútbol</div>
-          <div class="card-name">Mundialito 2026</div>
-          <div class="card-meta">
-            <div class="card-row"><i class="fa-solid fa-users"></i> 8 equipos</div>
-            <div class="card-row"><i class="fa-solid fa-calendar"></i> Inicia 20 jun</div>
-            <div class="card-row"><i class="fa-solid fa-chart-bar"></i> Liga</div>
-          </div>
-          <span class="badge estado-naranja">En curso — Fecha 1</span>
-        </a>
-
-        <a href="detalle.php?id=2" class="card card-link">
-          <div class="card-sport"><i class="fa-solid fa-chess"></i> Ajedrez</div>
-          <div class="card-name">Torneo de ajedrez</div>
-          <div class="card-meta">
-            <div class="card-row"><i class="fa-solid fa-users"></i> 128 participantes</div>
-            <div class="card-row"><i class="fa-solid fa-calendar"></i> Inicia 28 jul</div>
-            <div class="card-row"><i class="fa-solid fa-chart-bar"></i> Sistema suizo</div>
-          </div>
-          <span class="badge estado-verde">Inscripciones abiertas</span>
-        </a>
-
-        <a href="detalle.php?id=3" class="card card-link">
-          <div class="card-sport"><i class="fa-solid fa-gamepad"></i> Videojuegos</div>
-          <div class="card-name">CS:2 Gaming Cup</div>
-          <div class="card-meta">
-            <div class="card-row"><i class="fa-solid fa-users"></i> 16 equipos</div>
-            <div class="card-row"><i class="fa-solid fa-calendar"></i> 20 jul</div>
-            <div class="card-row"><i class="fa-solid fa-chart-bar"></i> Eliminación directa</div>
-          </div>
-          <span class="badge estado-rojo">Finalizado</span>
-        </a>
+        <?php if (empty($torneosPortada)): ?>
+          <p class="tabla-sin-datos">Todavía no hay torneos activos. <a href="busqueda.php">Mirá todos los torneos</a>.</p>
+        <?php endif; ?>
+        <?php foreach ($torneosPortada as $t): ?>
+          <a href="detalle.php?id=<?= (int) $t['id'] ?>" class="card card-link">
+            <div class="card-sport"><i class="fa-solid fa-trophy"></i> <?= escapar($t['deporte']) ?></div>
+            <div class="card-name"><?= escapar($t['nombre']) ?></div>
+            <div class="card-meta">
+              <div class="card-row"><i class="fa-solid fa-users"></i> <?= (int) $t['cantidad_participantes'] ?> <?= $t['modalidad'] === 'individual' ? 'participantes' : 'equipos' ?></div>
+              <div class="card-row"><i class="fa-solid fa-calendar"></i> <?= !empty($t['fecha_inicio']) ? 'Inicia ' . escapar(date('d/m/Y', strtotime($t['fecha_inicio']))) : 'Sin fecha de inicio' ?></div>
+              <div class="card-row"><i class="fa-solid fa-chart-bar"></i> <?= escapar($etiquetaFormatoPortada[$t['formato']] ?? $t['formato']) ?></div>
+            </div>
+            <?php if ($t['estado'] === 'en_curso'): ?>
+              <span class="badge estado-naranja">En curso</span>
+            <?php else: ?>
+              <span class="badge estado-verde">Inscripciones abiertas</span>
+            <?php endif; ?>
+          </a>
+        <?php endforeach; ?>
 
       </div>
       <button class="carrusel-flecha" data-carrusel-dir="1" aria-label="Ver más torneos">
@@ -345,6 +349,6 @@ $puedeCrearTorneo = !empty($_SESSION['usuario_id'])
     </div>
   </footer>
 
-<script src="script.js?v=25"></script>
+<script src="script.js?v=28"></script>
 </body>
 </html>

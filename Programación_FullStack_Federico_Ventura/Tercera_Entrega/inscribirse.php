@@ -9,6 +9,8 @@
  */
 session_start();
 require_once __DIR__ . '/app/Helpers/manejador_errores.php';
+require_once __DIR__ . '/app/Helpers/csrf.php';
+exigirCsrf('busqueda.php');
 require_once __DIR__ . '/app/Helpers/roles.php';
 require_once __DIR__ . '/app/Controllers/InscripcionController.php';
 

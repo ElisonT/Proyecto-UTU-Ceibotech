@@ -20,15 +20,21 @@ require_once __DIR__ . '/../Models/Torneo.php';
 
 class CompetenciaController
 {
+    private PDO $conexion;
     private Enfrentamiento $modeloEnfrentamiento;
     private TablaPosiciones $modeloPosiciones;
+    private Torneo $modeloTorneo;
     private Auditoria $auditoria;
 
     public function __construct()
     {
-        $this->modeloEnfrentamiento = new Enfrentamiento();
-        $this->modeloPosiciones     = new TablaPosiciones();
-        $this->auditoria            = new Auditoria();
+        // Una sola conexión compartida por los modelos de competencia: así cargar o
+        // corregir un resultado (resultado + tabla + campeón) se hace en una transacción.
+        $this->conexion              = obtenerConexion();
+        $this->modeloEnfrentamiento  = new Enfrentamiento($this->conexion);
+        $this->modeloPosiciones      = new TablaPosiciones($this->conexion);
+        $this->modeloTorneo          = new Torneo($this->conexion);
+        $this->auditoria             = new Auditoria();
     }
 
     /**
@@ -175,8 +181,7 @@ class CompetenciaController
         }
 
         if (count($ganadores) === 1) {
-            require_once __DIR__ . '/../Models/Torneo.php';
-            (new Torneo())->finalizar($torneoId, $ganadores[0]);
+            $this->modeloTorneo->finalizar($torneoId, $ganadores[0]);
             $this->auditoria->registrar(
                 $actorId, 'FINALIZACION_TORNEO', 'torneos', $torneoId,
                 "Campeón: inscripción #{$ganadores[0]}"
@@ -214,68 +219,179 @@ class CompetenciaController
     /**
      * Carga el resultado de un enfrentamiento y actualiza la tabla de posiciones.
      * En eliminación directa no se aceptan empates (alguien tiene que avanzar).
+     * Todo ocurre en una transacción: o se guarda completo o no se guarda nada.
      *
      * @return string[] Lista de errores. Vacía si se cargó bien.
      */
     public function cargarResultado(int $enfrentamientoId, int $puntajeLocal, int $puntajeVisitante, int $actorId): array
     {
-        $enf = $this->modeloEnfrentamiento->obtenerConFormato($enfrentamientoId);
-        if (!$enf) {
-            return ['El enfrentamiento no existe.'];
+        $info = null;
+        $errores = $this->enTransaccion(function () use ($enfrentamientoId, $puntajeLocal, $puntajeVisitante, &$info) {
+            $enf = $this->modeloEnfrentamiento->obtenerConFormato($enfrentamientoId, true);
+            if (!$enf) {
+                return ['El enfrentamiento no existe.'];
+            }
+            if ((int) $enf['tiene_resultado'] > 0) {
+                return ['Este enfrentamiento ya tiene resultado cargado.'];
+            }
+            if ($enf['torneo_estado'] !== 'en_curso') {
+                return ['El torneo no está en curso.'];
+            }
+            if ($errores = $this->validarMarcador($enf, $puntajeLocal, $puntajeVisitante)) {
+                return $errores;
+            }
+
+            $ganadorId = $this->ganadorDe($enf, $puntajeLocal, $puntajeVisitante);
+            $this->modeloEnfrentamiento->guardarResultado($enfrentamientoId, $puntajeLocal, $puntajeVisitante, $ganadorId);
+            $this->modeloPosiciones->recalcularDesdeResultados((int) $enf['torneo_id'], $enf['formato']);
+
+            // Liga: cuando no queda ningún partido sin resultado, el torneo se cierra solo.
+            if ($enf['formato'] === 'liga'
+                && $this->modeloEnfrentamiento->contarPendientesTorneo((int) $enf['torneo_id']) === 0) {
+                $campeonId = $this->campeonPorTabla((int) $enf['torneo_id']);
+                $this->modeloTorneo->finalizar((int) $enf['torneo_id'], $campeonId);
+                $info = ['campeon' => $campeonId];
+            }
+            $info['torneo_id'] = (int) $enf['torneo_id'];
+            return [];
+        });
+
+        if (empty($errores)) {
+            $this->auditoria->registrar($actorId, 'CARGA_RESULTADO', 'enfrentamientos', $enfrentamientoId,
+                "Resultado {$puntajeLocal} - {$puntajeVisitante}");
+            if (!empty($info['campeon'])) {
+                $this->auditoria->registrar($actorId, 'FINALIZACION_TORNEO', 'torneos', $info['torneo_id'],
+                    "Campeón: inscripción #{$info['campeon']}");
+            }
         }
-        if ((int) $enf['tiene_resultado'] > 0) {
-            return ['Este enfrentamiento ya tiene resultado cargado.'];
+        return $errores;
+    }
+
+    /**
+     * Corrige un resultado que ya estaba cargado (letra: el Administrador y el
+     * Organizador pueden corregir resultados). Reglas para no romper el torneo:
+     *  - Si lo que cambia es solo el marcador pero gana el mismo (o sigue el empate),
+     *    siempre se puede: nada de lo que se armó después depende de eso.
+     *  - Si cambia quién gana (o pasa de empate a victoria) y ya se generó la ronda
+     *    siguiente en eliminación o suizo, NO se puede: esa ronda se emparejó con el
+     *    resultado viejo. En liga siempre se puede, porque no hay rondas que dependan.
+     * Si el torneo ya estaba finalizado, se vuelve a determinar el campeón.
+     *
+     * @return string[] Lista de errores. Vacía si se corrigió bien.
+     */
+    public function corregirResultado(int $enfrentamientoId, int $puntajeLocal, int $puntajeVisitante, int $actorId): array
+    {
+        $detalle = '';
+        $errores = $this->enTransaccion(function () use ($enfrentamientoId, $puntajeLocal, $puntajeVisitante, $actorId, &$detalle) {
+            $enf = $this->modeloEnfrentamiento->obtenerConFormato($enfrentamientoId, true);
+            if (!$enf) {
+                return ['El enfrentamiento no existe.'];
+            }
+            $viejo = $this->modeloEnfrentamiento->obtenerResultado($enfrentamientoId);
+            if (!$viejo) {
+                return ['Este enfrentamiento todavía no tiene resultado para corregir.'];
+            }
+            if ($errores = $this->validarMarcador($enf, $puntajeLocal, $puntajeVisitante)) {
+                return $errores;
+            }
+
+            $torneoId    = (int) $enf['torneo_id'];
+            $ganadorNuevo = $this->ganadorDe($enf, $puntajeLocal, $puntajeVisitante);
+            $ganadorViejo = $viejo['inscripcion_ganadora_id'] === null ? null : (int) $viejo['inscripcion_ganadora_id'];
+
+            if ((int) $viejo['puntaje_local'] === $puntajeLocal && (int) $viejo['puntaje_visitante'] === $puntajeVisitante) {
+                return ['El marcador es el mismo que ya estaba cargado.'];
+            }
+
+            $cambiaGanador = $ganadorNuevo !== $ganadorViejo;
+            if ($cambiaGanador && in_array($enf['formato'], ['eliminacion', 'suizo'], true)
+                && $this->modeloEnfrentamiento->existeRondaPosterior($torneoId, (int) $enf['ronda_numero'])) {
+                return ['No se puede cambiar quién ganó: la ronda siguiente ya se armó con el resultado anterior. '
+                      . 'Sí podés corregir el marcador si gana el mismo.'];
+            }
+
+            $this->modeloEnfrentamiento->actualizarResultado($enfrentamientoId, $puntajeLocal, $puntajeVisitante, $ganadorNuevo, $actorId);
+            $this->modeloPosiciones->recalcularDesdeResultados($torneoId, $enf['formato']);
+
+            // Si el torneo ya tenía campeón, puede haber cambiado.
+            if ($enf['torneo_estado'] === 'finalizado' && $cambiaGanador) {
+                $campeonId = $enf['formato'] === 'eliminacion'
+                    ? $this->campeonEliminacion($torneoId)
+                    : $this->campeonPorTabla($torneoId);
+                $this->modeloTorneo->finalizar($torneoId, $campeonId);
+                $detalle = " (campeón del torneo: inscripción #{$campeonId})";
+            }
+
+            $detalle = "Resultado {$viejo['puntaje_local']} - {$viejo['puntaje_visitante']} corregido a "
+                     . "{$puntajeLocal} - {$puntajeVisitante}" . $detalle;
+            return [];
+        });
+
+        if (empty($errores)) {
+            $this->auditoria->registrar($actorId, 'CORRECCION_RESULTADO', 'enfrentamientos', $enfrentamientoId, $detalle);
         }
+        return $errores;
+    }
+
+    /** Validaciones de marcador comunes a cargar y corregir. */
+    private function validarMarcador(array $enf, int $local, int $visitante): array
+    {
         if ($enf['inscripcion_visitante_id'] === null) {
             return ['Un bye no se juega, no lleva resultado.'];
         }
-        if ($puntajeLocal < 0 || $puntajeVisitante < 0) {
+        if ($local < 0 || $visitante < 0) {
             return ['Los puntajes no pueden ser negativos.'];
         }
-        if ($puntajeLocal === $puntajeVisitante && $enf['formato'] === 'eliminacion') {
+        if ($local === $visitante && $enf['formato'] === 'eliminacion') {
             return ['En eliminación directa no puede haber empate.'];
         }
-
-        $localId     = (int) $enf['inscripcion_local_id'];
-        $visitanteId = (int) $enf['inscripcion_visitante_id'];
-
-        $ganadorId = null;
-        if ($puntajeLocal > $puntajeVisitante) {
-            $ganadorId = $localId;
-        } elseif ($puntajeVisitante > $puntajeLocal) {
-            $ganadorId = $visitanteId;
-        }
-
-        $this->modeloEnfrentamiento->guardarResultado($enfrentamientoId, $puntajeLocal, $puntajeVisitante, $ganadorId);
-
-        if ($ganadorId === null) {
-            $this->modeloPosiciones->registrarResultado($localId, 'empatado');
-            $this->modeloPosiciones->registrarResultado($visitanteId, 'empatado');
-        } else {
-            $perdedorId = ($ganadorId === $localId) ? $visitanteId : $localId;
-            $this->modeloPosiciones->registrarResultado($ganadorId, 'ganado');
-            $this->modeloPosiciones->registrarResultado($perdedorId, 'perdido');
-        }
-        $this->modeloPosiciones->recalcularPosiciones((int) $enf['torneo_id']);
-
-        $this->auditoria->registrar(
-            $actorId, 'CARGA_RESULTADO', 'enfrentamientos', $enfrentamientoId,
-            "Resultado {$puntajeLocal} - {$puntajeVisitante}"
-        );
-
-        // Liga: cuando no queda ningún partido sin resultado, el torneo se cierra solo.
-        if ($enf['formato'] === 'liga'
-            && $this->modeloEnfrentamiento->contarPendientesTorneo((int) $enf['torneo_id']) === 0) {
-            $tabla     = $this->modeloPosiciones->listarPorTorneo((int) $enf['torneo_id']);
-            $campeonId = (int) $tabla[0]['inscripcion_id'];
-            (new Torneo())->finalizar((int) $enf['torneo_id'], $campeonId);
-            $this->auditoria->registrar(
-                $actorId, 'FINALIZACION_TORNEO', 'torneos', (int) $enf['torneo_id'],
-                "Campeón: inscripción #{$campeonId}"
-            );
-        }
-
         return [];
+    }
+
+    /** Inscripción ganadora según el marcador (null = empate). */
+    private function ganadorDe(array $enf, int $local, int $visitante): ?int
+    {
+        if ($local > $visitante) {
+            return (int) $enf['inscripcion_local_id'];
+        }
+        if ($visitante > $local) {
+            return (int) $enf['inscripcion_visitante_id'];
+        }
+        return null;
+    }
+
+    private function campeonPorTabla(int $torneoId): int
+    {
+        $tabla = $this->modeloPosiciones->listarPorTorneo($torneoId);
+        return (int) $tabla[0]['inscripcion_id'];
+    }
+
+    /** Campeón de eliminación: el ganador del único partido de la última ronda. */
+    private function campeonEliminacion(int $torneoId): int
+    {
+        $ronda     = $this->modeloEnfrentamiento->obtenerRondaPorNumero($torneoId, $this->modeloEnfrentamiento->obtenerUltimaRonda($torneoId));
+        $ganadores = $this->modeloEnfrentamiento->obtenerGanadoresDeRonda((int) $ronda['id']);
+        return (int) $ganadores[0];
+    }
+
+    /** Ejecuta $operacion en una transacción; si devuelve errores o lanza una excepción, deshace todo. */
+    private function enTransaccion(callable $operacion): array
+    {
+        $this->conexion->beginTransaction();
+        try {
+            $errores = $operacion();
+            if (empty($errores)) {
+                $this->conexion->commit();
+            } else {
+                $this->conexion->rollBack();
+            }
+            return $errores;
+        } catch (Throwable $error) {
+            if ($this->conexion->inTransaction()) {
+                $this->conexion->rollBack();
+            }
+            throw $error;
+        }
     }
 
     /**
@@ -339,8 +455,7 @@ class CompetenciaController
             $tabla = $this->modeloPosiciones->listarPorTorneo($torneoId);
             $campeonId = (int) $tabla[0]['inscripcion_id'];
 
-            require_once __DIR__ . '/../Models/Torneo.php';
-            (new Torneo())->finalizar($torneoId, $campeonId);
+            $this->modeloTorneo->finalizar($torneoId, $campeonId);
             $this->auditoria->registrar(
                 $actorId, 'FINALIZACION_TORNEO', 'torneos', $torneoId,
                 "Campeón: inscripción #{$campeonId}"
@@ -426,8 +541,7 @@ class CompetenciaController
 
         if ($bye !== null) {
             $this->modeloEnfrentamiento->crearBye($rondaId, $bye);
-            $this->modeloPosiciones->registrarResultado($bye, 'ganado');
-            $this->modeloPosiciones->recalcularPosiciones($torneoId);
+            $this->modeloPosiciones->recalcularDesdeResultados($torneoId, 'suizo');
         }
     }
 
@@ -473,7 +587,7 @@ class CompetenciaController
      */
     public function generarFixture(int $torneoId, int $actorId): array
     {
-        $modeloTorneo = new Torneo();
+        $modeloTorneo = $this->modeloTorneo;
         $torneo = $modeloTorneo->obtenerPorId($torneoId);
         if (!$torneo) {
             return ['El torneo no existe.'];
@@ -503,7 +617,7 @@ class CompetenciaController
      */
     public function avanzarRonda(int $torneoId, int $actorId): array
     {
-        $torneo = (new Torneo())->obtenerPorId($torneoId);
+        $torneo = $this->modeloTorneo->obtenerPorId($torneoId);
         if (!$torneo) {
             return ['El torneo no existe.'];
         }

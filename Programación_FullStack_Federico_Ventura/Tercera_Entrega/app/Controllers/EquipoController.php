@@ -22,7 +22,7 @@ class EquipoController
     }
 
     /** @return string[] Lista de errores. Vacía si salió bien. */
-    public function crear(string $nombreEquipo, int $usuarioId, int $deporteId): array
+    public function crear(string $nombreEquipo, int $usuarioId, int $deporteId, ?string $deporteOtro = null, ?int $jugadoresOtro = null): array
     {
         if ($deporteId <= 0) {
             return ['Elegí el deporte para el que es el equipo.'];
@@ -35,7 +35,7 @@ class EquipoController
         }
 
         return $this->ejecutar(
-            fn () => $this->modelo->crear($nombreEquipo, $usuarioId, $deporteId),
+            fn () => $this->modelo->crear($nombreEquipo, $usuarioId, $deporteId, $deporteOtro, $jugadoresOtro),
             $usuarioId, 'CREACION_EQUIPO', "Equipo '{$nombreEquipo}' (deporte #{$deporteId})"
         );
     }

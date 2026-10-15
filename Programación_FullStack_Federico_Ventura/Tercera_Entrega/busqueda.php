@@ -4,8 +4,18 @@ require_once __DIR__ . '/app/Helpers/manejador_errores.php';
 require_once __DIR__ . '/app/Helpers/roles.php';
 require_once __DIR__ . '/app/Helpers/texto.php';
 require_once __DIR__ . '/app/Models/Torneo.php';
+require_once __DIR__ . '/app/Models/Deporte.php';
+require_once __DIR__ . '/app/Helpers/inscripcion_fechas.php';
 
 $torneos = (new Torneo())->listarParaBusqueda();
+// Juegos escritos a mano en torneos "Otro": no están en la lista fija del filtro, así que se agregan.
+$nombresCatalogo = array_map(fn ($d) => mb_strtolower($d['nombre']), (new Deporte())->listarTodos());
+$deportesPersonalizados = array_values(array_unique(array_filter(
+    array_column($torneos, 'deporte'),
+    fn ($nombre) => !in_array(mb_strtolower($nombre), $nombresCatalogo, true)
+)));
+sort($deportesPersonalizados);
+
 $etiquetasFormato = ['liga' => 'Liga', 'eliminacion' => 'Eliminación directa', 'suizo' => 'Sistema suizo'];
 $etiquetasEstado  = [
     'inscripciones_abiertas' => ['texto' => 'Inscripciones abiertas', 'clase' => 'estado-verde'],
@@ -42,7 +52,7 @@ $puedeCrearTorneo = !empty($_SESSION['usuario_id'])
   <!-- title es el texto que aparece en la pestaña del navegador. -->
   <title>Buscar torneos — SGDM</title>
   <!-- styles.css guarda todos los estilos visuales del sitio. -->
-  <link rel="stylesheet" href="styles.css?v=26" />
+  <link rel="stylesheet" href="styles.css?v=29" />
   <!-- Font Awesome aporta los iconos usados en botones, tarjetas y menus. -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 </head>
@@ -93,6 +103,7 @@ $puedeCrearTorneo = !empty($_SESSION['usuario_id'])
               <option>Fútbol 5</option>
               <option>Básquetbol</option>
               <option>Tenis</option>
+              <option>Tenis dobles</option>
               <option>Pádel</option>
               <option>Ping pong</option>
             </optgroup>
@@ -111,6 +122,13 @@ $puedeCrearTorneo = !empty($_SESSION['usuario_id'])
             <optgroup label="Otro">
               <option>Otro</option>
             </optgroup>
+            <?php if (!empty($deportesPersonalizados)): ?>
+              <optgroup label="Otros juegos">
+                <?php foreach ($deportesPersonalizados as $nombreDeporte): ?>
+                  <option><?= escapar($nombreDeporte) ?></option>
+                <?php endforeach; ?>
+              </optgroup>
+            <?php endif; ?>
           </select>
         </div>
 
@@ -151,9 +169,20 @@ $puedeCrearTorneo = !empty($_SESSION['usuario_id'])
       $estado   = $etiquetasEstado[$t['estado']];
       $formato  = $etiquetasFormato[$t['formato']];
       $unidad   = $t['modalidad'] === 'individual' ? 'participantes' : 'equipos';
-      $fechaTxt = $t['estado'] === 'finalizado'
-          ? 'Finalizado'
-          : formatearFecha($t['fecha_inicio']);
+      if ($t['estado'] === 'finalizado') {
+          $fechaTxt = 'Finalizado';
+      } elseif ($t['estado'] === 'inscripciones_abiertas') {
+          $ventana  = ventanaDeInscripcion($t);
+          $fechaTxt = match ($ventana['estado']) {
+              'cerrada'  => 'Inscripción cerrada',
+              'no_abrio' => 'Abre el ' . formatearFecha($ventana['abre']),
+              default    => $ventana['cierra'] !== null
+                  ? 'Inscripción hasta el ' . formatearFecha($ventana['cierra'])
+                  : formatearFecha($t['fecha_inicio']),
+          };
+      } else {
+          $fechaTxt = formatearFecha($t['fecha_inicio']);
+      }
     ?>
     <a href="detalle.php?id=<?= (int) $t['id'] ?>" class="resultado-card"
        data-deporte="<?= escapar($t['deporte']) ?>"
@@ -212,6 +241,6 @@ $puedeCrearTorneo = !empty($_SESSION['usuario_id'])
     </div>
   </footer>
 
-<script src="script.js?v=26"></script>
+<script src="script.js?v=28"></script>
 </body>
 </html>

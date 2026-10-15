@@ -3759,19 +3759,20 @@ a.nav-logo {
   color: inherit;
 }
 /* =====================================================
-   RESPONSIVE — SIEMPRE AL FINAL DEL ARCHIVO
+   RESPONSIVE (Mobile First) - SIEMPRE AL FINAL DEL ARCHIVO
 
-   Importante: estos bloques @media deben ir despues de
-   TODAS las demas reglas del archivo. En CSS, si dos
-   reglas tienen la misma "fuerza" (misma especificidad),
-   gana la que esta escrita mas abajo, sin importar si
-   esta dentro de un @media o no. Si este bloque se movi-
-   era mas arriba, cualquier regla de escritorio definida
-   despues le volveria a ganar a estas reglas mobile.
+   Las reglas siguientes, sin @media, son las del CELULAR: se
+   aplican a todos los anchos de pantalla. Debajo, los bloques
+   @media (min-width: ...) restauran el aspecto de tablet y de
+   escritorio a medida que la pantalla crece. Es decir: se parte
+   del celular y se va agregando, que es lo que define a Mobile First.
+
+   Importante: este bloque debe ir despues de TODAS las demas
+   reglas base. Si dos reglas tienen la misma "fuerza" (misma
+   especificidad), gana la que esta escrita mas abajo.
    ===================================================== */
 
-@media (max-width: 600px) {
-
+/* --- Celular (valores por defecto) --- */
   .nav { padding: 0 1rem; }
 
   /* En mobile, el panel pasa de "tarjeta angosta anclada a la derecha" a ocupar todo el ancho */
@@ -3867,9 +3868,7 @@ a.nav-logo {
   .admin-tabla-fila,
   .admin-tabla-header { grid-template-columns: 1fr auto auto; }
   .admin-acciones { display: none; }
-}
 
-@media (max-width: 900px) {
   .admin-body { flex-direction: column; }
 
   .admin-sidebar-toggle { display: flex; }
@@ -3891,7 +3890,91 @@ a.nav-logo {
   .admin-main { margin-left: 0; padding: 1rem; padding-top: 4.5rem; }
   .admin-stats { grid-template-columns: repeat(2, 1fr); }
   .admin-fila { grid-template-columns: 1fr; }
+
+/* --- Tablet y mayores: desde 601 px --- */
+@media (min-width: 601px) {
+  .nav { padding: 0 2rem; }
+  .nav-links { top: calc(100% + 8px); left: revert; right: 1rem; width: 260px; border-radius: 14px; }
+  .nav-links.active { max-height: 480px; }
+  .tipos { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+  .form-row { grid-template-columns: 1fr 1fr; }
+  .editar-fila { grid-template-columns: 1fr 1fr; }
+  .crear-fila { grid-template-columns: 1fr 1fr; }
+  .radio-group { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+  .cf-formatos { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+  .cf-roles { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+  .search-box { flex-direction: revert; }
+  .search-selects { flex-direction: revert; }
+  .busqueda-barra { flex-direction: revert; }
+  .crear-acciones { flex-direction: revert; }
+  .detalle-hero-content { flex-direction: revert; }
+  .perfil-main { padding: 2rem; }
+  .crear-main { padding: 2rem; }
+  .cf-main { padding: 2rem; }
+  .detalle-hero { padding: 1.5rem 2rem 2rem; }
+  .detalle-main { padding: 1.5rem 2rem 2rem; }
+  .hero h1 { font-size: 30px; }
+  .carrusel-flecha { display: flex; }
+  .tarjetas-carrusel .card { flex: 0 0 260px; }
+  .cta { margin: 0 auto 2rem; }
+  .section { padding: 2rem; }
+  .cf-seccion { padding: 2.5rem 2rem; }
+  .auth-card { padding: 2.5rem 2rem; }
+  .perfil-header { flex-direction: revert; align-items: center; }
+  .btn-editar { align-self: flex-start; justify-content: center; }
+  .perfil-stats { grid-template-columns: repeat(4, 1fr); }
+  .pstat:nth-child(2) { border-right: 1px solid var(--color-border); }
+  .pstat:nth-child(3) { border-top: revert; }
+  .pstat:nth-child(4) { border-top: revert; }
+  .historial-header { grid-template-columns: 2fr 1fr 80px 120px; }
+  .historial-fila { grid-template-columns: 2fr 1fr 80px 120px; }
+  .historial-header span:nth-child(2) { display: revert; }
+  .historial-header span:nth-child(3) { display: revert; }
+  .historial-fila .historial-formato { display: revert; }
+  .historial-fila .historial-pos { display: revert; }
+  .busqueda-header { padding: 2rem 2rem 1.25rem; }
+  .busqueda-main { margin: 1.5rem auto 2rem; }
+  .filtro-select { min-width: 160px; }
+  .resultado-card { flex-wrap: revert; gap: 1.5rem; padding: 1.25rem 1.5rem; }
+  .resultado-img { width: 90px; height: 90px; font-size: 32px; }
+  .resultado-accion { flex-direction: column; align-items: flex-end; justify-content: revert; width: revert; }
+  .crear-acciones .btn { width: revert; text-align: revert; justify-content: center; }
+  .crear-acciones .btn-primary { width: revert; text-align: revert; justify-content: center; }
+  .crear-acciones #btnPasoSiguiente { margin-left: auto; }
+  .crear-acciones #btnPublicarTorneo { margin-left: auto; }
+  .crear-step-label { display: revert; }
+  .crear-stepper::before { left: 30px; right: 30px; }
+  .crear-step-circulo { width: 32px; height: 32px; font-size: 13px; }
+  .cf-hero { padding: 3.5rem 2rem; }
+  .cf-hero-logo { height: 90px; }
+  .cf-hero-titulo { font-size: 26px; }
+  .cf-pasos { flex-direction: revert; align-items: flex-start; flex-wrap: wrap; width: revert; min-width: revert; }
+  .cf-paso-flecha { transform: revert; padding-top: 3rem; }
+  .cf-paso { max-width: 220px; min-width: 160px; width: revert; }
+  .detalle-hero-img { width: 100px; height: 100px; font-size: 38px; }
+  .detalle-titulo { font-size: 26px; }
+  .detalle-hero-accion { flex-direction: column; align-items: flex-end; width: revert; justify-content: revert; }
+  .partido { grid-template-columns: 1fr auto 1fr; gap: 12px; padding: 10px 16px; }
+  .partido-equipo { font-size: 14px; }
+  .participantes-grid { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
+  .admin-tabla-fila { grid-template-columns: 1fr auto auto auto; }
+  .admin-tabla-header { grid-template-columns: 1fr auto auto auto; }
+  .admin-acciones { display: flex; }
+  /* el ultimo indicador no lleva linea a la derecha (misma regla que en la hoja base) */
+  .pstat:last-child { border-right: none; }
 }
+
+/* --- Escritorio: desde 901 px --- */
+@media (min-width: 901px) {
+  .admin-body { flex-direction: column; }
+  .admin-sidebar-toggle { display: none; }
+  .admin-sidebar { position: fixed; top: 0; left: 0; width: 240px; min-height: 100vh; transform: revert; transition: revert; z-index: 100; }
+  .admin-sidebar.open { transform: revert; }
+  .admin-main { margin-left: 240px; padding: 2rem; }
+  .admin-stats { grid-template-columns: repeat(4, 1fr); }
+  .admin-fila { grid-template-columns: 1fr 1fr; }
+}
+
 
 /* ===== Gestión real de torneos (detalle.php) ===== */
 .detalle-aviso {
@@ -3974,4 +4057,64 @@ a.nav-logo {
   font-size: 11px;
   font-weight: 700;
   line-height: 1;
+}
+
+/* ===== Correcciones de resultado (partials/ronda.php) ===== */
+.partido-item { display: flex; flex-direction: column; background: var(--color-surface); }
+.partido-item .partido { margin-bottom: 0; }
+.partido-corregir { margin: 0.25rem 0 0.5rem; text-align: center; font-size: 12px; }
+.partido-corregir summary {
+  display: inline-block; cursor: pointer; list-style: none;
+  color: var(--color-text-muted); padding: 0.15rem 0.5rem; border-radius: 6px;
+}
+.partido-corregir summary::-webkit-details-marker { display: none; }
+.partido-corregir summary:hover { color: #1E5BFF; }
+.partido-corregir[open] .partido-form { margin-top: 0.35rem; }
+.partido-corregido { align-self: center; font-size: 11px; color: var(--color-text-muted); margin-top: 0.15rem; }
+
+/* ===== Panel de administración con datos reales (listas con fetch) ===== */
+.admin-stat-sub { font-size: 12px; font-weight: 500; color: var(--color-text-muted); }
+.panel-filtros { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.5rem 0 1rem; }
+.panel-filtros input,
+.panel-filtros select {
+  flex: 1 1 180px; min-width: 0; padding: 0.5rem 0.7rem;
+  border: 1px solid var(--color-border); border-radius: 8px;
+  font: inherit; background: var(--color-surface); color: inherit;
+}
+.panel-lista { border: 1px solid var(--color-border); border-radius: 10px; overflow: hidden; }
+.panel-fila {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.75rem;
+  padding: 10px 14px; border-bottom: 1px solid var(--color-border);
+}
+.panel-fila:last-child { border-bottom: none; }
+.panel-fila:hover { background: var(--color-bg); }
+.panel-fila-main { flex: 1 1 220px; min-width: 0; display: flex; flex-direction: column; overflow-wrap: anywhere; }
+.panel-lista .tabla-sin-datos { padding: 1rem; margin: 0; }
+.panel-pag { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem; margin-top: 0.75rem; }
+.panel-pag .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* ===== Portada: hero con imagen (Mobile First) ===== */
+.hero-con-imagen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.75rem;
+}
+.hero-con-imagen .hero-texto { width: 100%; }
+.hero-imagen { width: 100%; max-width: 360px; }
+.hero-imagen img { display: block; width: 100%; height: auto; }
+
+@media (min-width: 901px) {
+  .hero-con-imagen {
+    flex-direction: row;
+    justify-content: center;
+    gap: 3rem;
+    padding: 3rem 2rem;
+    text-align: left;
+  }
+  .hero-con-imagen .hero-texto { max-width: 520px; }
+  .hero-con-imagen h1,
+  .hero-con-imagen p { margin-left: 0; margin-right: 0; }
+  .hero-con-imagen .hero-actions { justify-content: flex-start; }
+  .hero-imagen { max-width: 460px; flex-shrink: 0; }
 }

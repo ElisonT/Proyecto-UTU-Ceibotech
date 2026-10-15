@@ -1,6 +1,8 @@
 <?php
 session_start();
 require_once __DIR__ . '/app/Helpers/manejador_errores.php';
+require_once __DIR__ . '/app/Helpers/csrf.php';
+exigirCsrf('asignar-organizador.php');
 require_once __DIR__ . '/app/Helpers/roles.php';
 require_once __DIR__ . '/app/Models/Torneo.php';
 require_once __DIR__ . '/app/Models/Usuario.php';
@@ -48,7 +50,7 @@ $mostrarComoFunciona = false;
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Asignar organizador — SGDM</title>
-  <link rel="stylesheet" href="styles.css?v=25" />
+  <link rel="stylesheet" href="styles.css?v=29" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 </head>
 <body>
@@ -111,7 +113,7 @@ $mostrarComoFunciona = false;
                   <td><?= htmlspecialchars($torneo['nombre']) ?></td>
                   <td><?= htmlspecialchars($torneo['nombre_creador']) ?></td>
                   <td colspan="2">
-                    <form method="post" action="asignar-organizador.php" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                    <form method="post" action="asignar-organizador.php" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;"> <?= campoCsrf() ?>
                       <input type="hidden" name="torneo_id" value="<?= (int) $torneo['id'] ?>" />
                       <select name="organizador_id" class="form-input-p" style="padding:6px 10px; font-size:13px; width:auto;">
                         <option value="">— Sin asignar —</option>
@@ -139,6 +141,6 @@ $mostrarComoFunciona = false;
     </section>
   </main>
 
-<script src="script.js?v=25"></script>
+<script src="script.js?v=28"></script>
 </body>
 </html>

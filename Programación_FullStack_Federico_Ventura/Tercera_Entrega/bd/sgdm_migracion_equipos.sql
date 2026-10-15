@@ -7,9 +7,12 @@
 --     deporte o juego (Fútbol 11 = 11, League of Legends = 5, Truco = 2,
 --     Ajedrez = 1...). jugadores_por_equipo = 1 significa que se juega
 --     de forma individual y no lleva equipos. De acá salen la modalidad
---     del torneo y el tamaño de cada equipo: nadie lo elige a mano.
---   * equipos.deporte_id: cada equipo se crea PARA un deporte y solo
---     puede inscribirse a torneos de ese deporte.
+--     del torneo y el tamaño de cada equipo. La excepción es "Otro"
+--     (es_libre = 1): ahí se escribe el nombre del juego y el tamaño.
+--   * torneos.jugadores_por_equipo y equipos.deporte / jugadores_por_equipo:
+--     copia del tamaño al crear el torneo o el equipo (del catálogo, o lo
+--     que se escribió en "Otro"). Un equipo solo se inscribe a torneos del
+--     mismo deporte y del mismo tamaño.
 --   * equipos.capitan_id: quien creó el equipo. Solo el capitán
 --     invita, saca integrantes, disuelve el equipo e inscribe al
 --     equipo a un torneo.
@@ -30,6 +33,7 @@ CREATE TABLE IF NOT EXISTS deportes (
     nombre               VARCHAR(60)  NOT NULL UNIQUE,   -- es lo que se guarda en torneos.deporte
     categoria            VARCHAR(40)  NOT NULL,
     jugadores_por_equipo INT          NOT NULL DEFAULT 1,
+    es_libre             TINYINT(1)   NOT NULL DEFAULT 0,   -- 1 = "Otro": nombre y tamaño los escribe quien crea el torneo / equipo
     orden                INT          NOT NULL DEFAULT 0
 ) ENGINE=InnoDB;
 
@@ -38,6 +42,7 @@ INSERT IGNORE INTO deportes (codigo, nombre, categoria, jugadores_por_equipo, or
     ('futbol5',      'Fútbol 5',          'Deportes tradicionales',    5,  2),
     ('basquetbol',   'Básquetbol',        'Deportes tradicionales',    5,  3),
     ('tenis',        'Tenis',             'Deportes tradicionales',    1,  4),
+    ('tenis_dobles', 'Tenis dobles',      'Deportes tradicionales',    2,  4),
     ('padel',        'Pádel',             'Deportes tradicionales',    2,  5),
     ('pingpong',     'Ping pong',         'Deportes tradicionales',    1,  6),
     ('ajedrez',      'Ajedrez',           'Juegos de mesa / carta',    1,  7),
@@ -50,9 +55,16 @@ INSERT IGNORE INTO deportes (codigo, nombre, categoria, jugadores_por_equipo, or
     ('rocketleague', 'Rocket League',     'Videojuegos',               3, 14),
     ('otro',         'Otro',              'Otro',                      1, 15);
 
+-- Por si la tabla ya existía de una corrida anterior (sin la columna es_libre).
+ALTER TABLE deportes
+    ADD COLUMN IF NOT EXISTS es_libre TINYINT(1) NOT NULL DEFAULT 0 AFTER jugadores_por_equipo;
+UPDATE deportes SET es_libre = 1 WHERE codigo = 'otro';
+
 ALTER TABLE equipos
     ADD COLUMN IF NOT EXISTS capitan_id INT NULL AFTER nombre_equipo,
-    ADD COLUMN IF NOT EXISTS deporte_id INT NULL AFTER capitan_id;
+    ADD COLUMN IF NOT EXISTS deporte_id INT NULL AFTER capitan_id,
+    ADD COLUMN IF NOT EXISTS deporte VARCHAR(60) NULL AFTER deporte_id,
+    ADD COLUMN IF NOT EXISTS jugadores_por_equipo INT NULL AFTER deporte;
 
 -- Equipos que ya existían (creados con la inscripción anterior): el
 -- capitán es el integrante más antiguo, o sea quien lo creó.
@@ -79,11 +91,18 @@ UPDATE equipos eq
    )
  WHERE eq.deporte_id IS NULL;
 
-ALTER TABLE equipos
-    ADD CONSTRAINT IF NOT EXISTS fk_equipos_capitan FOREIGN KEY (capitan_id) REFERENCES usuarios(id);
+-- Copia del nombre y del tamaño del deporte para los equipos que todavía no la tienen.
+UPDATE equipos eq
+  JOIN deportes d ON d.id = eq.deporte_id
+   SET eq.deporte = d.nombre,
+       eq.jugadores_por_equipo = d.jugadores_por_equipo
+ WHERE eq.deporte IS NULL;
 
 ALTER TABLE equipos
-    ADD CONSTRAINT IF NOT EXISTS fk_equipos_deporte FOREIGN KEY (deporte_id) REFERENCES deportes(id);
+    ADD CONSTRAINT fk_equipos_capitan FOREIGN KEY IF NOT EXISTS (capitan_id) REFERENCES usuarios(id);
+
+ALTER TABLE equipos
+    ADD CONSTRAINT fk_equipos_deporte FOREIGN KEY IF NOT EXISTS (deporte_id) REFERENCES deportes(id);
 
 CREATE TABLE IF NOT EXISTS invitaciones_equipo (
     id               INT AUTO_INCREMENT PRIMARY KEY,
@@ -102,12 +121,19 @@ CREATE TABLE IF NOT EXISTS invitaciones_equipo (
 ) ENGINE=InnoDB;
 
 -- ---------------------------------------------------------
--- Torneos que ya existían: la modalidad pasa a depender del deporte
--- (antes quedaba en 'equipo' por defecto aunque fuera Ajedrez). Solo se
--- corrige en torneos que todavía no tienen ninguna inscripción, para no
--- romper los que ya tienen gente anotada.
+-- Torneos: jugadores_por_equipo (1 = individual). Para los que ya existían
+-- sale del catálogo; después la modalidad se corrige solo en los torneos
+-- que todavía no tienen ninguna inscripción, para no romper los que ya
+-- tienen gente anotada.
 -- ---------------------------------------------------------
+ALTER TABLE torneos
+    ADD COLUMN IF NOT EXISTS jugadores_por_equipo INT NULL AFTER cupos;
+
 UPDATE torneos t
   JOIN deportes d ON d.nombre = t.deporte
-   SET t.modalidad = IF(d.jugadores_por_equipo >= 2, 'equipo', 'individual')
+   SET t.jugadores_por_equipo = d.jugadores_por_equipo
+ WHERE t.jugadores_por_equipo IS NULL;
+
+UPDATE torneos t
+   SET t.modalidad = IF(COALESCE(t.jugadores_por_equipo, 1) >= 2, 'equipo', 'individual')
  WHERE NOT EXISTS (SELECT 1 FROM inscripciones i WHERE i.torneo_id = t.id);

@@ -14,9 +14,10 @@ class TablaPosiciones
 {
     private PDO $conexion;
 
-    public function __construct()
+    public function __construct(?PDO $conexion = null)
     {
-        $this->conexion = obtenerConexion();
+        // Se puede compartir una conexión para trabajar dentro de una misma transacción.
+        $this->conexion = $conexion ?? obtenerConexion();
     }
 
     /** Crea la fila en cero para una inscripción, si todavía no existe. */
@@ -68,6 +69,54 @@ class TablaPosiciones
               WHERE inscripcion_id = :id"
         );
         $consulta->execute(['puntos' => $puntos[$resultado], 'id' => $inscripcionId]);
+    }
+
+    /**
+     * Reconstruye TODA la tabla del torneo a partir de los resultados guardados.
+     * Es lo que se usa al cargar y al corregir un resultado: en vez de sumar y
+     * restar a mano (y arriesgar que la tabla quede desfasada), se vuelve a
+     * contar todo, así la tabla siempre coincide con los resultados.
+     * Un bye cuenta como victoria solo en sistema suizo (en eliminación no hay tabla).
+     */
+    public function recalcularDesdeResultados(int $torneoId, string $formato): void
+    {
+        $this->conexion->prepare(
+            'UPDATE tabla_posiciones tp JOIN inscripciones i ON i.id = tp.inscripcion_id
+                SET tp.puntos = 0, tp.partidos_jugados = 0, tp.partidos_ganados = 0,
+                    tp.partidos_empatados = 0, tp.partidos_perdidos = 0
+              WHERE i.torneo_id = :t'
+        )->execute(['t' => $torneoId]);
+
+        $consulta = $this->conexion->prepare(
+            'SELECT e.inscripcion_local_id AS local_id, e.inscripcion_visitante_id AS visitante_id,
+                    r.inscripcion_ganadora_id AS ganador_id
+               FROM enfrentamientos e
+               JOIN rondas ro ON ro.id = e.ronda_id
+               JOIN resultados r ON r.enfrentamiento_id = e.id
+              WHERE ro.torneo_id = :t'
+        );
+        $consulta->execute(['t' => $torneoId]);
+
+        foreach ($consulta->fetchAll() as $fila) {
+            $local = (int) $fila['local_id'];
+            if ($fila['visitante_id'] === null) {
+                if ($formato === 'suizo') {
+                    $this->registrarResultado($local, 'ganado');
+                }
+                continue;
+            }
+            $visitante = (int) $fila['visitante_id'];
+            if ($fila['ganador_id'] === null) {
+                $this->registrarResultado($local, 'empatado');
+                $this->registrarResultado($visitante, 'empatado');
+            } else {
+                $ganador = (int) $fila['ganador_id'];
+                $this->registrarResultado($ganador, 'ganado');
+                $this->registrarResultado($ganador === $local ? $visitante : $local, 'perdido');
+            }
+        }
+
+        $this->recalcularPosiciones($torneoId);
     }
 
     /** Guarda el número de posición (1, 2, 3...) según el orden de listarPorTorneo(). */

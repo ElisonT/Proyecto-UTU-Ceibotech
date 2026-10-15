@@ -2,6 +2,8 @@
 require_once __DIR__ . '/app/Controllers/UsuarioController.php';
 session_start();
 require_once __DIR__ . '/app/Helpers/manejador_errores.php';
+require_once __DIR__ . '/app/Helpers/csrf.php';
+exigirCsrf('register.php');
 
 $errores = [];
 
@@ -40,7 +42,7 @@ $valores = $_POST ?? [];
   <!-- title es el texto que aparece en la pestaña del navegador. -->
   <title>Registrarse — SGDM</title>
   <!-- styles.css guarda todos los estilos visuales del sitio. -->
-  <link rel="stylesheet" href="styles.css?v=25" />
+  <link rel="stylesheet" href="styles.css?v=29" />
   <!-- Font Awesome aporta los iconos usados en botones, tarjetas y menus. -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 </head>
@@ -88,7 +90,7 @@ $valores = $_POST ?? [];
       <?php endif; ?>
 
       <!-- FORMULARIO DE REGISTRO: campos basicos para crear usuario. -->
-      <form class="auth-form" id="registerForm" method="post" action="register.php">
+      <form class="auth-form" id="registerForm" method="post" action="register.php"> <?= campoCsrf() ?>
 
         <!-- FILA 1: campo para crear el nombre de usuario. -->
         <div class="form-group" id="group-usuario">
@@ -193,6 +195,6 @@ $valores = $_POST ?? [];
     </div>
   </main>
 
-<script src="script.js?v=25"></script>
+<script src="script.js?v=28"></script>
 </body>
 </html>

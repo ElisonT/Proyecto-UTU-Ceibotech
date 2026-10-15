@@ -14,9 +14,10 @@ class Torneo
 {
     private PDO $conexion;
 
-    public function __construct()
+    public function __construct(?PDO $conexion = null)
     {
-        $this->conexion = obtenerConexion();
+        // Se puede compartir una conexión para trabajar dentro de una misma transacción.
+        $this->conexion = $conexion ?? obtenerConexion();
     }
 
     public function contarJugados(int $usuarioId): int
@@ -147,12 +148,18 @@ class Torneo
         ?string $fechaInicio,
         int $creadoPor,
         string $modalidad = 'equipo',
-        ?int $cupos = null
+        ?int $cupos = null,
+        ?int $jugadoresPorEquipo = null,
+        ?string $aperturaInscripcion = null,
+        ?string $cierreInscripcion = null,
+        ?string $fechaFin = null
     ): int|false
     {
         $consulta = $this->conexion->prepare(
-            'INSERT INTO torneos (nombre, deporte, formato, fecha_inicio, creado_por, modalidad, cupos)
-             VALUES (:nombre, :deporte, :formato, :fecha_inicio, :creado_por, :modalidad, :cupos)'
+            'INSERT INTO torneos (nombre, deporte, formato, fecha_inicio, creado_por, modalidad, cupos, jugadores_por_equipo,
+                                 fecha_apertura_inscripcion, fecha_cierre_inscripcion, fecha_fin)
+             VALUES (:nombre, :deporte, :formato, :fecha_inicio, :creado_por, :modalidad, :cupos, :jugadores,
+                     :apertura, :cierre, :fin)'
         );
 
         $exito = $consulta->execute([
@@ -163,6 +170,10 @@ class Torneo
             'creado_por'   => $creadoPor,
             'modalidad'    => $modalidad,
             'cupos'        => $cupos,
+            'jugadores'    => $jugadoresPorEquipo,
+            'apertura'     => $aperturaInscripcion,
+            'cierre'       => $cierreInscripcion,
+            'fin'          => $fechaFin,
         ]);
 
         return $exito ? (int) $this->conexion->lastInsertId() : false;
@@ -187,7 +198,6 @@ class Torneo
     {
         $consulta = $this->conexion->prepare(
             "SELECT t.*,
-                    d.jugadores_por_equipo,
                     creador.nombre_completo     AS nombre_creador,
                     organizador.nombre_completo AS nombre_organizador,
                     (SELECT COUNT(*) FROM inscripciones i
@@ -195,7 +205,6 @@ class Torneo
                FROM torneos t
                JOIN usuarios creador          ON creador.id = t.creado_por
           LEFT JOIN usuarios organizador      ON organizador.id = t.organizador_asignado_id
-          LEFT JOIN deportes d                ON d.nombre = t.deporte
               WHERE t.id = :id"
         );
         $consulta->execute(['id' => $id]);

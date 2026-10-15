@@ -40,7 +40,7 @@ class Equipo
     {
         $consulta = $this->conexion->prepare(
             "SELECT eq.id, eq.nombre_equipo, eq.capitan_id,
-                    d.nombre AS deporte, d.jugadores_por_equipo AS tamano,
+                    eq.deporte AS deporte, eq.jugadores_por_equipo AS tamano,
                     cap.nombre_completo AS nombre_capitan,
                     (eq.capitan_id = :usuario_id) AS es_capitan,
                     (SELECT COUNT(*) FROM equipo_miembros m WHERE m.equipo_id = eq.id) AS miembros,
@@ -54,7 +54,6 @@ class Equipo
                FROM equipos eq
                JOIN equipo_miembros em ON em.equipo_id = eq.id AND em.usuario_id = :usuario_id
           LEFT JOIN usuarios cap ON cap.id = eq.capitan_id
-          LEFT JOIN deportes d   ON d.id = eq.deporte_id
               ORDER BY eq.nombre_equipo ASC"
         );
         $consulta->execute(['usuario_id' => $usuarioId]);
@@ -66,10 +65,9 @@ class Equipo
     {
         $consulta = $this->conexion->prepare(
             "SELECT eq.id, eq.nombre_equipo,
-                    d.nombre AS deporte, d.jugadores_por_equipo AS tamano,
+                    eq.deporte AS deporte, eq.jugadores_por_equipo AS tamano,
                     (SELECT COUNT(*) FROM equipo_miembros m WHERE m.equipo_id = eq.id) AS miembros
                FROM equipos eq
-          LEFT JOIN deportes d ON d.id = eq.deporte_id
               WHERE eq.capitan_id = :usuario_id
               ORDER BY eq.nombre_equipo ASC"
         );
@@ -128,33 +126,64 @@ class Equipo
 
     /**
      * Crea un equipo PARA un deporte; quien lo crea queda como capitán y
-     * primer integrante. El tamaño lo fija el deporte. Devuelve el id del equipo.
+     * primer integrante. El tamaño lo fija el deporte; si es "Otro" (libre),
+     * el capitán escribe el nombre del juego y cuántos jugadores lleva.
+     * Devuelve el id del equipo.
      */
-    public function crear(string $nombreEquipo, int $capitanId, int $deporteId): int
-    {
-        return $this->enTransaccion(function () use ($nombreEquipo, $capitanId, $deporteId) {
-            $consulta = $this->conexion->prepare('SELECT jugadores_por_equipo FROM deportes WHERE id = :id');
+    public function crear(
+        string $nombreEquipo,
+        int $capitanId,
+        int $deporteId,
+        ?string $deporteOtro = null,
+        ?int $jugadoresOtro = null
+    ): int {
+        return $this->enTransaccion(function () use ($nombreEquipo, $capitanId, $deporteId, $deporteOtro, $jugadoresOtro) {
+            $consulta = $this->conexion->prepare('SELECT nombre, jugadores_por_equipo, es_libre FROM deportes WHERE id = :id');
             $consulta->execute(['id' => $deporteId]);
             $deporte = $consulta->fetch();
             if (!$deporte) {
                 throw new DomainException('Elegí un deporte válido para el equipo.');
             }
-            if ((int) $deporte['jugadores_por_equipo'] < 2) {
-                throw new DomainException('Ese deporte se juega de forma individual: no lleva equipos.');
+
+            if ((int) $deporte['es_libre'] === 1) {
+                $nombreDeporte = trim(preg_replace('/\s+/', ' ', (string) $deporteOtro));
+                $largo = mb_strlen($nombreDeporte);
+                if ($largo < 3 || $largo > 60) {
+                    throw new DomainException('Escribí el nombre del juego o deporte (entre 3 y 60 caracteres).');
+                }
+                $consulta = $this->conexion->prepare('SELECT COUNT(*) AS total FROM deportes WHERE LOWER(nombre) = LOWER(:nombre)');
+                $consulta->execute(['nombre' => $nombreDeporte]);
+                if ((int) $consulta->fetch()['total'] > 0) {
+                    throw new DomainException("\"{$nombreDeporte}\" ya está en la lista de deportes: elegilo ahí en lugar de \"Otro\".");
+                }
+                if ($jugadoresOtro === null || $jugadoresOtro < 2 || $jugadoresOtro > 50) {
+                    throw new DomainException('Indicá cuántos jugadores lleva cada equipo (entre 2 y 50).');
+                }
+                $tamano = $jugadoresOtro;
+            } else {
+                $nombreDeporte = $deporte['nombre'];
+                $tamano = (int) $deporte['jugadores_por_equipo'];
+                if ($tamano < 2) {
+                    throw new DomainException('Ese deporte se juega de forma individual: no lleva equipos.');
+                }
             }
 
             $consulta = $this->conexion->prepare(
                 'SELECT COUNT(*) AS total FROM equipos
-                  WHERE capitan_id = :capitan AND deporte_id = :deporte AND LOWER(nombre_equipo) = LOWER(:nombre)'
+                  WHERE capitan_id = :capitan AND LOWER(deporte) = LOWER(:deporte) AND LOWER(nombre_equipo) = LOWER(:nombre)'
             );
-            $consulta->execute(['capitan' => $capitanId, 'deporte' => $deporteId, 'nombre' => $nombreEquipo]);
+            $consulta->execute(['capitan' => $capitanId, 'deporte' => $nombreDeporte, 'nombre' => $nombreEquipo]);
             if ((int) $consulta->fetch()['total'] > 0) {
                 throw new DomainException('Ya tenés un equipo con ese nombre para ese deporte.');
             }
 
             $this->conexion->prepare(
-                'INSERT INTO equipos (nombre_equipo, capitan_id, deporte_id) VALUES (:nombre, :capitan, :deporte)'
-            )->execute(['nombre' => $nombreEquipo, 'capitan' => $capitanId, 'deporte' => $deporteId]);
+                'INSERT INTO equipos (nombre_equipo, capitan_id, deporte_id, deporte, jugadores_por_equipo)
+                 VALUES (:nombre, :capitan, :deporte_id, :deporte, :tamano)'
+            )->execute([
+                'nombre' => $nombreEquipo, 'capitan' => $capitanId, 'deporte_id' => $deporteId,
+                'deporte' => $nombreDeporte, 'tamano' => $tamano,
+            ]);
             $equipoId = (int) $this->conexion->lastInsertId();
 
             $this->conexion->prepare('INSERT INTO equipo_miembros (equipo_id, usuario_id) VALUES (:equipo, :usuario)')
@@ -357,7 +386,7 @@ class Equipo
 
     private function bloquearEquipo(int $equipoId): array
     {
-        $consulta = $this->conexion->prepare('SELECT id, capitan_id, deporte_id FROM equipos WHERE id = :id FOR UPDATE');
+        $consulta = $this->conexion->prepare('SELECT id, capitan_id, deporte, jugadores_por_equipo FROM equipos WHERE id = :id FOR UPDATE');
         $consulta->execute(['id' => $equipoId]);
         $equipo = $consulta->fetch();
         if (!$equipo) {
@@ -404,19 +433,17 @@ class Equipo
         return (int) $consulta->fetch()['total'];
     }
 
-    /** Tamaño estándar del equipo = jugadores por equipo de su deporte. */
+    /**
+     * Tamaño del equipo (jugadores por equipo), guardado al crearlo: sale del
+     * catálogo o, si el deporte es "Otro", de lo que escribió el capitán.
+     */
     private function tamanoDelEquipo(array $equipo): int
     {
-        if ($equipo['deporte_id'] === null) {
+        $tamano = (int) ($equipo['jugadores_por_equipo'] ?? 0);
+        if ($equipo['deporte'] === null || $tamano < 2) {
             throw new DomainException('Este equipo no tiene un deporte asignado: disolvelo y creá uno nuevo.');
         }
-        $consulta = $this->conexion->prepare('SELECT jugadores_por_equipo FROM deportes WHERE id = :id');
-        $consulta->execute(['id' => $equipo['deporte_id']]);
-        $fila = $consulta->fetch();
-        if (!$fila) {
-            throw new DomainException('El deporte del equipo ya no existe en el catálogo.');
-        }
-        return (int) $fila['jugadores_por_equipo'];
+        return $tamano;
     }
 
     /** Invitaciones pendientes que tiene un usuario (para el aviso del menú). */

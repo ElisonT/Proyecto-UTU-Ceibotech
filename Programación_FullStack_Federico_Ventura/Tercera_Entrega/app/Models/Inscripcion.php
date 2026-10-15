@@ -14,6 +14,7 @@
  */
 
 require_once __DIR__ . '/../../config/database.php';
+require_once __DIR__ . '/../Helpers/inscripcion_fechas.php';
 
 class Inscripcion
 {
@@ -104,33 +105,38 @@ class Inscripcion
             }
 
             // Se bloquea también el equipo para que nadie cambie el plantel mientras se valida.
-            $consulta = $this->conexion->prepare('SELECT id, capitan_id, deporte_id FROM equipos WHERE id = :id FOR UPDATE');
+            $consulta = $this->conexion->prepare('SELECT id, capitan_id, deporte, jugadores_por_equipo FROM equipos WHERE id = :id FOR UPDATE');
             $consulta->execute(['id' => $equipoId]);
             $equipo = $consulta->fetch();
             if (!$equipo || (int) $equipo['capitan_id'] !== $usuarioId) {
                 throw new DomainException('Solo el capitán puede inscribir al equipo a un torneo.');
             }
 
-            // El equipo tiene que ser del mismo deporte que el torneo y estar completo
-            // según el tamaño estándar de ese deporte.
-            if ($equipo['deporte_id'] === null) {
+            // El equipo tiene que ser del mismo deporte que el torneo, del mismo tamaño
+            // y estar completo (los "Otro" se comparan por el nombre que se escribió).
+            if ($equipo['deporte'] === null || $equipo['jugadores_por_equipo'] === null) {
                 throw new DomainException('Este equipo no tiene un deporte asignado: disolvelo y creá uno nuevo en "Mis equipos".');
             }
-            $consulta = $this->conexion->prepare('SELECT nombre, jugadores_por_equipo FROM deportes WHERE id = :id');
-            $consulta->execute(['id' => $equipo['deporte_id']]);
-            $deporteEquipo = $consulta->fetch();
-            if (!$deporteEquipo || $deporteEquipo['nombre'] !== $torneo['deporte']) {
-                $nombreEquipoDeporte = $deporteEquipo ? $deporteEquipo['nombre'] : 'otro deporte';
-                throw new DomainException("Tu equipo es de {$nombreEquipoDeporte} y este torneo es de {$torneo['deporte']}.");
+            if (mb_strtolower(trim($equipo['deporte'])) !== mb_strtolower(trim($torneo['deporte']))) {
+                throw new DomainException("Tu equipo es de {$equipo['deporte']} y este torneo es de {$torneo['deporte']}.");
             }
 
-            $requeridos  = (int) $deporteEquipo['jugadores_por_equipo'];
+            $requeridos = (int) ($torneo['jugadores_por_equipo'] ?? 0);
+            if ($requeridos < 2) {
+                throw new DomainException('Este torneo no está configurado para equipos.');
+            }
+            if ((int) $equipo['jugadores_por_equipo'] !== $requeridos) {
+                throw new DomainException(
+                    "{$torneo['deporte']} se juega en este torneo de a {$requeridos} y tu equipo es de {$equipo['jugadores_por_equipo']}."
+                );
+            }
+
             $consulta = $this->conexion->prepare('SELECT COUNT(*) AS total FROM equipo_miembros WHERE equipo_id = :equipo');
             $consulta->execute(['equipo' => $equipoId]);
             $integrantes = (int) $consulta->fetch()['total'];
             if ($integrantes !== $requeridos) {
                 throw new DomainException(
-                    "{$torneo['deporte']} se juega de a {$requeridos} y tu equipo tiene {$integrantes}. "
+                    "El torneo pide equipos de {$requeridos} y tu equipo tiene {$integrantes}. "
                     . 'Completá el plantel en "Mis equipos".'
                 );
             }
@@ -186,7 +192,7 @@ class Inscripcion
     {
         return $this->enTransaccion(function () use ($torneoId, $usuarioId) {
             $torneo = $this->bloquearTorneo($torneoId);
-            $this->exigirInscripcionesAbiertas($torneo);
+            $this->exigirInscripcionesAbiertas($torneo, false);
 
             $inscripcion = $this->obtenerActivaDeUsuario($torneoId, $usuarioId);
             if (!$inscripcion) {
@@ -225,7 +231,9 @@ class Inscripcion
     private function bloquearTorneo(int $torneoId): array
     {
         $consulta = $this->conexion->prepare(
-            'SELECT id, estado, modalidad, cupos, deporte FROM torneos WHERE id = :id FOR UPDATE'
+            'SELECT id, estado, modalidad, cupos, deporte, jugadores_por_equipo,
+                    fecha_apertura_inscripcion, fecha_cierre_inscripcion
+               FROM torneos WHERE id = :id FOR UPDATE'
         );
         $consulta->execute(['id' => $torneoId]);
         $torneo = $consulta->fetch();
@@ -235,10 +243,21 @@ class Inscripcion
         return $torneo;
     }
 
-    private function exigirInscripcionesAbiertas(array $torneo): void
+    /**
+     * El torneo tiene que seguir en etapa de inscripciones y, si se cargaron fechas de
+     * apertura y cierre, hoy tiene que estar dentro de esa ventana. Para darse de baja
+     * solo importa el estado (se puede mientras el organizador no haya generado el fixture).
+     */
+    private function exigirInscripcionesAbiertas(array $torneo, bool $controlarFechas = true): void
     {
         if ($torneo['estado'] !== 'inscripciones_abiertas') {
             throw new DomainException('Las inscripciones de este torneo están cerradas.');
+        }
+        if ($controlarFechas) {
+            $ventana = ventanaDeInscripcion($torneo);
+            if ($ventana['estado'] !== 'abierta') {
+                throw new DomainException($ventana['mensaje']);
+            }
         }
     }
 

@@ -1,0 +1,114 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 420" role="img" aria-labelledby="t d">
+  <title id="t">Cuadro de un torneo que termina en un trofeo</title>
+  <desc id="d">Ilustración de un cuadro de eliminación directa con cuatro participantes que avanza hasta un trofeo dorado sobre un podio, con íconos de fútbol, ajedrez y videojuegos.</desc>
+
+  <!-- Fondo suave (transparente: sirve en modo claro y oscuro) -->
+  <circle cx="300" cy="205" r="195" fill="#1E5BFF" opacity="0.07"/>
+  <circle cx="300" cy="205" r="150" fill="#1E5BFF" opacity="0.07"/>
+
+  <!-- Confeti -->
+  <circle cx="352" cy="48" r="5" fill="#F5B800"/>
+  <circle cx="404" cy="30" r="4" fill="#2F9E44"/>
+  <rect x="492" y="26" width="9" height="9" rx="2" fill="#E8590C" transform="rotate(20 496 30)"/>
+  <circle cx="545" cy="150" r="4" fill="#F5B800"/>
+  <rect x="338" y="20" width="8" height="8" rx="2" fill="#1E5BFF" transform="rotate(-18 342 24)"/>
+
+  <!-- Conectores del cuadro -->
+  <g fill="none" stroke="#1E5BFF" stroke-opacity="0.35" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M130 77 H156 V127 H130"/>
+    <path d="M130 207 H156 V257 H130"/>
+    <path d="M156 102 H176"/>
+    <path d="M156 232 H176"/>
+    <path d="M286 102 H312 V232 H286"/>
+    <path d="M312 167 H346"/>
+  </g>
+  <!-- Camino del ganador -->
+  <g fill="none" stroke="#1E5BFF" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M130 77 H156 V102 H176"/>
+    <path d="M286 102 H312 V167 H346"/>
+  </g>
+  <circle cx="346" cy="167" r="6" fill="#1E5BFF"/>
+
+  <!-- Primera ronda: cuatro participantes -->
+  <g stroke="#1E5BFF" stroke-opacity="0.4" stroke-width="2">
+    <rect x="20" y="60" width="110" height="34" rx="17" fill="#fff"/>
+    <rect x="20" y="110" width="110" height="34" rx="17" fill="#fff"/>
+    <rect x="20" y="190" width="110" height="34" rx="17" fill="#fff"/>
+    <rect x="20" y="240" width="110" height="34" rx="17" fill="#fff"/>
+  </g>
+  <circle cx="38" cy="77" r="9" fill="#1E5BFF"/>
+  <circle cx="38" cy="127" r="9" fill="#2F9E44"/>
+  <circle cx="38" cy="207" r="9" fill="#E8590C"/>
+  <circle cx="38" cy="257" r="9" fill="#7048E8"/>
+  <g fill="#1E5BFF" opacity="0.25">
+    <rect x="56" y="73" width="58" height="8" rx="4"/>
+    <rect x="56" y="123" width="48" height="8" rx="4"/>
+    <rect x="56" y="203" width="54" height="8" rx="4"/>
+    <rect x="56" y="253" width="44" height="8" rx="4"/>
+  </g>
+
+  <!-- Segunda ronda -->
+  <rect x="176" y="85" width="110" height="34" rx="17" fill="#fff" stroke="#1E5BFF" stroke-width="2.5"/>
+  <rect x="176" y="215" width="110" height="34" rx="17" fill="#fff" stroke="#1E5BFF" stroke-opacity="0.4" stroke-width="2"/>
+  <circle cx="194" cy="102" r="9" fill="#1E5BFF"/>
+  <circle cx="194" cy="232" r="9" fill="#E8590C"/>
+  <g fill="#1E5BFF" opacity="0.25">
+    <rect x="212" y="98" width="58" height="8" rx="4"/>
+    <rect x="212" y="228" width="50" height="8" rx="4"/>
+  </g>
+
+  <!-- Trofeo -->
+  <g>
+    <path d="M404 98 H386 C381 98 379 102 380 108 C383 128 394 138 408 142" fill="none" stroke="#F5B800" stroke-width="9" stroke-linecap="round"/>
+    <path d="M476 98 H494 C499 98 501 102 500 108 C497 128 486 138 472 142" fill="none" stroke="#F5B800" stroke-width="9" stroke-linecap="round"/>
+    <path d="M400 80 H480 V132 C480 162 462 180 440 184 C418 180 400 162 400 132 Z" fill="#F5B800"/>
+    <path d="M412 88 V130 C412 150 422 163 434 170" fill="none" stroke="#fff" stroke-opacity="0.45" stroke-width="5" stroke-linecap="round"/>
+    <polygon points="440,104 445,116 458,116 448,124 452,137 440,129 428,137 432,124 422,116 435,116" fill="#fff" opacity="0.92"/>
+    <rect x="432" y="184" width="16" height="26" fill="#D99A00"/>
+    <rect x="410" y="208" width="60" height="14" rx="5" fill="#D99A00"/>
+  </g>
+
+  <!-- Podio -->
+  <g font-family="Segoe UI, system-ui, sans-serif" font-weight="700" font-size="22" fill="#fff" text-anchor="middle">
+    <rect x="346" y="256" width="60" height="46" rx="4" fill="#5A85FF"/>
+    <rect x="410" y="222" width="60" height="80" rx="4" fill="#1E5BFF"/>
+    <rect x="474" y="272" width="60" height="30" rx="4" fill="#8FADFF"/>
+    <text x="376" y="288">2</text>
+    <text x="440" y="270">1</text>
+    <text x="504" y="294">3</text>
+  </g>
+  <rect x="330" y="302" width="220" height="4" rx="2" fill="#1E5BFF" opacity="0.35"/>
+
+  <!-- Insignias de disciplinas -->
+  <!-- Fútbol -->
+  <g>
+    <circle cx="520" cy="62" r="27" fill="#fff" stroke="#1E5BFF" stroke-opacity="0.4" stroke-width="2"/>
+    <circle cx="520" cy="62" r="17" fill="#fff" stroke="#222" stroke-width="2"/>
+    <polygon points="520,53 528,59 525,69 515,69 512,59" fill="#222"/>
+    <g stroke="#222" stroke-width="2" stroke-linecap="round">
+      <path d="M520 53 V46"/><path d="M528 59 L535 56"/><path d="M525 69 L530 75"/><path d="M515 69 L510 75"/><path d="M512 59 L505 56"/>
+    </g>
+  </g>
+  <!-- Ajedrez (peón) -->
+  <g>
+    <circle cx="80" cy="352" r="27" fill="#fff" stroke="#1E5BFF" stroke-opacity="0.4" stroke-width="2"/>
+    <circle cx="80" cy="340" r="6.5" fill="#222"/>
+    <path d="M74 349 H86 L88 362 H72 Z" fill="#222"/>
+    <rect x="69" y="362" width="22" height="5" rx="2.5" fill="#222"/>
+  </g>
+  <!-- Videojuegos (control) -->
+  <g>
+    <circle cx="170" cy="368" r="27" fill="#fff" stroke="#1E5BFF" stroke-opacity="0.4" stroke-width="2"/>
+    <rect x="150" y="358" width="40" height="22" rx="11" fill="#222"/>
+    <rect x="158" y="364" width="3.5" height="10" rx="1" fill="#fff"/>
+    <rect x="154.7" y="367.2" width="10" height="3.5" rx="1" fill="#fff"/>
+    <circle cx="178" cy="366" r="2.6" fill="#F5B800"/>
+    <circle cx="183" cy="371" r="2.6" fill="#2F9E44"/>
+  </g>
+  <!-- Mente/estrategia: llave de cuadro simplificada (damas) -->
+  <g>
+    <circle cx="262" cy="352" r="27" fill="#fff" stroke="#1E5BFF" stroke-opacity="0.4" stroke-width="2"/>
+    <circle cx="262" cy="352" r="15" fill="#E8590C"/>
+    <circle cx="262" cy="352" r="9.5" fill="none" stroke="#fff" stroke-opacity="0.7" stroke-width="2"/>
+  </g>
+</svg>

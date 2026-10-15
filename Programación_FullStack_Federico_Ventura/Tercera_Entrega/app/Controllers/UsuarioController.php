@@ -315,6 +315,11 @@ class UsuarioController
             return 'Esta cuenta está suspendida. Contactate con un administrador.';
         }
 
+        // Al iniciar sesión se cambia el id de la sesión (evita "fijación de sesión": que alguien
+        // que conocía el id de antes del login herede la sesión ya autenticada) y se renueva el token CSRF.
+        session_regenerate_id(true);
+        unset($_SESSION['csrf']);
+
         // Solo se guarda en sesión lo necesario; nunca la contraseña ni su hash.
         $_SESSION['usuario_id']     = $usuario['id'];
         $_SESSION['usuario_nombre'] = $usuario['nombre_completo'];

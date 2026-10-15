@@ -2,12 +2,14 @@
 session_start();
 require_once __DIR__ . '/app/Helpers/manejador_errores.php';
 require_once __DIR__ . '/app/Helpers/roles.php';
+require_once __DIR__ . '/app/Helpers/csrf.php';
 require_once __DIR__ . '/app/Helpers/texto.php';
 require_once __DIR__ . '/app/Models/Torneo.php';
 require_once __DIR__ . '/app/Models/Enfrentamiento.php';
 require_once __DIR__ . '/app/Models/TablaPosiciones.php';
 require_once __DIR__ . '/app/Models/Inscripcion.php';
 require_once __DIR__ . '/app/Models/Equipo.php';
+require_once __DIR__ . '/app/Helpers/inscripcion_fechas.php';
 
 $puedeCrearTorneo = !empty($_SESSION['usuario_id'])
     && in_array((int) ($_SESSION['usuario_rol'] ?? 0), [ROL_ADMINISTRADOR], true);
@@ -91,9 +93,11 @@ $equiposComoCapitan = ($esParticipante && !$miInscripcion
         && $torneo['modalidad'] === 'equipo' && $torneo['estado'] === 'inscripciones_abiertas')
     ? array_values(array_filter(
         (new Equipo())->listarComoCapitan((int) $_SESSION['usuario_id']),
-        fn ($eq) => $eq['deporte'] === $torneo['deporte']   // solo equipos del deporte del torneo
+        fn ($eq) => mb_strtolower((string) $eq['deporte']) === mb_strtolower((string) $torneo['deporte'])   // solo equipos del deporte del torneo
     ))
     : [];
+$ventana            = ventanaDeInscripcion($torneo);
+$textoFechas        = $ventana['cierra'] !== null ? ' Hasta el ' . formatearFecha($ventana['cierra']) . '.' : '';
 $textoCupos         = $cupos !== null ? ' Quedan ' . max(0, $cupos - $cantidad) . ' de ' . $cupos . ' cupos.' : '';
 
 $tituloPagina = $torneo['nombre'] . ' — PrimeCup';
@@ -111,9 +115,10 @@ $tituloPagina = $torneo['nombre'] . ' — PrimeCup';
       }
     })();
   </script>
+  <?= metaCsrf() ?>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title><?= escapar($tituloPagina) ?></title>
-  <link rel="stylesheet" href="styles.css?v=26" />
+  <link rel="stylesheet" href="styles.css?v=29" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 </head>
 <body>
@@ -160,7 +165,7 @@ $tituloPagina = $torneo['nombre'] . ' — PrimeCup';
                 Sin organizador asignado
               <?php endif; ?>
             </span>
-            <span><i class="fa-solid fa-calendar"></i> <?= escapar(formatearFecha($torneo['fecha_inicio'])) ?></span>
+            <span><i class="fa-solid fa-calendar"></i> <?= escapar(formatearFecha($torneo['fecha_inicio'])) ?><?= !empty($torneo['fecha_fin']) ? ' al ' . escapar(formatearFecha($torneo['fecha_fin'])) : '' ?></span>
             <span><i class="fa-solid fa-users"></i> <?= $cantidad ?><?= $cupos !== null ? ' / ' . $cupos : '' ?> <?= $unidad ?></span>
           </div>
         </div>
@@ -190,9 +195,15 @@ $tituloPagina = $torneo['nombre'] . ' — PrimeCup';
     <?php if ($torneo['estado'] === 'inscripciones_abiertas'): ?>
       <div class="detalle-inscripcion<?= $miInscripcion ? ' inscripto' : '' ?>">
 
-        <?php if (!$haySesion): ?>
+        <?php if ($ventana['estado'] !== 'abierta' && !$miInscripcion): ?>
           <div class="detalle-inscripcion-texto">
-            <i class="fa-solid fa-circle-info"></i> Inscripciones abiertas.<?= escapar($textoCupos) ?> Iniciá sesión para anotarte.
+            <i class="fa-solid fa-lock"></i> <?= escapar($ventana['mensaje']) ?>
+            <?= $ventana['estado'] === 'cerrada' ? 'El organizador va a armar el fixture en cualquier momento.' : '' ?>
+          </div>
+
+        <?php elseif (!$haySesion): ?>
+          <div class="detalle-inscripcion-texto">
+            <i class="fa-solid fa-circle-info"></i> Inscripciones abiertas.<?= escapar($textoCupos . $textoFechas) ?> Iniciá sesión para anotarte.
           </div>
           <div class="detalle-inscripcion-acciones">
             <a href="login.php" class="btn-primary"><i class="fa-solid fa-right-to-bracket"></i> Iniciar sesión</a>
@@ -200,7 +211,7 @@ $tituloPagina = $torneo['nombre'] . ' — PrimeCup';
 
         <?php elseif (!$esParticipante): ?>
           <div class="detalle-inscripcion-texto">
-            <i class="fa-solid fa-circle-info"></i> Inscripciones abiertas.<?= escapar($textoCupos) ?> Solo las cuentas de participante pueden inscribirse.
+            <i class="fa-solid fa-circle-info"></i> Inscripciones abiertas.<?= escapar($textoCupos . $textoFechas) ?> Solo las cuentas de participante pueden inscribirse.
           </div>
 
         <?php elseif ($miInscripcion): ?>
@@ -214,7 +225,7 @@ $tituloPagina = $torneo['nombre'] . ' — PrimeCup';
           <?php if ($puedeRetirar): ?>
             <div class="detalle-inscripcion-acciones">
               <form method="post" action="inscribirse.php"
-                    onsubmit="return confirm('<?= $miInscripcion['equipo_id'] === null ? '¿Seguro que querés darte de baja de este torneo?' : '¿Retirar al equipo de este torneo?' ?>');">
+                    onsubmit="return confirm('<?= $miInscripcion['equipo_id'] === null ? '¿Seguro que querés darte de baja de este torneo?' : '¿Retirar al equipo de este torneo?' ?> <?= campoCsrf() ?>');">
                 <input type="hidden" name="accion" value="darme_de_baja" />
                 <input type="hidden" name="torneo_id" value="<?= $torneoId ?>" />
                 <button type="submit" class="btn">
@@ -229,11 +240,11 @@ $tituloPagina = $torneo['nombre'] . ' — PrimeCup';
             <div class="detalle-inscripcion-texto"><i class="fa-solid fa-triangle-exclamation"></i> No quedan cupos disponibles.</div>
           <?php else: ?>
             <div class="detalle-inscripcion-texto">
-              <i class="fa-solid fa-circle-info"></i> Inscripciones abiertas.<?= escapar($textoCupos) ?>
+              <i class="fa-solid fa-circle-info"></i> Inscripciones abiertas.<?= escapar($textoCupos . $textoFechas) ?>
             </div>
             <div class="detalle-inscripcion-acciones">
               <form method="post" action="inscribirse.php"
-                    onsubmit="return confirm('¿Confirmás tu inscripción a este torneo?');">
+                    onsubmit="return confirm('¿Confirmás tu inscripción a este torneo?');"> <?= campoCsrf() ?>
                 <input type="hidden" name="accion" value="inscribirme" />
                 <input type="hidden" name="torneo_id" value="<?= $torneoId ?>" />
                 <button type="submit" class="btn-primary"><i class="fa-solid fa-user-plus"></i> Inscribirme</button>
@@ -246,7 +257,7 @@ $tituloPagina = $torneo['nombre'] . ' — PrimeCup';
             <div class="detalle-inscripcion-texto"><i class="fa-solid fa-triangle-exclamation"></i> No quedan cupos disponibles.</div>
           <?php elseif (empty($equiposComoCapitan)): ?>
             <div class="detalle-inscripcion-texto">
-              <i class="fa-solid fa-circle-info"></i> Inscripciones abiertas.<?= escapar($textoCupos) ?>
+              <i class="fa-solid fa-circle-info"></i> Inscripciones abiertas.<?= escapar($textoCupos . $textoFechas) ?>
               Este torneo es por equipos: el capitán inscribe al equipo. Armá uno de <?= escapar($torneo['deporte']) ?> en "Mis equipos"<?= $jugadoresPorEquipo !== null ? ' (equipos de ' . $jugadoresPorEquipo . ' jugadores)' : '' ?> e invitá a tus compañeros.
             </div>
             <div class="detalle-inscripcion-acciones">
@@ -256,26 +267,28 @@ $tituloPagina = $torneo['nombre'] . ' — PrimeCup';
             <?php
               $hayEquipoApto = false;
               foreach ($equiposComoCapitan as $eqc) {
-                  if ((int) $eqc['miembros'] === (int) $eqc['tamano']) {   // plantel completo
+                  if ((int) $eqc['miembros'] === (int) $eqc['tamano']                      // plantel completo
+                      && ($jugadoresPorEquipo === null || (int) $eqc['tamano'] === $jugadoresPorEquipo)) {
                       $hayEquipoApto = true;
                   }
               }
             ?>
             <div class="detalle-inscripcion-texto">
-              <i class="fa-solid fa-circle-info"></i> Inscripciones abiertas.<?= escapar($textoCupos) ?>
+              <i class="fa-solid fa-circle-info"></i> Inscripciones abiertas.<?= escapar($textoCupos . $textoFechas) ?>
               <?= $jugadoresPorEquipo !== null ? escapar($torneo['deporte']) . ' se juega en equipos de ' . $jugadoresPorEquipo . ': el plantel tiene que estar completo.' : '' ?>
             </div>
             <div class="detalle-inscripcion-acciones">
               <form method="post" action="inscribirse.php" class="equipo-fila-acciones"
-                    onsubmit="return confirm('¿Inscribir a este equipo al torneo?');">
+                    onsubmit="return confirm('¿Inscribir a este equipo al torneo?');"> <?= campoCsrf() ?>
                 <input type="hidden" name="accion" value="inscribir_equipo" />
                 <input type="hidden" name="torneo_id" value="<?= $torneoId ?>" />
                 <select name="equipo_id" class="form-input-p" required aria-label="Equipo a inscribir">
                   <option value="">Elegí uno de tus equipos...</option>
                   <?php foreach ($equiposComoCapitan as $eqc):
-                      $apto = (int) $eqc['miembros'] === (int) $eqc['tamano']; ?>
+                      $apto = (int) $eqc['miembros'] === (int) $eqc['tamano']
+                          && ($jugadoresPorEquipo === null || (int) $eqc['tamano'] === $jugadoresPorEquipo); ?>
                     <option value="<?= (int) $eqc['id'] ?>" <?= $apto ? '' : 'disabled' ?>>
-                      <?= escapar($eqc['nombre_equipo']) ?> (<?= (int) $eqc['miembros'] ?>/<?= (int) $eqc['tamano'] ?> integrantes)<?= $apto ? '' : ' — incompleto' ?>
+                      <?= escapar($eqc['nombre_equipo']) ?> (<?= (int) $eqc['miembros'] ?>/<?= (int) $eqc['tamano'] ?> integrantes)<?= $apto ? '' : (($jugadoresPorEquipo !== null && (int) $eqc['tamano'] !== $jugadoresPorEquipo) ? ' — el torneo pide equipos de ' . $jugadoresPorEquipo : ' — incompleto') ?>
                     </option>
                   <?php endforeach; ?>
                 </select>
@@ -324,6 +337,7 @@ $tituloPagina = $torneo['nombre'] . ' — PrimeCup';
             <form method="post" action="gestionar-torneo.php"
                   onsubmit="return confirm('Se cierran las inscripciones y se genera el fixture con <?= $cantidad ?> <?= $unidad ?>. ¿Seguimos?');">
               <input type="hidden" name="accion" value="generar_fixture" />
+              <?= campoCsrf() ?>
               <input type="hidden" name="torneo_id" value="<?= $torneoId ?>" />
               <button type="submit" class="btn-primary" <?= $cantidad < 2 ? 'disabled' : '' ?>>
                 <i class="fa-solid fa-shuffle"></i> Cerrar inscripciones y generar fixture
@@ -331,12 +345,17 @@ $tituloPagina = $torneo['nombre'] . ' — PrimeCup';
             </form>
             <?php if ($cantidad < 2): ?>
               <span class="tabla-hint">Hacen falta al menos 2 inscriptos.</span>
+            <?php elseif ($ventana['estado'] === 'abierta' && $ventana['cierra'] !== null): ?>
+              <span class="tabla-hint">Las inscripciones siguen abiertas hasta el <?= escapar(formatearFecha($ventana['cierra'])) ?>: si generás el fixture ahora, se cierran antes.</span>
+            <?php elseif ($ventana['estado'] === 'no_abrio'): ?>
+              <span class="tabla-hint"><?= escapar($ventana['mensaje']) ?> Si generás el fixture ahora, no se van a poder inscribir más.</span>
             <?php endif; ?>
           <?php elseif ($formato === 'liga'): ?>
             <span class="tabla-hint">Cargá los resultados en cada partido. La liga se cierra sola al cargar el último.</span>
           <?php else: ?>
             <form method="post" action="gestionar-torneo.php">
               <input type="hidden" name="accion" value="avanzar_ronda" />
+              <?= campoCsrf() ?>
               <input type="hidden" name="torneo_id" value="<?= $torneoId ?>" />
               <button type="submit" class="btn-primary" <?= $partidosPendientes > 0 ? 'disabled' : '' ?>>
                 <i class="fa-solid fa-forward-step"></i>
@@ -344,7 +363,7 @@ $tituloPagina = $torneo['nombre'] . ' — PrimeCup';
               </button>
             </form>
             <?php if ($partidosPendientes > 0): ?>
-              <span class="tabla-hint">Faltan <?= $partidosPendientes ?> resultado(s) de la ronda actual.</span>
+              <span class="tabla-hint">Faltan <b data-stat="pendientes"><?= $partidosPendientes ?></b> resultado(s) de la ronda actual.</span>
             <?php endif; ?>
           <?php endif; ?>
         </div>
@@ -357,11 +376,11 @@ $tituloPagina = $torneo['nombre'] . ' — PrimeCup';
         <div class="pstat-label"><?= $unidad === 'equipos' ? 'Equipos' : 'Participantes' ?></div>
       </div>
       <div class="pstat">
-        <div class="pstat-num"><?= $partidosJugados ?></div>
+        <div class="pstat-num" data-stat="jugados"><?= $partidosJugados ?></div>
         <div class="pstat-label">Partidos jugados</div>
       </div>
       <div class="pstat">
-        <div class="pstat-num"><?= $partidosPendientes ?></div>
+        <div class="pstat-num" data-stat="pendientes"><?= $partidosPendientes ?></div>
         <div class="pstat-label">Partidos pendientes</div>
       </div>
       <div class="pstat">
@@ -375,43 +394,9 @@ $tituloPagina = $torneo['nombre'] . ' — PrimeCup';
         <div class="seccion-header">
           <h2 class="seccion-titulo"><i class="fa-solid fa-table"></i> Tabla de posiciones</h2>
         </div>
-        <?php if (empty($tabla)): ?>
-          <p class="tabla-sin-datos">Este torneo todavía no comenzó — la tabla se arma cuando se juegue la primera ronda.</p>
-        <?php else: ?>
-          <div class="tabla-wrap">
-            <table class="tabla-posiciones">
-              <thead>
-                <tr>
-                  <th class="tabla-pos">#</th>
-                  <th class="tabla-equipo"><?= $unidad === 'equipos' ? 'Equipo' : 'Participante' ?></th>
-                  <th>PJ</th>
-                  <th>G</th>
-                  <th>E</th>
-                  <th>P</th>
-                  <th class="tabla-pts">PTS</th>
-                </tr>
-              </thead>
-              <tbody>
-                <?php foreach ($tabla as $indice => $fila): $pos = $indice + 1; ?>
-                  <tr class="<?= $pos === 1 ? 'tabla-lider' : '' ?>">
-                    <td class="tabla-pos"><span class="pos-num<?= $pos <= 3 ? ' pos-' . $pos : '' ?>"><?= $pos ?></span></td>
-                    <td class="tabla-equipo"><?= escapar($fila['nombre']) ?></td>
-                    <td><?= (int) $fila['partidos_jugados'] ?></td>
-                    <td><?= (int) $fila['partidos_ganados'] ?></td>
-                    <td><?= (int) $fila['partidos_empatados'] ?></td>
-                    <td><?= (int) $fila['partidos_perdidos'] ?></td>
-                    <td class="tabla-pts"><strong><?= (int) $fila['puntos'] ?></strong></td>
-                  </tr>
-                <?php endforeach; ?>
-              </tbody>
-            </table>
-          </div>
-          <div class="tabla-leyenda">
-            <span class="leyenda-item"><span class="leyenda-color leyenda-lider"></span> Líder</span>
-            <span class="leyenda-sep">·</span>
-            <span class="tabla-hint">PJ jugados · G ganados · E empatados · P perdidos · PTS puntos</span>
-          </div>
-        <?php endif; ?>
+        <div id="tablaPosicionesContenedor">
+          <?php include __DIR__ . '/app/Views/partials/tabla_posiciones.php'; ?>
+        </div>
       </section>
     <?php endif; ?>
 
@@ -467,6 +452,6 @@ $tituloPagina = $torneo['nombre'] . ' — PrimeCup';
     </div>
   </footer>
 
-<script src="script.js?v=26"></script>
+<script src="script.js?v=28"></script>
 </body>
 </html>

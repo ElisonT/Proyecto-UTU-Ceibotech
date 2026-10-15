@@ -2,6 +2,7 @@
 session_start();
 require_once __DIR__ . '/app/Helpers/manejador_errores.php';
 require_once __DIR__ . '/app/Helpers/roles.php';
+require_once __DIR__ . '/app/Helpers/csrf.php';
 require_once __DIR__ . '/app/Helpers/texto.php';
 require_once __DIR__ . '/app/Models/Torneo.php';
 require_once __DIR__ . '/app/Models/Enfrentamiento.php';
@@ -62,9 +63,10 @@ $tituloPagina = 'Calendario — ' . $torneo['nombre'] . ' — PrimeCup';
       }
     })();
   </script>
+  <?= metaCsrf() ?>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title><?= escapar($tituloPagina) ?></title>
-  <link rel="stylesheet" href="styles.css?v=26" />
+  <link rel="stylesheet" href="styles.css?v=29" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 </head>
 <body>
@@ -152,6 +154,6 @@ $tituloPagina = 'Calendario — ' . $torneo['nombre'] . ' — PrimeCup';
     </div>
   </footer>
 
-<script src="script.js?v=26"></script>
+<script src="script.js?v=28"></script>
 </body>
 </html>
