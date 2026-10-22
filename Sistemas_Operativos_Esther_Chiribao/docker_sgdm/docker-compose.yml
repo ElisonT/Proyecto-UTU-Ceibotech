@@ -1,0 +1,60 @@
+# =========================================================================
+# docker-compose.yml - SGDM / PrimeCup
+#   web: Apache + PHP con la app del equipo (puerto 80)
+#   db : MariaDB con el esquema cargado automaticamente
+# La base NO publica ningun puerto: solo la web la alcanza (red interna).
+# =========================================================================
+services:
+
+  web:
+    build: .
+    container_name: sgdm_web
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    environment:
+      SGDM_DB_HOST: db
+      SGDM_DB_NAME: sgdm
+      SGDM_DB_USER: sgdm_app
+      SGDM_DB_PASS: ${DB_APP_PASSWORD}
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - sgdm_uploads:/var/www/html/uploads
+    networks:
+      - sgdm_net
+
+  db:
+    # MariaDB: las migraciones del equipo usan "ADD COLUMN IF NOT EXISTS",
+    # sintaxis que MariaDB acepta (MySQL 8 no).
+    image: mariadb:10.11
+    container_name: sgdm_db
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MARIADB_DATABASE: sgdm
+      DB_APP_PASSWORD: ${DB_APP_PASSWORD}
+    volumes:
+      - sgdm_db_data:/var/lib/mysql
+      # Se ejecutan en orden alfabetico, solo la primera vez (base vacia):
+      - ./app/bd/sgdm_schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./app/bd/sgdm_migracion_perfil_torneos.sql:/docker-entrypoint-initdb.d/02-perfil-torneos.sql:ro
+      - ./app/bd/sgdm_migracion_organizador_asignado.sql:/docker-entrypoint-initdb.d/03-organizador.sql:ro
+      - ./app/bd/sgdm_migracion_auditoria.sql:/docker-entrypoint-initdb.d/04-auditoria.sql:ro
+      - ./initdb/05-app-user.sh:/docker-entrypoint-initdb.d/05-app-user.sh:ro
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - sgdm_net
+
+volumes:
+  sgdm_db_data:
+  sgdm_uploads:
+
+networks:
+  sgdm_net:
+    driver: bridge
