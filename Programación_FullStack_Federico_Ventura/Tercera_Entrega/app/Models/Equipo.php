@@ -35,6 +35,41 @@ class Equipo
     // Consultas (solo lectura)
     // ---------------------------------------------------------
 
+    /**
+     * Equipos que quien gestiona un torneo puede inscribir: mismo deporte y tamaño que el torneo, plantel
+     * completo, que no estén ya inscriptos ni tengan algún integrante inscripto con otro equipo.
+     * (La inscripción vuelve a validar todo dentro de su transacción: esta lista es solo para el desplegable.)
+     */
+    public function listarInscribiblesEnTorneo(array $torneo): array
+    {
+        $requeridos = (int) ($torneo['jugadores_por_equipo'] ?? 0);
+        if ($requeridos < 2) {
+            return [];
+        }
+        $consulta = $this->conexion->prepare(
+            "SELECT eq.id, eq.nombre_equipo, cap.nombre_usuario AS capitan
+               FROM equipos eq
+          LEFT JOIN usuarios cap ON cap.id = eq.capitan_id
+              WHERE LOWER(TRIM(eq.deporte)) = LOWER(TRIM(:deporte))
+                AND eq.jugadores_por_equipo = :requeridos
+                AND (SELECT COUNT(*) FROM equipo_miembros WHERE equipo_id = eq.id) = :requeridos_b
+                AND NOT EXISTS (
+                      SELECT 1
+                        FROM inscripciones i
+                   LEFT JOIN equipo_miembros otro ON otro.equipo_id = i.equipo_id
+                   LEFT JOIN equipo_miembros mio  ON mio.usuario_id = otro.usuario_id AND mio.equipo_id = eq.id
+                       WHERE i.torneo_id = :torneo
+                         AND i.estado_inscripcion = 'activa'
+                         AND (i.equipo_id = eq.id OR mio.usuario_id IS NOT NULL))
+              ORDER BY eq.nombre_equipo"
+        );
+        $consulta->execute([
+            'deporte' => $torneo['deporte'], 'requeridos' => $requeridos,
+            'requeridos_b' => $requeridos, 'torneo' => $torneo['id'],
+        ]);
+        return $consulta->fetchAll();
+    }
+
     /** Equipos de los que el usuario es integrante, con cantidad de integrantes y si está bloqueado. */
     public function listarDeUsuario(int $usuarioId): array
     {

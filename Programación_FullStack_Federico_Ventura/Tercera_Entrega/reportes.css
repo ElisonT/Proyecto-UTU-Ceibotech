@@ -1,0 +1,52 @@
+/* reportes.css — hoja de los reportes (reporte.php y reporte-torneo.php).
+   Siempre en claro (se imprime en papel) y con reglas @media print para A4. */
+:root { color-scheme: light; }
+* { box-sizing: border-box; }
+body.reporte-body {
+  margin: 0; background: #eef0f3; color: #1b1f24;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; line-height: 1.45;
+}
+.reporte-barra {
+  position: sticky; top: 0; z-index: 5; display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;
+  padding: 0.6rem 1rem; background: #fff; border-bottom: 1px solid #d6dae0;
+}
+.reporte-barra-espacio { flex: 1 1 auto; }
+.reporte-boton {
+  display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.5rem 0.9rem; border-radius: 8px;
+  border: 1px solid #c3c9d1; background: #fff; color: #1b1f24; font: inherit; font-size: 0.9rem;
+  text-decoration: none; cursor: pointer;
+}
+.reporte-boton:hover { background: #f1f3f6; }
+.reporte-boton-principal { background: #1f6feb; border-color: #1f6feb; color: #fff; }
+.reporte-boton-principal:hover { background: #1a5fcc; }
+
+.reporte-hoja {
+  max-width: 1100px; margin: 1rem auto; padding: 1.5rem; background: #fff; border: 1px solid #d6dae0;
+  border-radius: 10px;
+}
+.reporte-marca { font-size: 0.8rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #5b6572; }
+.reporte-encabezado h1 { margin: 0.25rem 0 0.25rem; font-size: 1.5rem; overflow-wrap: anywhere; }
+.reporte-subtitulo { margin: 0; color: #3d4652; }
+.reporte-generado { margin: 0.2rem 0 0; font-size: 0.85rem; color: #5b6572; }
+.reporte-seccion { margin-top: 1.5rem; }
+.reporte-seccion h2 { margin: 0 0 0.5rem; font-size: 1.1rem; border-bottom: 2px solid #1b1f24; padding-bottom: 0.2rem; }
+.reporte-vacio { margin: 0; color: #5b6572; font-style: italic; }
+.reporte-tabla-wrap { overflow-x: auto; }
+.reporte-tabla { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+.reporte-tabla th, .reporte-tabla td { padding: 0.4rem 0.55rem; border: 1px solid #c3c9d1; text-align: left; vertical-align: top; overflow-wrap: anywhere; }
+.reporte-tabla thead th { background: #eef0f3; font-weight: 700; }
+.reporte-tabla tbody tr:nth-child(even) { background: #f8f9fb; }
+
+@media print {
+  @page { size: A4; margin: 15mm 12mm; }
+  body.reporte-body { background: #fff; font-size: 11pt; }
+  .no-imprimir { display: none !important; }
+  .reporte-hoja { max-width: none; margin: 0; padding: 0; border: 0; border-radius: 0; }
+  .reporte-tabla { font-size: 9.5pt; }
+  .reporte-tabla-wrap { overflow: visible; }
+  .reporte-tabla thead { display: table-header-group; }   /* repite el encabezado en cada página */
+  .reporte-tabla tr { break-inside: avoid; }
+  .reporte-seccion h2 { break-after: avoid; }
+  .reporte-tabla tbody tr:nth-child(even) { background: #f3f4f6; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .reporte-tabla thead th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}

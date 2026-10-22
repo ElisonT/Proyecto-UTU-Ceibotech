@@ -106,7 +106,7 @@ class Panel
             $like = '%' . addcslashes($texto, '%_\\') . '%';
             $params += ['t1' => $like, 't2' => $like];
         }
-        if (in_array($estado, ['inscripciones_abiertas', 'en_curso', 'finalizado'], true)) {
+        if (in_array($estado, ['inscripciones_abiertas', 'en_curso', 'finalizado', 'cancelado'], true)) {
             $donde[]          = 'estado = :estado';
             $params['estado'] = $estado;
         }
@@ -133,7 +133,11 @@ class Panel
         // Las que ya están en la base más las que el sistema sabe registrar, así el filtro
         // ofrece también acciones que todavía no ocurrieron (por ejemplo una suspensión nueva).
         $existentes = $this->conexion->query('SELECT DISTINCT accion FROM auditoria')->fetchAll(PDO::FETCH_COLUMN);
-        $conocidas  = ['CARGA_RESULTADO', 'CORRECCION_RESULTADO', 'SUSPENSION_USUARIO', 'REACTIVACION_USUARIO'];
+        $conocidas  = ['CARGA_RESULTADO', 'CORRECCION_RESULTADO', 'SUSPENSION_USUARIO', 'REACTIVACION_USUARIO',
+                       'ALTA_USUARIO_ADMIN', 'EDICION_USUARIO', 'BAJA_USUARIO_ADMIN',
+                       'CAMBIO_MODULO', 'CAMBIO_CONFIGURACION', 'AUTORIZACION_CORRECCION', 'REVOCACION_CORRECCION',
+                       'INSCRIPCION_POR_ORGANIZADOR', 'INSCRIPCION_EQUIPO_POR_ORGANIZADOR', 'BAJA_INSCRIPCION_POR_ORGANIZADOR',
+                       'REPORTE_GENERADO', 'LOGIN_BLOQUEADO', 'VALIDACION_RESULTADO'];
         $todas      = array_values(array_unique(array_merge($existentes, $conocidas)));
         sort($todas);
         return $todas;

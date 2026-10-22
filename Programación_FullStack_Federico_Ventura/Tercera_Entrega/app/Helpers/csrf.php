@@ -52,7 +52,7 @@ function exigirCsrf(string $volverA = 'index.php'): void
     echo '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8" />'
        . '<meta name="viewport" content="width=device-width, initial-scale=1" />'
        . '<title>Página desactualizada · PrimeCup</title>'
-       . '<link rel="stylesheet" href="styles.css?v=29" /></head>'
+       . '<link rel="stylesheet" href="styles.css?v=32" /></head>'
        . '<body style="display:flex;min-height:100vh;align-items:center;justify-content:center;padding:1rem;">'
        . '<main class="admin-card" style="max-width:28rem;text-align:center;">'
        . '<h1 class="seccion-titulo" style="justify-content:center;">La página quedó desactualizada</h1>'

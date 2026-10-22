@@ -147,7 +147,7 @@ class Enfrentamiento
                 "SELECT e.*,
                         COALESCE(ul.nombre_completo, eql.nombre_equipo) AS nombre_local,
                         COALESCE(uv.nombre_completo, eqv.nombre_equipo) AS nombre_visitante,
-                        res.puntaje_local, res.puntaje_visitante, res.fecha_correccion,
+                        res.puntaje_local, res.puntaje_visitante, res.fecha_correccion, res.validado,
                         (res.id IS NOT NULL) AS tiene_resultado
                    FROM enfrentamientos e
               LEFT JOIN resultados res ON res.enfrentamiento_id = e.id
@@ -210,16 +210,16 @@ class Enfrentamiento
         return $consulta->fetch();
     }
 
-    /** Guarda el resultado validado y marca el enfrentamiento como jugado. */
-    public function guardarResultado(int $enfrentamientoId, int $puntajeLocal, int $puntajeVisitante, ?int $ganadorId): void
+    /** Guarda el resultado (validado o pendiente de validación) y marca el enfrentamiento como jugado. */
+    public function guardarResultado(int $enfrentamientoId, int $puntajeLocal, int $puntajeVisitante, ?int $ganadorId, bool $validado = true): void
     {
         $insertar = $this->conexion->prepare(
             'INSERT INTO resultados (enfrentamiento_id, puntaje_local, puntaje_visitante, inscripcion_ganadora_id, validado)
-             VALUES (:enf, :pl, :pv, :ganador, 1)'
+             VALUES (:enf, :pl, :pv, :ganador, :validado)'
         );
         $insertar->execute([
             'enf' => $enfrentamientoId, 'pl' => $puntajeLocal,
-            'pv' => $puntajeVisitante, 'ganador' => $ganadorId,
+            'pv' => $puntajeVisitante, 'ganador' => $ganadorId, 'validado' => $validado ? 1 : 0,
         ]);
 
         $this->conexion->prepare("UPDATE enfrentamientos SET estado = 'jugado' WHERE id = :id")
@@ -234,19 +234,79 @@ class Enfrentamiento
         return $consulta->fetch();
     }
 
-    /** Pisa el marcador de un resultado ya cargado y deja constancia de quién lo corrigió. */
-    public function actualizarResultado(int $enfrentamientoId, int $puntajeLocal, int $puntajeVisitante, ?int $ganadorId, int $actorId): void
+    /**
+     * Pisa el marcador de un resultado ya cargado y deja constancia de quién lo corrigió.
+     * Un resultado ya validado sigue validado (corregirlo exige autorización, ver puedeCorregirResultados);
+     * uno pendiente solo pasa a validado si quien corrige puede validar ($validaAhora).
+     */
+    public function actualizarResultado(int $enfrentamientoId, int $puntajeLocal, int $puntajeVisitante, ?int $ganadorId, int $actorId, bool $validaAhora = true): void
     {
         $consulta = $this->conexion->prepare(
             'UPDATE resultados
                 SET puntaje_local = :pl, puntaje_visitante = :pv, inscripcion_ganadora_id = :ganador,
-                    validado = 1, corregido_por = :actor, fecha_correccion = NOW()
+                    validado = CASE WHEN validado = 1 THEN 1 ELSE :valida END,
+                    corregido_por = :actor, fecha_correccion = NOW()
               WHERE enfrentamiento_id = :enf'
         );
         $consulta->execute([
             'pl' => $puntajeLocal, 'pv' => $puntajeVisitante, 'ganador' => $ganadorId,
-            'actor' => $actorId, 'enf' => $enfrentamientoId,
+            'valida' => $validaAhora ? 1 : 0, 'actor' => $actorId, 'enf' => $enfrentamientoId,
         ]);
+    }
+
+    /** Marca como validado un resultado pendiente. Devuelve false si no había nada pendiente. */
+    public function marcarValidado(int $enfrentamientoId): bool
+    {
+        $consulta = $this->conexion->prepare('UPDATE resultados SET validado = 1 WHERE enfrentamiento_id = :enf AND validado = 0');
+        $consulta->execute(['enf' => $enfrentamientoId]);
+        return $consulta->rowCount() > 0;
+    }
+
+    /** Ids de los enfrentamientos del torneo con resultado cargado que todavía espera validación. */
+    public function listarPendientesDeValidacion(int $torneoId): array
+    {
+        $consulta = $this->conexion->prepare(
+            'SELECT e.id
+               FROM enfrentamientos e
+               JOIN rondas ro ON ro.id = e.ronda_id
+               JOIN resultados r ON r.enfrentamiento_id = e.id
+              WHERE ro.torneo_id = :t AND r.validado = 0
+              ORDER BY e.id'
+        );
+        $consulta->execute(['t' => $torneoId]);
+        return array_map('intval', $consulta->fetchAll(PDO::FETCH_COLUMN));
+    }
+
+    /** Cuántos partidos reales (sin contar byes) de rondas posteriores a la dada ya tienen resultado cargado. */
+    public function contarResultadosEnRondasPosteriores(int $torneoId, int $numeroRonda): int
+    {
+        $consulta = $this->conexion->prepare(
+            'SELECT COUNT(*)
+               FROM enfrentamientos e
+               JOIN rondas ro ON ro.id = e.ronda_id
+               JOIN resultados r ON r.enfrentamiento_id = e.id
+              WHERE ro.torneo_id = :t AND ro.numero > :n AND e.inscripcion_visitante_id IS NOT NULL'
+        );
+        $consulta->execute(['t' => $torneoId, 'n' => $numeroRonda]);
+        return (int) $consulta->fetchColumn();
+    }
+
+    /**
+     * Borra las rondas posteriores a la dada con todo lo que cuelga de ellas (resultados de los byes,
+     * enfrentamientos y la ronda). Solo se usa para rearmar la ronda siguiente cuando todavía no se jugó
+     * ningún partido real en ella (ver CompetenciaController::corregirResultado).
+     */
+    public function eliminarRondasPosteriores(int $torneoId, int $numeroRonda): void
+    {
+        $ids = $this->conexion->prepare('SELECT id FROM rondas WHERE torneo_id = :t AND numero > :n');
+        $ids->execute(['t' => $torneoId, 'n' => $numeroRonda]);
+        $rondas = $ids->fetchAll(PDO::FETCH_COLUMN);
+        foreach ($rondas as $rondaId) {
+            $this->conexion->prepare('DELETE r FROM resultados r JOIN enfrentamientos e ON e.id = r.enfrentamiento_id WHERE e.ronda_id = :r')
+                           ->execute(['r' => $rondaId]);
+            $this->conexion->prepare('DELETE FROM enfrentamientos WHERE ronda_id = :r')->execute(['r' => $rondaId]);
+            $this->conexion->prepare('DELETE FROM rondas WHERE id = :r')->execute(['r' => $rondaId]);
+        }
     }
 
     /** true si el torneo ya tiene una ronda con número mayor al dado. */

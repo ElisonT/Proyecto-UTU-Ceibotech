@@ -39,3 +39,20 @@ function formatearFecha(?string $fecha): string
     $t = strtotime($fecha);
     return date('j', $t) . ' ' . $meses[(int) date('n', $t) - 1] . ' ' . date('Y', $t);
 }
+
+/** Texto del premio de un torneo para mostrar ("US$ 500", "Medalla + remera"), o null si no hay premio. */
+function textoPremio(array $torneo): ?string
+{
+    switch ($torneo['tipo_premio'] ?? 'ninguno') {
+        case 'monetario':
+            if ($torneo['monto_premio'] === null || $torneo['monto_premio'] === '') {
+                return 'Premio en dinero';
+            }
+            $monto = (float) $torneo['monto_premio'];
+            return 'US$ ' . number_format($monto, fmod($monto, 1.0) === 0.0 ? 0 : 2, ',', '.');
+        case 'otro':
+            return (string) ($torneo['desc_premio'] ?? '') !== '' ? (string) $torneo['desc_premio'] : 'Premio a definir';
+        default:
+            return null;
+    }
+}

@@ -22,6 +22,7 @@
           <th>G</th>
           <th>E</th>
           <th>P</th>
+          <th title="Diferencia de tantos (a favor menos en contra)">DIF</th>
           <th class="tabla-pts">PTS</th>
         </tr>
       </thead>
@@ -34,6 +35,7 @@
             <td><?= (int) $fila['partidos_ganados'] ?></td>
             <td><?= (int) $fila['partidos_empatados'] ?></td>
             <td><?= (int) $fila['partidos_perdidos'] ?></td>
+            <td><?= (int) $fila['diferencia'] > 0 ? '+' : '' ?><?= (int) $fila['diferencia'] ?></td>
             <td class="tabla-pts"><strong><?= (int) $fila['puntos'] ?></strong></td>
           </tr>
         <?php endforeach; ?>
@@ -43,6 +45,6 @@
   <div class="tabla-leyenda">
     <span class="leyenda-item"><span class="leyenda-color leyenda-lider"></span> Líder</span>
     <span class="leyenda-sep">·</span>
-    <span class="tabla-hint">PJ jugados · G ganados · E empatados · P perdidos · PTS puntos</span>
+    <span class="tabla-hint">PJ jugados · G ganados · E empatados · P perdidos · DIF diferencia de tantos · PTS puntos. Desempate: enfrentamiento directo, diferencia, tantos a favor.</span>
   </div>
 <?php endif; ?>

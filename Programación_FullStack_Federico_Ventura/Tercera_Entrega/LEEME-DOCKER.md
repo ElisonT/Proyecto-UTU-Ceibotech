@@ -66,3 +66,6 @@ con SELinux activado.
 * `config/database.php`: lee `SGDM_DB_HOST`, `SGDM_DB_NAME`, `SGDM_DB_USER` y `SGDM_DB_PASS`. Si no están
   definidas usa los valores de siempre, así que en la VM actual no cambia nada.
 * Regenerar los datos de prueba (opcional): `python3 bd/generar_datos_prueba.py`.
+* Fechas de los datos de prueba: el seed se generó "como si hoy fuera el 7/oct/2026". Después de cargarlo hay que correr
+  `bd/sgdm_datos_prueba_actualizar_fechas.sql` (el `init.sh` ya lo hace): corre todas las fechas hasta el día de hoy para
+  que las inscripciones abiertas sigan abiertas. Se puede volver a correr cuando quieras (si ya está al día no mueve nada).

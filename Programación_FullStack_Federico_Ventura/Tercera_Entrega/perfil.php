@@ -18,7 +18,9 @@ $usuario = (new Usuario())->buscarPorId((int) $_SESSION['usuario_id']);
 if (!$usuario) {
     // La sesión apunta a un usuario que ya no existe (por ejemplo, si un
     // admin lo borró mientras estaba logueado). Se cierra la sesión y listo.
-    header('Location: logout.php');
+    $_SESSION = [];
+    session_destroy();
+    header('Location: index.php');
     exit;
 }
 
@@ -121,6 +123,7 @@ $etiquetasEstado  = [
     'inscripciones_abiertas' => ['texto' => 'Inscripciones abiertas', 'clase' => 'estado-verde'],
     'en_curso'               => ['texto' => 'En curso',               'clase' => 'estado-naranja'],
     'finalizado'             => ['texto' => 'Finalizado',             'clase' => 'estado-rojo'],
+    'cancelado'              => ['texto' => 'Cancelado',              'clase' => 'estado-gris'],
 ];
 
 $iniciales = obtenerIniciales($usuario['nombre_completo']);
@@ -145,22 +148,13 @@ $miembroDesde  = $meses[(int) $fechaRegistro->format('n')] . ' ' . $fechaRegistr
   <!-- HEAD: contiene informacion para el navegador; no se muestra como contenido principal de la pagina. -->
   <!-- charset define la codificacion para que tildes y eñes se lean correctamente. -->
   <meta charset="UTF-8" />
-  <script>
-    // Aplica el modo oscuro ANTES de que se pinte la página, para evitar el
-    // destello blanco al cargar/cambiar de página (si no, se ve un instante
-    // en claro y recién después salta a oscuro).
-    (function () {
-      if (localStorage.getItem('sgdm-tema') === 'oscuro') {
-        document.documentElement.classList.add('modo-oscuro');
-      }
-    })();
-  </script>
+  <script src="tema.js?v=1"></script>
   <!-- viewport adapta el ancho de la pagina a celulares, tablets y PC. -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <!-- title es el texto que aparece en la pestaña del navegador. -->
   <title>Perfil — SGDM</title>
   <!-- styles.css guarda todos los estilos visuales del sitio. -->
-  <link rel="stylesheet" href="styles.css?v=29" />
+  <link rel="stylesheet" href="styles.css?v=32" />
   <!-- Font Awesome aporta los iconos usados en botones, tarjetas y menus. -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 </head>
@@ -535,19 +529,19 @@ $miembroDesde  = $meses[(int) $fechaRegistro->format('n')] . ' ' . $fechaRegistr
                   <label class="form-label-p" for="pass-nueva">Nueva contraseña</label>
                   <input
                     type="password" id="pass-nueva" name="pass_nueva" class="form-input-p"
-                    placeholder="Mínimo 8 caracteres" minlength="8"
-                    pattern="(?=.*[A-Z])(?=.*[0-9]).{8,}"
-                    title="Mínimo 8 caracteres, una mayúscula y un número" required
+                    placeholder="Mínimo 8 caracteres" minlength="8" maxlength="72"
+                    pattern="(?=.*\p{Ll})(?=.*\p{Lu})(?=.*[0-9]).{8,}"
+                    title="Entre 8 y 72 caracteres, con una mayúscula, una minúscula y un número" autocomplete="new-password" required
                   />
                 </div>
                 <div class="form-group">
                   <label class="form-label-p" for="pass-confirmar">Confirmar nueva contraseña</label>
-                  <input type="password" id="pass-confirmar" name="pass_confirmar" class="form-input-p" placeholder="Repetí la nueva contraseña" minlength="8" required />
+                  <input type="password" id="pass-confirmar" name="pass_confirmar" class="form-input-p" placeholder="Repetí la nueva contraseña" minlength="8" maxlength="72" autocomplete="new-password" required />
                 </div>
               </div>
               <span class="form-hint-p" style="padding-left: 4px;">
                 <i class="fa-solid fa-circle-info"></i>
-                La contraseña debe tener al menos 8 caracteres, una mayúscula y un número.
+                La contraseña debe tener entre 8 y 72 caracteres, con una mayúscula, una minúscula y un número.
               </span>
               <div class="editar-acciones">
                 <button type="submit" class="btn-primary">Cambiar contraseña</button>
@@ -574,7 +568,7 @@ $miembroDesde  = $meses[(int) $fechaRegistro->format('n')] . ' ' . $fechaRegistr
               </div>
             <?php endif; ?>
 
-            <form method="post" action="perfil.php" onsubmit="return confirm('¿Seguro que querés eliminar tu cuenta? Esta acción no se puede deshacer.');"> <?= campoCsrf() ?>
+            <form method="post" action="perfil.php" data-confirmar="¿Seguro que querés eliminar tu cuenta? Esta acción no se puede deshacer."> <?= campoCsrf() ?>
               <div class="peligro-contenido">
                 <div class="peligro-info">
                   <p class="peligro-titulo">Eliminar cuenta</p>
@@ -612,6 +606,6 @@ $miembroDesde  = $meses[(int) $fechaRegistro->format('n')] . ' ' . $fechaRegistr
       <span>&copy; 2026 CeiboTech</span>
     </div>
   </footer>
-<script src="script.js?v=28"></script>
+<script src="script.js?v=33"></script>
 </body>
 </html>

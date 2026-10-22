@@ -40,17 +40,11 @@ $mostrarComoFunciona = false;
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <script>
-    (function () {
-      if (localStorage.getItem('sgdm-tema') === 'oscuro') {
-        document.documentElement.classList.add('modo-oscuro');
-      }
-    })();
-  </script>
+  <script src="tema.js?v=1"></script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Asignar organizador — SGDM</title>
-  <link rel="stylesheet" href="styles.css?v=29" />
+  <link rel="stylesheet" href="styles.css?v=32" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 </head>
 <body>
@@ -141,6 +135,6 @@ $mostrarComoFunciona = false;
     </section>
   </main>
 
-<script src="script.js?v=28"></script>
+<script src="script.js?v=33"></script>
 </body>
 </html>

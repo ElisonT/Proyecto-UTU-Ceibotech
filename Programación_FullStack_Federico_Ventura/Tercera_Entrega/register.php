@@ -3,6 +3,7 @@ require_once __DIR__ . '/app/Controllers/UsuarioController.php';
 session_start();
 require_once __DIR__ . '/app/Helpers/manejador_errores.php';
 require_once __DIR__ . '/app/Helpers/csrf.php';
+require_once __DIR__ . '/app/Models/Configuracion.php';
 exigirCsrf('register.php');
 
 $errores = [];
@@ -20,6 +21,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // Guarda lo que el usuario ya había escrito, para no hacerle repetir todo
 // el formulario si algo falló en la validación del servidor.
 $valores = $_POST ?? [];
+
+$registroPermitido = (new Configuracion())->registroPermitido();
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -27,22 +30,13 @@ $valores = $_POST ?? [];
   <!-- HEAD: contiene informacion para el navegador; no se muestra como contenido principal de la pagina. -->
   <!-- charset define la codificacion para que tildes y eñes se lean correctamente. -->
   <meta charset="UTF-8" />
-  <script>
-    // Aplica el modo oscuro ANTES de que se pinte la página, para evitar el
-    // destello blanco al cargar/cambiar de página (si no, se ve un instante
-    // en claro y recién después salta a oscuro).
-    (function () {
-      if (localStorage.getItem('sgdm-tema') === 'oscuro') {
-        document.documentElement.classList.add('modo-oscuro');
-      }
-    })();
-  </script>
+  <script src="tema.js?v=1"></script>
   <!-- viewport adapta el ancho de la pagina a celulares, tablets y PC. -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <!-- title es el texto que aparece en la pestaña del navegador. -->
   <title>Registrarse — SGDM</title>
   <!-- styles.css guarda todos los estilos visuales del sitio. -->
-  <link rel="stylesheet" href="styles.css?v=29" />
+  <link rel="stylesheet" href="styles.css?v=32" />
   <!-- Font Awesome aporta los iconos usados en botones, tarjetas y menus. -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 </head>
@@ -90,6 +84,12 @@ $valores = $_POST ?? [];
       <?php endif; ?>
 
       <!-- FORMULARIO DE REGISTRO: campos basicos para crear usuario. -->
+      <?php if (!$registroPermitido): ?>
+        <div class="form-alert form-alert-error" style="display:flex; align-items:flex-start;" role="status">
+          <i class="fa-solid fa-circle-exclamation"></i>
+          <p style="margin:0;">El registro de cuentas nuevas está deshabilitado. Pedile al administrador que te cree una.</p>
+        </div>
+      <?php else: ?>
       <form class="auth-form" id="registerForm" method="post" action="register.php"> <?= campoCsrf() ?>
 
         <!-- FILA 1: campo para crear el nombre de usuario. -->
@@ -164,9 +164,9 @@ $valores = $_POST ?? [];
           <div class="form-group" id="group-password">
             <label class="form-label" for="password">Contraseña</label>
             <div class="input-password-wrap">
-              <input type="password" id="password" name="password" class="form-input" placeholder="Mínimo 8 caracteres" minlength="8" autocomplete="new-password" required/>
+              <input type="password" id="password" name="password" class="form-input" placeholder="Mínimo 8 caracteres" minlength="8" maxlength="72" pattern="(?=.*\p{Ll})(?=.*\p{Lu})(?=.*[0-9]).{8,}" title="Entre 8 y 72 caracteres, con una mayúscula, una minúscula y un número" autocomplete="new-password" required/>
             </div>
-            <span class="form-hint">Usá al menos 8 caracteres.</span>
+            <span class="form-hint">Entre 8 y 72 caracteres, con una mayúscula, una minúscula y un número.</span>
             <div class="password-strength" id="passwordStrength">
               <div class="strength-track">
                 <div class="strength-fill" id="strengthFill"></div>
@@ -187,6 +187,7 @@ $valores = $_POST ?? [];
         <button type="submit" class="btn-primary btn-lg btn-block">Crear cuenta</button>
 
       </form>
+      <?php endif; ?>
 
       <div class="auth-footer">
         ¿Ya tenés cuenta? <a href="login.php">Iniciá sesión acá</a>
@@ -195,6 +196,6 @@ $valores = $_POST ?? [];
     </div>
   </main>
 
-<script src="script.js?v=28"></script>
+<script src="script.js?v=33"></script>
 </body>
 </html>

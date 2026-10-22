@@ -5,6 +5,7 @@ require_once __DIR__ . '/app/Helpers/texto.php';
 require_once __DIR__ . '/app/Helpers/roles.php';
 require_once __DIR__ . '/app/Helpers/csrf.php';
 require_once __DIR__ . '/app/Models/Panel.php';
+require_once __DIR__ . '/app/Models/Configuracion.php';
 
 // Solo el Administrador general puede ver este panel.
 // Si no hay sesión, o la sesión es de otro rol, se lo manda para afuera.
@@ -22,13 +23,16 @@ $inicialesAdmin  = obtenerIniciales($nombreAdmin);
 $panel           = new Panel();
 $resumen         = $panel->resumen();
 $porFormato      = $panel->torneosPorFormato();
+$configModelo    = new Configuracion();
+$modulos         = $configModelo->modulos();
+$configGeneral   = $configModelo->todas();
 $usuariosRecientes = $panel->listarUsuarios('', '', 1)['filas'];
 $torneosRecientes  = $panel->listarTorneos('', '', 1)['filas'];
 $usuariosRecientes = array_slice($usuariosRecientes, 0, 5);
 $torneosRecientes  = array_slice($torneosRecientes, 0, 5);
 
-$etiquetaEstadoTorneo = ['inscripciones_abiertas' => 'Abierto', 'en_curso' => 'En curso', 'finalizado' => 'Finalizado'];
-$claseEstadoTorneo    = ['inscripciones_abiertas' => 'estado-verde', 'en_curso' => 'estado-naranja', 'finalizado' => 'estado-azul'];
+$etiquetaEstadoTorneo = ['inscripciones_abiertas' => 'Abierto', 'en_curso' => 'En curso', 'finalizado' => 'Finalizado', 'cancelado' => 'Cancelado'];
+$claseEstadoTorneo    = ['inscripciones_abiertas' => 'estado-verde', 'en_curso' => 'estado-naranja', 'finalizado' => 'estado-azul', 'cancelado' => 'estado-gris'];
 $etiquetaFormato      = ['liga' => 'Liga', 'eliminacion' => 'Eliminación', 'suizo' => 'Suizo'];
 ?>
 <!DOCTYPE html>
@@ -37,23 +41,14 @@ $etiquetaFormato      = ['liga' => 'Liga', 'eliminacion' => 'Eliminación', 'sui
   <!-- HEAD: contiene informacion para el navegador; no se muestra como contenido principal de la pagina. -->
   <!-- charset define la codificacion para que tildes y eñes se lean correctamente. -->
   <meta charset="UTF-8" />
-  <script>
-    // Aplica el modo oscuro ANTES de que se pinte la página, para evitar el
-    // destello blanco al cargar/cambiar de página (si no, se ve un instante
-    // en claro y recién después salta a oscuro).
-    (function () {
-      if (localStorage.getItem('sgdm-tema') === 'oscuro') {
-        document.documentElement.classList.add('modo-oscuro');
-      }
-    })();
-  </script>
+  <script src="tema.js?v=1"></script>
   <!-- viewport adapta el ancho de la pagina a celulares, tablets y PC. -->
   <?= metaCsrf() ?>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <!-- title es el texto que aparece en la pestaña del navegador. -->
   <title>Panel de administración — SGDM</title>
   <!-- styles.css guarda todos los estilos visuales del sitio. -->
-  <link rel="stylesheet" href="styles.css?v=29" />
+  <link rel="stylesheet" href="styles.css?v=32" />
   <!-- Font Awesome aporta los iconos usados en botones, tarjetas y menus. -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 </head>
@@ -96,10 +91,13 @@ $etiquetaFormato      = ['liga' => 'Liga', 'eliminacion' => 'Eliminación', 'sui
       <a href="#auditoria" class="admin-nav-link">
         <i class="fa-solid fa-clock-rotate-left"></i> Auditoría
       </a>
+      <a href="#reportes" class="admin-nav-link">
+        <i class="fa-solid fa-file-lines"></i> Reportes
+      </a>
 
       <span class="admin-nav-label">Sistema</span>
       <a href="#modulos" class="admin-nav-link">
-        <i class="fa-solid fa-puzzle-piece"></i> Formatos
+        <i class="fa-solid fa-puzzle-piece"></i> Módulos
       </a>
       <a href="#configuracion" class="admin-nav-link">
         <i class="fa-solid fa-gear"></i> Configuración
@@ -115,9 +113,11 @@ $etiquetaFormato      = ['liga' => 'Liga', 'eliminacion' => 'Eliminación', 'sui
           <span class="admin-sidebar-rol">Super admin</span>
         </div>
       </div>
-      <a href="logout.php" class="admin-sidebar-salir">
-        <i class="fa-solid fa-right-from-bracket"></i> Salir
-      </a>
+      <form method="post" action="logout.php" style="margin: 0;"> <?= campoCsrf() ?>
+        <button type="submit" class="admin-sidebar-salir" style="background: none; border: 0; padding: 0; font-family: inherit; cursor: pointer;">
+          <i class="fa-solid fa-right-from-bracket"></i> Salir
+        </button>
+      </form>
     </div>
 
   </aside>
@@ -229,7 +229,53 @@ $etiquetaFormato      = ['liga' => 'Liga', 'eliminacion' => 'Eliminación', 'sui
     <section class="admin-card" id="usuarios" data-view="usuarios">
       <div class="seccion-header">
         <h2 class="seccion-titulo"><i class="fa-solid fa-users"></i> Usuarios</h2>
+        <button type="button" class="btn-primary" id="btnNuevoUsuario"><i class="fa-solid fa-user-plus"></i> Nuevo usuario</button>
       </div>
+
+      <!-- Formulario de alta y edición: lo envía script.js con fetch a api/admin.php -->
+      <form id="formUsuario" class="panel-form" hidden>
+        <h3 class="panel-form-titulo" id="tituloFormUsuario">Nuevo usuario</h3>
+        <input type="hidden" name="usuario_id" value="" />
+        <div class="panel-form-grid">
+          <div class="form-group">
+            <label class="form-label" for="fu-nombre">Nombre completo</label>
+            <input class="form-input" type="text" id="fu-nombre" name="nombre" maxlength="100" placeholder="Nombre y apellido" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="fu-usuario">Nombre de usuario</label>
+            <input class="form-input" type="text" id="fu-usuario" name="usuario" maxlength="30" pattern="[A-Za-z0-9_]+" title="Letras, números y guion bajo" autocomplete="off" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="fu-email">Correo electrónico</label>
+            <input class="form-input" type="email" id="fu-email" name="email" maxlength="150" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="fu-rol">Rol</label>
+            <select class="form-input" id="fu-rol" name="rol_id" required>
+              <option value="3">Participante</option>
+              <option value="2">Organizador de torneo</option>
+              <option value="1">Administrador general</option>
+            </select>
+          </div>
+          <div class="form-group" data-solo-alta>
+            <label class="form-label" for="fu-password">Contraseña</label>
+            <input class="form-input" type="password" id="fu-password" name="password" maxlength="72" minlength="8"
+                   pattern="(?=.*\p{Ll})(?=.*\p{Lu})(?=.*[0-9]).{8,}" title="Entre 8 y 72 caracteres, con una mayúscula, una minúscula y un número"
+                   autocomplete="new-password" required />
+            <span class="form-hint">Entre 8 y 72 caracteres, con una mayúscula, una minúscula y un número.</span>
+          </div>
+          <div class="form-group" data-solo-alta>
+            <label class="form-label" for="fu-confirm">Repetir contraseña</label>
+            <input class="form-input" type="password" id="fu-confirm" name="confirm" maxlength="72" autocomplete="new-password" required />
+          </div>
+        </div>
+        <ul class="panel-form-errores" id="erroresFormUsuario" role="alert" hidden></ul>
+        <div class="panel-form-acciones">
+          <button type="submit" class="btn-primary">Guardar</button>
+          <button type="button" class="btn" id="cancelarFormUsuario">Cancelar</button>
+        </div>
+      </form>
+
       <div class="panel-filtros" data-panel="usuarios">
         <input type="search" data-filtro="q" placeholder="Buscar por nombre, usuario o correo" aria-label="Buscar usuarios" />
         <select data-filtro="estado" aria-label="Filtrar por estado">
@@ -256,6 +302,7 @@ $etiquetaFormato      = ['liga' => 'Liga', 'eliminacion' => 'Eliminación', 'sui
           <option value="inscripciones_abiertas">Inscripciones abiertas</option>
           <option value="en_curso">En curso</option>
           <option value="finalizado">Finalizados</option>
+          <option value="cancelado">Cancelados</option>
         </select>
       </div>
       <div class="panel-lista" id="listaTorneos" aria-live="polite"></div>
@@ -281,31 +328,137 @@ $etiquetaFormato      = ['liga' => 'Liga', 'eliminacion' => 'Eliminación', 'sui
       <div class="panel-pag" data-paginacion="auditoria"></div>
     </section>
 
+    <!-- REPORTES (letra 5.1): cada uno se abre en una hoja imprimible o se descarga en CSV (reporte.php) -->
+    <section class="admin-card" id="reportes" data-view="reportes">
+      <div class="seccion-header">
+        <h2 class="seccion-titulo"><i class="fa-solid fa-file-lines"></i> Reportes</h2>
+      </div>
+      <p class="admin-ayuda">"Ver / imprimir" abre una hoja lista para imprimir o guardar como PDF desde el navegador. "CSV" descarga una planilla que se abre en Excel. Cada reporte que generás queda en la auditoría.</p>
+
+      <h3 class="equipo-subtitulo">Resumen general</h3>
+      <form method="get" action="reporte.php" class="panel-filtros">
+        <input type="hidden" name="tipo" value="resumen" />
+        <button type="submit" name="formato" value="html" class="btn-primary"><i class="fa-solid fa-print"></i> Ver / imprimir</button>
+        <button type="submit" name="formato" value="csv" class="btn"><i class="fa-solid fa-file-csv"></i> CSV</button>
+      </form>
+
+      <h3 class="equipo-subtitulo">Torneos</h3>
+      <form method="get" action="reporte.php" class="panel-filtros">
+        <input type="hidden" name="tipo" value="torneos" />
+        <select name="estado" aria-label="Estado de los torneos">
+          <option value="">Todos los estados</option>
+          <option value="inscripciones_abiertas">Inscripciones abiertas</option>
+          <option value="en_curso">En curso</option>
+          <option value="finalizado">Finalizados</option>
+          <option value="cancelado">Cancelados</option>
+        </select>
+        <button type="submit" name="formato" value="html" class="btn-primary"><i class="fa-solid fa-print"></i> Ver / imprimir</button>
+        <button type="submit" name="formato" value="csv" class="btn"><i class="fa-solid fa-file-csv"></i> CSV</button>
+      </form>
+
+      <h3 class="equipo-subtitulo">Usuarios</h3>
+      <form method="get" action="reporte.php" class="panel-filtros">
+        <input type="hidden" name="tipo" value="usuarios" />
+        <select name="rol" aria-label="Rol de los usuarios">
+          <option value="">Todos los roles</option>
+          <option value="1">Administradores</option>
+          <option value="2">Organizadores</option>
+          <option value="3">Participantes</option>
+        </select>
+        <select name="estado" aria-label="Estado de las cuentas">
+          <option value="">Todos los estados</option>
+          <option value="activo">Activos</option>
+          <option value="suspendido">Suspendidos</option>
+          <option value="eliminado">Dados de baja</option>
+        </select>
+        <button type="submit" name="formato" value="html" class="btn-primary"><i class="fa-solid fa-print"></i> Ver / imprimir</button>
+        <button type="submit" name="formato" value="csv" class="btn"><i class="fa-solid fa-file-csv"></i> CSV</button>
+      </form>
+
+      <h3 class="equipo-subtitulo">Auditoría</h3>
+      <form method="get" action="reporte.php" class="panel-filtros">
+        <input type="hidden" name="tipo" value="auditoria" />
+        <input type="date" name="desde" aria-label="Desde" />
+        <input type="date" name="hasta" aria-label="Hasta" />
+        <select name="accion" aria-label="Acción">
+          <option value="">Todas las acciones</option>
+          <?php foreach ($panel->accionesDeAuditoria() as $accionAud): ?>
+            <option value="<?= escapar($accionAud) ?>"><?= escapar($accionAud) ?></option>
+          <?php endforeach; ?>
+        </select>
+        <button type="submit" name="formato" value="html" class="btn-primary"><i class="fa-solid fa-print"></i> Ver / imprimir</button>
+        <button type="submit" name="formato" value="csv" class="btn"><i class="fa-solid fa-file-csv"></i> CSV</button>
+      </form>
+      <p class="tabla-hint" style="margin: 0;">El reporte de un torneo en particular (participantes, posiciones y resultados) se pide desde la página de ese torneo.</p>
+    </section>
+
     <!-- FORMATOS: cuántos torneos hay de cada formato de competencia (datos reales) -->
     <section class="admin-card" id="modulos" data-view="modulos">
       <div class="seccion-header">
-        <h2 class="seccion-titulo"><i class="fa-solid fa-puzzle-piece"></i> Formatos de competencia</h2>
+        <h2 class="seccion-titulo"><i class="fa-solid fa-puzzle-piece"></i> Módulos de competencia</h2>
       </div>
-      <div class="admin-modulos-lista">
+      <p class="admin-ayuda">Un módulo deshabilitado deja de ofrecerse al crear torneos nuevos. Los torneos que ya existen con ese formato siguen hasta terminar. Siempre tiene que quedar al menos un módulo habilitado.</p>
+      <div class="admin-modulos-lista" id="listaModulos">
         <?php
-        $formatos = [
-          ['liga', 'Liga', 'fa-table-cells', 'Todos contra todos. Victoria 3 puntos, empate 1.'],
-          ['eliminacion', 'Eliminación directa', 'fa-sitemap', 'El perdedor queda eliminado; se arma una ronda por vez, con byes si hace falta.'],
-          ['suizo', 'Sistema suizo', 'fa-shuffle', 'Emparejamiento por puntos sin repetir rival; cantidad de rondas fija.'],
-        ];
-        foreach ($formatos as [$clave, $nombre, $icono, $descripcion]): ?>
+        $iconosModulo = ['liga' => 'fa-table-cells', 'eliminacion' => 'fa-sitemap', 'suizo' => 'fa-shuffle'];
+        foreach ($modulos as $m): $clave = $m['formato']; ?>
           <div class="admin-modulo-fila">
             <div class="admin-modulo-info">
-              <span class="admin-modulo-icono"><i class="fa-solid <?= $icono ?>"></i></span>
+              <span class="admin-modulo-icono"><i class="fa-solid <?= $iconosModulo[$clave] ?? 'fa-puzzle-piece' ?>"></i></span>
               <div>
-                <span class="admin-modulo-nombre"><?= $nombre ?></span>
-                <span class="admin-modulo-desc"><?= $descripcion ?></span>
+                <span class="admin-modulo-nombre"><?= escapar($m['nombre']) ?> <small class="admin-stat-sub">· <?= (int) ($porFormato[$clave] ?? 0) ?> torneo(s)</small></span>
+                <span class="admin-modulo-desc"><?= escapar($m['descripcion']) ?></span>
               </div>
             </div>
-            <span class="badge estado-azul" style="margin-top:0;"><?= (int) ($porFormato[$clave] ?? 0) ?> torneo(s)</span>
+            <label class="interruptor" title="Habilitar o deshabilitar <?= escapar($m['nombre']) ?>">
+              <input type="checkbox" role="switch" data-modulo="<?= escapar($clave) ?>" aria-label="Módulo <?= escapar($m['nombre']) ?> habilitado" <?= (int) $m['habilitado'] === 1 ? 'checked' : '' ?> />
+              <span class="interruptor-pista"></span>
+              <span class="interruptor-texto"><?= (int) $m['habilitado'] === 1 ? 'Habilitado' : 'Deshabilitado' ?></span>
+            </label>
           </div>
         <?php endforeach; ?>
       </div>
+    </section>
+
+    <!-- CONFIGURACIÓN GENERAL (letra 5.1): parámetros que el sistema usa de verdad -->
+    <section class="admin-card" id="configuracion" data-view="configuracion">
+      <div class="seccion-header">
+        <h2 class="seccion-titulo"><i class="fa-solid fa-gear"></i> Configuración general</h2>
+      </div>
+      <form id="formConfiguracion" class="panel-form">
+        <div class="panel-form-grid">
+          <div class="form-group">
+            <label class="form-label" for="cfg-max">Cupo máximo al crear un torneo</label>
+            <input class="form-input" type="number" id="cfg-max" name="max_participantes_por_torneo" min="2" max="512" required
+                   value="<?= (int) ($configGeneral['max_participantes_por_torneo'] ?? 512) ?>" />
+            <span class="form-hint">Entre 2 y 512. No cambia los torneos ya creados.</span>
+          </div>
+          <div class="form-group">
+            <span class="form-label">Registro de usuarios nuevos</span>
+            <label class="interruptor">
+              <input type="checkbox" role="switch" id="cfg-registro" aria-label="Permitir el registro público"
+                     <?= ($configGeneral['permitir_registro'] ?? '1') !== '0' ? 'checked' : '' ?> />
+              <span class="interruptor-pista"></span>
+              <span class="interruptor-texto"><?= ($configGeneral['permitir_registro'] ?? '1') !== '0' ? 'Permitido' : 'Solo el administrador crea cuentas' ?></span>
+            </label>
+            <span class="form-hint">Si se desactiva, la página de registro avisa que está cerrada y las cuentas las crea el administrador desde Usuarios.</span>
+          </div>
+          <div class="form-group">
+            <span class="form-label">Validación de resultados</span>
+            <label class="interruptor">
+              <input type="checkbox" role="switch" id="cfg-validar" aria-label="Exigir validación de resultados"
+                     <?= ($configGeneral['validar_resultados'] ?? '0') === '1' ? 'checked' : '' ?> />
+              <span class="interruptor-pista"></span>
+              <span class="interruptor-texto"><?= ($configGeneral['validar_resultados'] ?? '0') === '1' ? 'Los resultados de organizadores esperan tu validación' : 'Los resultados valen apenas se cargan' ?></span>
+            </label>
+            <span class="form-hint">Si se activa, lo que cargue un organizador queda pendiente: no suma a la tabla ni deja avanzar de ronda hasta que un administrador lo valide. Lo que cargues vos vale al instante.</span>
+          </div>
+        </div>
+        <ul class="panel-form-errores" id="erroresFormConfiguracion" role="alert" hidden></ul>
+        <div class="panel-form-acciones">
+          <button type="submit" class="btn-primary">Guardar configuración</button>
+        </div>
+      </form>
     </section>
 
     <section class="admin-card" data-view="dashboard">
@@ -325,11 +478,14 @@ $etiquetaFormato      = ['liga' => 'Liga', 'eliminacion' => 'Eliminación', 'sui
         <a href="#auditoria" class="admin-acceso">
           <i class="fa-solid fa-clock-rotate-left admin-acceso-icon"></i><span>Ver auditoría</span>
         </a>
+        <a href="#reportes" class="admin-acceso">
+          <i class="fa-solid fa-file-lines admin-acceso-icon"></i><span>Reportes</span>
+        </a>
       </div>
     </section>
 
   </main>
 
-  <script src="script.js?v=28"></script>
+  <script src="script.js?v=33"></script>
 </body>
 </html>

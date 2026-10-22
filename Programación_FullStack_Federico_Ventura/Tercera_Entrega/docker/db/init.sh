@@ -25,6 +25,12 @@ cargar_sgdm() {
         sgdm_migracion_equipos.sql
         sgdm_migracion_fechas.sql
         sgdm_migracion_correccion_vistas.sql
+        sgdm_migracion_modulos_config.sql
+        sgdm_migracion_correccion_autorizada.sql
+        sgdm_migracion_intentos_login.sql
+        sgdm_migracion_validacion_resultados.sql
+        sgdm_migracion_editar_cancelar.sql
+        sgdm_migracion_premio_reglas_visibilidad.sql
     )
 
     local archivo

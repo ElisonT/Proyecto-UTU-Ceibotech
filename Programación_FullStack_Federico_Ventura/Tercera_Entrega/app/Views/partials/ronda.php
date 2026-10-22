@@ -5,16 +5,19 @@
  * Dibuja una ronda con sus enfrentamientos. Variables que espera:
  *   $ronda          fila de Enfrentamiento::listarRondasConEnfrentamientos()
  *   $torneoId       id del torneo
- *   $puedeGestionar true si hay que mostrar los formularios de cargar y corregir resultados
+ *   $puedeGestionar true si hay que mostrar el formulario de cargar resultados
+ *   $puedeCorregir  true si además hay que mostrar el de corregir (admin, u organizador autorizado)
  *
  * Los formularios funcionan solos (POST a gestionar-torneo.php); si hay JavaScript,
  * script.js los intercepta y los manda con fetch a api/resultado.php, que devuelve
  * esta misma partial ya actualizada.
  */
 require_once __DIR__ . '/../../Helpers/csrf.php';
+require_once __DIR__ . '/../../Helpers/roles.php';
 
-$jugados = 0;
-$total   = 0;
+$jugados   = 0;
+$total     = 0;
+$sinValidar = 0;
 foreach ($ronda['enfrentamientos'] as $enf) {
     if ($enf['inscripcion_visitante_id'] === null) {
         continue; // un bye no es un partido
@@ -22,15 +25,19 @@ foreach ($ronda['enfrentamientos'] as $enf) {
     $total++;
     if ((int) $enf['tiene_resultado'] === 1) {
         $jugados++;
+        if ((int) $enf['validado'] === 0) {
+            $sinValidar++; // cargado por un organizador, espera la validación del administrador
+        }
     }
 }
-$completa = $jugados === $total;
+$completa = $jugados === $total && $sinValidar === 0;
+$esAdminRonda = esAdministrador();
 ?>
 <div class="fecha-grupo" id="ronda-<?= (int) $ronda['id'] ?>" style="margin-top: 1.25rem;">
   <div class="fecha-titulo">
     <span><?= escapar($ronda['nombre'] ?: 'Ronda ' . $ronda['numero']) ?></span>
     <span class="badge <?= $completa ? 'estado-verde' : 'estado-naranja' ?>" style="margin-top:0;">
-      <?= $completa ? 'Jugada' : 'Jugados ' . $jugados . ' de ' . $total ?>
+      <?= $completa ? 'Jugada' : ($jugados === $total ? $sinValidar . ' sin validar' : 'Jugados ' . $jugados . ' de ' . $total) ?>
     </span>
   </div>
   <div class="partidos-lista">
@@ -52,10 +59,22 @@ $completa = $jugados === $total;
             </div>
             <div class="partido-equipo partido-visitante"><?= escapar($enf['nombre_visitante']) ?></div>
           </div>
+          <?php if ((int) $enf['validado'] === 0): ?>
+            <span class="partido-corregido" title="Todavía no suma a la tabla ni deja avanzar de ronda"><i class="fa-solid fa-hourglass-half"></i> pendiente de validación</span>
+            <?php if ($esAdminRonda): ?>
+              <form method="post" action="gestionar-torneo.php" style="display: inline;">
+                <input type="hidden" name="accion" value="validar_resultado" />
+                <input type="hidden" name="torneo_id" value="<?= (int) $torneoId ?>" />
+                <input type="hidden" name="enfrentamiento_id" value="<?= (int) $enf['id'] ?>" />
+                <?= campoCsrf() ?>
+                <button type="submit" class="btn-primary" style="padding: 2px 10px; font-size: 12px;"><i class="fa-solid fa-circle-check"></i> Validar</button>
+              </form>
+            <?php endif; ?>
+          <?php endif; ?>
           <?php if (!empty($enf['fecha_correccion'])): ?>
             <span class="partido-corregido" title="Corregido el <?= escapar($enf['fecha_correccion']) ?>"><i class="fa-solid fa-pen-to-square"></i> corregido</span>
           <?php endif; ?>
-          <?php if ($puedeGestionar): ?>
+          <?php if (!empty($puedeCorregir)): ?>
             <details class="partido-corregir">
               <summary><i class="fa-solid fa-pen"></i> Corregir</summary>
               <form method="post" action="gestionar-torneo.php" class="partido-form js-resultado-form" data-accion="corregir">

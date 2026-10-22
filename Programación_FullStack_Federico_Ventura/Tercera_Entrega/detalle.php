@@ -29,6 +29,14 @@ $tabla          = ($formato !== 'eliminacion' && count($rondas) > 0)
     ? (new TablaPosiciones())->listarPorTorneo($torneoId)
     : [];
 $puedeGestionar = puedeGestionarTorneo($torneo);
+$puedeCorregir  = puedeCorregirResultados($torneo);
+$puedeVerReporte = $puedeGestionar;                 // el reporte se puede pedir también de un torneo cancelado
+if ($torneo['estado'] === 'cancelado') {            // un torneo cancelado queda solo para consulta
+    $puedeGestionar = false;
+    $puedeCorregir  = false;
+}
+$esAdmin        = esAdministrador();
+$pendientesValidacion = $puedeGestionar ? count((new Enfrentamiento())->listarPendientesDeValidacion($torneoId)) : 0;
 
 // Aviso de la última acción de gestión (lo deja gestionar-torneo.php).
 $aviso = $_SESSION['flash_torneo'] ?? null;
@@ -96,6 +104,11 @@ $equiposComoCapitan = ($esParticipante && !$miInscripcion
         fn ($eq) => mb_strtolower((string) $eq['deporte']) === mb_strtolower((string) $torneo['deporte'])   // solo equipos del deporte del torneo
     ))
     : [];
+// Equipos que quien gestiona el torneo puede inscribir (letra 5.2).
+$puedeInscribirOrg  = $puedeGestionar && $torneo['estado'] === 'inscripciones_abiertas';
+$equiposInscribibles = ($puedeInscribirOrg && $torneo['modalidad'] === 'equipo')
+    ? (new Equipo())->listarInscribiblesEnTorneo($torneo)
+    : [];
 $ventana            = ventanaDeInscripcion($torneo);
 $textoFechas        = $ventana['cierra'] !== null ? ' Hasta el ' . formatearFecha($ventana['cierra']) . '.' : '';
 $textoCupos         = $cupos !== null ? ' Quedan ' . max(0, $cupos - $cantidad) . ' de ' . $cupos . ' cupos.' : '';
@@ -106,19 +119,11 @@ $tituloPagina = $torneo['nombre'] . ' — PrimeCup';
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <script>
-    // Aplica el modo oscuro ANTES de que se pinte la página, para evitar el
-    // destello blanco al cargar/cambiar de página.
-    (function () {
-      if (localStorage.getItem('sgdm-tema') === 'oscuro') {
-        document.documentElement.classList.add('modo-oscuro');
-      }
-    })();
-  </script>
+  <script src="tema.js?v=1"></script>
   <?= metaCsrf() ?>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title><?= escapar($tituloPagina) ?></title>
-  <link rel="stylesheet" href="styles.css?v=29" />
+  <link rel="stylesheet" href="styles.css?v=32" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 </head>
 <body>
@@ -167,6 +172,12 @@ $tituloPagina = $torneo['nombre'] . ' — PrimeCup';
             </span>
             <span><i class="fa-solid fa-calendar"></i> <?= escapar(formatearFecha($torneo['fecha_inicio'])) ?><?= !empty($torneo['fecha_fin']) ? ' al ' . escapar(formatearFecha($torneo['fecha_fin'])) : '' ?></span>
             <span><i class="fa-solid fa-users"></i> <?= $cantidad ?><?= $cupos !== null ? ' / ' . $cupos : '' ?> <?= $unidad ?></span>
+            <?php if (textoPremio($torneo) !== null): ?>
+              <span><i class="fa-solid fa-gift"></i> Premio: <strong><?= escapar(textoPremio($torneo)) ?></strong></span>
+            <?php endif; ?>
+            <?php if ($torneo['visibilidad'] === 'privado'): ?>
+              <span title="No aparece en la portada ni en las búsquedas: se llega con el link directo"><i class="fa-solid fa-lock"></i> Torneo privado</span>
+            <?php endif; ?>
           </div>
         </div>
 
@@ -178,6 +189,10 @@ $tituloPagina = $torneo['nombre'] . ' — PrimeCup';
           <?php elseif ($torneo['estado'] === 'en_curso'): ?>
             <span class="badge estado-naranja" style="margin-top:0; font-size: 13px; padding: 5px 14px;">
               <i class="fa-solid fa-circle-play"></i> En curso — Ronda <?= $rondaActual ?><?= $formato !== 'eliminacion' ? ' de ' . $totalRondas : '' ?>
+            </span>
+          <?php elseif ($torneo['estado'] === 'cancelado'): ?>
+            <span class="badge estado-gris" style="margin-top:0; font-size: 13px; padding: 5px 14px;">
+              <i class="fa-solid fa-ban"></i> Cancelado
             </span>
           <?php else: ?>
             <span class="badge estado-rojo" style="margin-top:0; font-size: 13px; padding: 5px 14px;">
@@ -225,7 +240,7 @@ $tituloPagina = $torneo['nombre'] . ' — PrimeCup';
           <?php if ($puedeRetirar): ?>
             <div class="detalle-inscripcion-acciones">
               <form method="post" action="inscribirse.php"
-                    onsubmit="return confirm('<?= $miInscripcion['equipo_id'] === null ? '¿Seguro que querés darte de baja de este torneo?' : '¿Retirar al equipo de este torneo?' ?> <?= campoCsrf() ?>');">
+                    data-confirmar="<?= escapar($miInscripcion['equipo_id'] === null ? '¿Seguro que querés darte de baja de este torneo?' : '¿Retirar al equipo de este torneo?') ?>"> <?= campoCsrf() ?>
                 <input type="hidden" name="accion" value="darme_de_baja" />
                 <input type="hidden" name="torneo_id" value="<?= $torneoId ?>" />
                 <button type="submit" class="btn">
@@ -244,7 +259,7 @@ $tituloPagina = $torneo['nombre'] . ' — PrimeCup';
             </div>
             <div class="detalle-inscripcion-acciones">
               <form method="post" action="inscribirse.php"
-                    onsubmit="return confirm('¿Confirmás tu inscripción a este torneo?');"> <?= campoCsrf() ?>
+                    data-confirmar="¿Confirmás tu inscripción a este torneo?"> <?= campoCsrf() ?>
                 <input type="hidden" name="accion" value="inscribirme" />
                 <input type="hidden" name="torneo_id" value="<?= $torneoId ?>" />
                 <button type="submit" class="btn-primary"><i class="fa-solid fa-user-plus"></i> Inscribirme</button>
@@ -279,7 +294,7 @@ $tituloPagina = $torneo['nombre'] . ' — PrimeCup';
             </div>
             <div class="detalle-inscripcion-acciones">
               <form method="post" action="inscribirse.php" class="equipo-fila-acciones"
-                    onsubmit="return confirm('¿Inscribir a este equipo al torneo?');"> <?= campoCsrf() ?>
+                    data-confirmar="¿Inscribir a este equipo al torneo?"> <?= campoCsrf() ?>
                 <input type="hidden" name="accion" value="inscribir_equipo" />
                 <input type="hidden" name="torneo_id" value="<?= $torneoId ?>" />
                 <select name="equipo_id" class="form-input-p" required aria-label="Equipo a inscribir">
@@ -335,7 +350,7 @@ $tituloPagina = $torneo['nombre'] . ' — PrimeCup';
         <div class="gestion-acciones">
           <?php if ($torneo['estado'] === 'inscripciones_abiertas'): ?>
             <form method="post" action="gestionar-torneo.php"
-                  onsubmit="return confirm('Se cierran las inscripciones y se genera el fixture con <?= $cantidad ?> <?= $unidad ?>. ¿Seguimos?');">
+                  data-confirmar="Se cierran las inscripciones y se genera el fixture con <?= $cantidad ?> <?= $unidad ?>. ¿Seguimos?">
               <input type="hidden" name="accion" value="generar_fixture" />
               <?= campoCsrf() ?>
               <input type="hidden" name="torneo_id" value="<?= $torneoId ?>" />
@@ -367,6 +382,72 @@ $tituloPagina = $torneo['nombre'] . ' — PrimeCup';
             <?php endif; ?>
           <?php endif; ?>
         </div>
+      </section>
+    <?php endif; ?>
+
+    <?php if ($pendientesValidacion > 0): ?>
+      <section class="perfil-seccion">
+        <div class="seccion-header">
+          <h2 class="seccion-titulo"><i class="fa-solid fa-hourglass-half"></i> Resultados por validar</h2>
+        </div>
+        <div class="gestion-acciones">
+          <span class="badge estado-naranja" style="margin-top:0;"><?= $pendientesValidacion ?> pendiente<?= $pendientesValidacion === 1 ? '' : 's' ?></span>
+          <?php if ($esAdmin): ?>
+            <form method="post" action="gestionar-torneo.php"> <?= campoCsrf() ?>
+              <input type="hidden" name="accion" value="validar_pendientes" />
+              <input type="hidden" name="torneo_id" value="<?= $torneoId ?>" />
+              <button type="submit" class="btn-primary"><i class="fa-solid fa-circle-check"></i> Validar todos</button>
+            </form>
+          <?php endif; ?>
+          <span class="tabla-hint">Mientras no se validen no suman a la tabla ni dejan avanzar de ronda.<?= $esAdmin ? '' : ' Los valida el administrador.' ?></span>
+        </div>
+      </section>
+    <?php endif; ?>
+
+    <?php if ($esAdmin): ?>
+      <section class="perfil-seccion">
+        <div class="seccion-header">
+          <h2 class="seccion-titulo"><i class="fa-solid fa-user-check"></i> Corrección de resultados</h2>
+        </div>
+        <div class="gestion-acciones">
+          <?php if (empty($torneo['organizador_asignado_id'])): ?>
+            <span class="tabla-hint">Este torneo no tiene organizador asignado. Vos (administrador) siempre podés corregir resultados.</span>
+          <?php elseif ((int) $torneo['correccion_autorizada'] === 1): ?>
+            <span class="badge estado-verde" style="margin-top:0;">Organizador autorizado</span>
+            <form method="post" action="gestionar-torneo.php"
+                  data-confirmar="El organizador ya no va a poder corregir resultados de este torneo. ¿Seguimos?">
+              <input type="hidden" name="accion" value="revocar_correccion" />
+              <?= campoCsrf() ?>
+              <input type="hidden" name="torneo_id" value="<?= $torneoId ?>" />
+              <button type="submit" class="btn-danger"><i class="fa-solid fa-user-xmark"></i> Quitar autorización</button>
+            </form>
+            <span class="tabla-hint"><?= escapar($torneo['nombre_organizador']) ?> puede cargar y corregir resultados.</span>
+          <?php else: ?>
+            <span class="badge estado-gris" style="margin-top:0;">Organizador sin autorización</span>
+            <form method="post" action="gestionar-torneo.php">
+              <input type="hidden" name="accion" value="autorizar_correccion" />
+              <?= campoCsrf() ?>
+              <input type="hidden" name="torneo_id" value="<?= $torneoId ?>" />
+              <button type="submit" class="btn-primary"><i class="fa-solid fa-user-check"></i> Autorizar corrección</button>
+            </form>
+            <span class="tabla-hint"><?= escapar($torneo['nombre_organizador']) ?> puede cargar resultados, pero no corregir los ya cargados.</span>
+          <?php endif; ?>
+        </div>
+      </section>
+    <?php elseif ($puedeGestionar && !$puedeCorregir): ?>
+      <p class="tabla-hint" style="margin: 0 0 1rem;">Podés cargar resultados. Para corregir uno ya cargado necesitás la autorización del administrador.</p>
+    <?php endif; ?>
+
+    <?php if (!empty($torneo['tiene_reglas_pdf']) || !empty($torneo['reglas_texto'])): ?>
+      <section class="perfil-seccion">
+        <div class="seccion-header">
+          <h2 class="seccion-titulo"><i class="fa-solid fa-book"></i> Reglas del torneo</h2>
+        </div>
+        <?php if (!empty($torneo['tiene_reglas_pdf'])): ?>
+          <a href="reglas.php?id=<?= $torneoId ?>" target="_blank" rel="noopener" class="btn-primary"><i class="fa-solid fa-file-pdf"></i> Ver las reglas (PDF)</a>
+        <?php else: ?>
+          <p style="margin: 0; white-space: pre-wrap; overflow-wrap: anywhere;"><?= escapar($torneo['reglas_texto']) ?></p>
+        <?php endif; ?>
       </section>
     <?php endif; ?>
 
@@ -417,6 +498,146 @@ $tituloPagina = $torneo['nombre'] . ' — PrimeCup';
       <?php endif; ?>
     </section>
 
+    <?php if ($puedeGestionar && in_array($torneo['estado'], ['inscripciones_abiertas', 'en_curso'], true)): ?>
+      <?php $abiertoEdicion = $torneo['estado'] === 'inscripciones_abiertas'; ?>
+      <section class="perfil-seccion">
+        <div class="seccion-header">
+          <h2 class="seccion-titulo"><i class="fa-solid fa-pen-to-square"></i> Editar o cancelar el torneo</h2>
+        </div>
+        <details class="partido-corregir">
+          <summary><i class="fa-solid fa-pen"></i> Editar datos del torneo</summary>
+          <form method="post" action="gestionar-torneo.php" class="panel-form"> <?= campoCsrf() ?>
+            <input type="hidden" name="accion" value="editar_torneo" />
+            <input type="hidden" name="torneo_id" value="<?= $torneoId ?>" />
+            <div class="panel-form-grid">
+              <div class="form-group">
+                <label class="form-label" for="ed-nombre">Nombre</label>
+                <input class="form-input" type="text" id="ed-nombre" name="nombre" minlength="3" maxlength="120" required value="<?= escapar($torneo['nombre']) ?>" />
+              </div>
+              <?php if ($abiertoEdicion): ?>
+                <div class="form-group">
+                  <label class="form-label" for="ed-cupos">Máximo de <?= $unidad ?></label>
+                  <input class="form-input" type="number" id="ed-cupos" name="max_participantes" min="<?= max(2, $cantidad) ?>"
+                         value="<?= $torneo['cupos'] === null ? '' : (int) $torneo['cupos'] ?>" <?= $torneo['cupos'] === null ? '' : 'required' ?> />
+                  <span class="form-hint">No puede ser menor que los <?= $cantidad ?> ya inscriptos.</span>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="ed-apertura">Inicio de las inscripciones</label>
+                  <input class="form-input" type="date" id="ed-apertura" name="fecha_inicio_inscripcion" required value="<?= escapar((string) $torneo['fecha_apertura_inscripcion']) ?>" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="ed-cierre">Cierre de las inscripciones</label>
+                  <input class="form-input" type="date" id="ed-cierre" name="fecha_cierre_inscripcion" required value="<?= escapar((string) $torneo['fecha_cierre_inscripcion']) ?>" />
+                </div>
+              <?php endif; ?>
+              <div class="form-group">
+                <label class="form-label" for="ed-inicio">Inicio del torneo</label>
+                <input class="form-input" type="date" id="ed-inicio" name="fecha_inicio_torneo" required value="<?= escapar((string) $torneo['fecha_inicio']) ?>" />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="ed-fin">Fin del torneo</label>
+                <input class="form-input" type="date" id="ed-fin" name="fecha_fin_torneo" required value="<?= escapar((string) $torneo['fecha_fin']) ?>" />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="ed-visib">Visibilidad</label>
+                <select class="form-input" id="ed-visib" name="visibilidad">
+                  <option value="publico" <?= $torneo['visibilidad'] === 'publico' ? 'selected' : '' ?>>Público (aparece en búsquedas)</option>
+                  <option value="privado" <?= $torneo['visibilidad'] === 'privado' ? 'selected' : '' ?>>Privado (solo con el link)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="ed-premio">Premio</label>
+                <select class="form-input" id="ed-premio" name="tipo_premio">
+                  <option value="ninguno" <?= $torneo['tipo_premio'] === 'ninguno' ? 'selected' : '' ?>>Sin premio</option>
+                  <option value="monetario" <?= $torneo['tipo_premio'] === 'monetario' ? 'selected' : '' ?>>Monetario</option>
+                  <option value="otro" <?= $torneo['tipo_premio'] === 'otro' ? 'selected' : '' ?>>Otro</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="ed-monto">Monto del premio (USD)</label>
+                <input class="form-input" type="number" id="ed-monto" name="monto_premio" min="0" step="0.01"
+                       value="<?= $torneo['monto_premio'] === null ? '' : escapar((string) (float) $torneo['monto_premio']) ?>" />
+                <span class="form-hint">Solo si el premio es monetario.</span>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="ed-descp">Descripción del premio</label>
+                <input class="form-input" type="text" id="ed-descp" name="desc_premio" maxlength="300" value="<?= escapar((string) $torneo['desc_premio']) ?>" />
+                <span class="form-hint">Solo si el premio es "Otro".</span>
+              </div>
+              <?php if (empty($torneo['tiene_reglas_pdf'])): ?>
+                <div class="form-group">
+                  <label class="form-label" for="ed-reglas">Reglas</label>
+                  <textarea class="form-input" id="ed-reglas" name="reglas_texto" rows="4" maxlength="5000"><?= escapar((string) $torneo['reglas_texto']) ?></textarea>
+                </div>
+              <?php endif; ?>
+            </div>
+            <p class="tabla-hint" style="margin: 0 0 0.75rem;">El deporte, el formato y la modalidad no se pueden cambiar.<?= $abiertoEdicion ? '' : ' Con el torneo en curso tampoco se tocan las inscripciones ni el cupo.' ?></p>
+            <div class="panel-form-acciones"><button type="submit" class="btn-primary">Guardar cambios</button></div>
+          </form>
+        </details>
+        <details class="partido-corregir">
+          <summary><i class="fa-solid fa-ban"></i> Cancelar el torneo</summary>
+          <form method="post" action="gestionar-torneo.php" class="panel-form"
+                data-confirmar="El torneo queda cancelado y ya no admite inscripciones ni resultados. Esto no se puede deshacer. ¿Seguimos?"> <?= campoCsrf() ?>
+            <input type="hidden" name="accion" value="cancelar_torneo" />
+            <input type="hidden" name="torneo_id" value="<?= $torneoId ?>" />
+            <div class="form-group">
+              <label class="form-label" for="can-motivo">Motivo (opcional)</label>
+              <input class="form-input" type="text" id="can-motivo" name="motivo" maxlength="200" placeholder="Ej.: no se llegó al mínimo de equipos" />
+              <span class="form-hint">Los resultados y las inscripciones quedan guardados como historial. Los equipos inscriptos se liberan.</span>
+            </div>
+            <div class="panel-form-acciones"><button type="submit" class="btn-danger"><i class="fa-solid fa-ban"></i> Cancelar torneo</button></div>
+          </form>
+        </details>
+      </section>
+    <?php endif; ?>
+
+    <?php if ($puedeVerReporte): ?>
+      <section class="perfil-seccion">
+        <div class="seccion-header">
+          <h2 class="seccion-titulo"><i class="fa-solid fa-file-lines"></i> Reporte del torneo</h2>
+        </div>
+        <div class="gestion-acciones">
+          <a href="reporte-torneo.php?id=<?= $torneoId ?>" class="btn-primary"><i class="fa-solid fa-print"></i> Ver / imprimir</a>
+          <a href="reporte-torneo.php?id=<?= $torneoId ?>&amp;formato=csv" class="btn"><i class="fa-solid fa-file-csv"></i> Descargar CSV</a>
+          <span class="tabla-hint">Participantes, tabla de posiciones y resultados.</span>
+        </div>
+      </section>
+    <?php endif; ?>
+
+    <?php if ($puedeInscribirOrg): ?>
+      <section class="perfil-seccion">
+        <div class="seccion-header">
+          <h2 class="seccion-titulo"><i class="fa-solid fa-user-plus"></i> Inscribir <?= $unidad === 'equipos' ? 'un equipo' : 'a un participante' ?></h2>
+        </div>
+        <?php if ($torneo['modalidad'] === 'individual'): ?>
+          <form method="post" action="gestionar-torneo.php" class="equipo-fila-acciones"> <?= campoCsrf() ?>
+            <input type="hidden" name="accion" value="inscribir_persona" />
+            <input type="hidden" name="torneo_id" value="<?= $torneoId ?>" />
+            <input type="text" name="nombre_usuario" class="form-input-p" placeholder="Nombre de usuario (ej: juanperez)"
+                   maxlength="30" required aria-label="Nombre de usuario a inscribir" />
+            <button type="submit" class="btn-primary" <?= $hayCupo ? '' : 'disabled' ?>><i class="fa-solid fa-user-plus"></i> Inscribir</button>
+          </form>
+          <p class="tabla-hint" style="margin: 0.5rem 0 0;">Se puede inscribir a cualquier participante activo hasta que generes el fixture, aunque haya pasado la fecha de cierre.<?= $hayCupo ? '' : ' No quedan cupos.' ?></p>
+        <?php elseif (empty($equiposInscribibles)): ?>
+          <p class="tabla-hint" style="margin: 0;">No hay equipos para inscribir: tienen que ser de <?= escapar($torneo['deporte']) ?>, de <?= (int) $jugadoresPorEquipo ?> integrantes con el plantel completo y no estar ya inscriptos.</p>
+        <?php else: ?>
+          <form method="post" action="gestionar-torneo.php" class="equipo-fila-acciones"> <?= campoCsrf() ?>
+            <input type="hidden" name="accion" value="inscribir_equipo_org" />
+            <input type="hidden" name="torneo_id" value="<?= $torneoId ?>" />
+            <select name="equipo_id" class="form-input-p" required aria-label="Equipo a inscribir">
+              <option value="">Elegí un equipo…</option>
+              <?php foreach ($equiposInscribibles as $eq): ?>
+                <option value="<?= (int) $eq['id'] ?>"><?= escapar($eq['nombre_equipo']) ?><?= $eq['capitan'] ? ' (capitán: ' . escapar($eq['capitan']) . ')' : '' ?></option>
+              <?php endforeach; ?>
+            </select>
+            <button type="submit" class="btn-primary" <?= $hayCupo ? '' : 'disabled' ?>><i class="fa-solid fa-user-plus"></i> Inscribir equipo</button>
+          </form>
+          <?php if (!$hayCupo): ?><p class="tabla-hint" style="margin: 0.5rem 0 0;">No quedan cupos.</p><?php endif; ?>
+        <?php endif; ?>
+      </section>
+    <?php endif; ?>
+
     <section class="perfil-seccion">
       <div class="seccion-header">
         <h2 class="seccion-titulo"><i class="fa-solid fa-users"></i> <?= $unidad === 'equipos' ? 'Equipos participantes' : 'Participantes' ?></h2>
@@ -429,6 +650,15 @@ $tituloPagina = $torneo['nombre'] . ' — PrimeCup';
           <?php foreach ($inscriptos as $i): ?>
             <div class="participante-item">
               <i class="fa-solid <?= $unidad === 'equipos' ? 'fa-people-group' : 'fa-user' ?>"></i> <?= escapar($i['nombre']) ?>
+              <?php if ($puedeInscribirOrg): ?>
+                <form method="post" action="gestionar-torneo.php" style="margin: 0 0 0 auto;"
+                      data-confirmar="¿Retirar a <?= escapar($i['nombre']) ?> del torneo?"> <?= campoCsrf() ?>
+                  <input type="hidden" name="accion" value="retirar_inscripcion" />
+                  <input type="hidden" name="torneo_id" value="<?= $torneoId ?>" />
+                  <input type="hidden" name="inscripcion_id" value="<?= (int) $i['inscripcion_id'] ?>" />
+                  <button type="submit" class="btn-danger" style="padding: 2px 8px; font-size: 12px;" aria-label="Retirar inscripción"><i class="fa-solid fa-xmark"></i></button>
+                </form>
+              <?php endif; ?>
             </div>
           <?php endforeach; ?>
         <?php endif; ?>
@@ -452,6 +682,6 @@ $tituloPagina = $torneo['nombre'] . ' — PrimeCup';
     </div>
   </footer>
 
-<script src="script.js?v=28"></script>
+<script src="script.js?v=33"></script>
 </body>
 </html>

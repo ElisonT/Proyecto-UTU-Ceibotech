@@ -21,6 +21,7 @@ $etiquetasEstado  = [
     'inscripciones_abiertas' => ['texto' => 'Inscripciones abiertas', 'clase' => 'estado-verde'],
     'en_curso'               => ['texto' => 'En curso',               'clase' => 'estado-naranja'],
     'finalizado'             => ['texto' => 'Finalizado',             'clase' => 'estado-rojo'],
+    'cancelado'              => ['texto' => 'Cancelado',              'clase' => 'estado-gris'],
 ];
 $descripcionesFormato = [
     'liga'        => 'Todos contra todos, puntos por resultado.',
@@ -37,22 +38,13 @@ $puedeCrearTorneo = !empty($_SESSION['usuario_id'])
   <!-- HEAD: contiene informacion para el navegador; no se muestra como contenido principal de la pagina. -->
   <!-- charset define la codificacion para que tildes y eñes se lean correctamente. -->
   <meta charset="UTF-8" />
-  <script>
-    // Aplica el modo oscuro ANTES de que se pinte la página, para evitar el
-    // destello blanco al cargar/cambiar de página (si no, se ve un instante
-    // en claro y recién después salta a oscuro).
-    (function () {
-      if (localStorage.getItem('sgdm-tema') === 'oscuro') {
-        document.documentElement.classList.add('modo-oscuro');
-      }
-    })();
-  </script>
+  <script src="tema.js?v=1"></script>
   <!-- viewport adapta el ancho de la pagina a celulares, tablets y PC. -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <!-- title es el texto que aparece en la pestaña del navegador. -->
   <title>Buscar torneos — SGDM</title>
   <!-- styles.css guarda todos los estilos visuales del sitio. -->
-  <link rel="stylesheet" href="styles.css?v=29" />
+  <link rel="stylesheet" href="styles.css?v=32" />
   <!-- Font Awesome aporta los iconos usados en botones, tarjetas y menus. -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 </head>
@@ -147,6 +139,7 @@ $puedeCrearTorneo = !empty($_SESSION['usuario_id'])
             <option>Inscripciones abiertas</option>
             <option>En curso</option>
             <option>Finalizado</option>
+            <option>Cancelado</option>
           </select>
         </div>
       </div>
@@ -169,7 +162,9 @@ $puedeCrearTorneo = !empty($_SESSION['usuario_id'])
       $estado   = $etiquetasEstado[$t['estado']];
       $formato  = $etiquetasFormato[$t['formato']];
       $unidad   = $t['modalidad'] === 'individual' ? 'participantes' : 'equipos';
-      if ($t['estado'] === 'finalizado') {
+      if ($t['estado'] === 'cancelado') {
+          $fechaTxt = 'Cancelado';
+      } elseif ($t['estado'] === 'finalizado') {
           $fechaTxt = 'Finalizado';
       } elseif ($t['estado'] === 'inscripciones_abiertas') {
           $ventana  = ventanaDeInscripcion($t);
@@ -241,6 +236,6 @@ $puedeCrearTorneo = !empty($_SESSION['usuario_id'])
     </div>
   </footer>
 
-<script src="script.js?v=28"></script>
+<script src="script.js?v=33"></script>
 </body>
 </html>

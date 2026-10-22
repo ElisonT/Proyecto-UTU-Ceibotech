@@ -19,6 +19,11 @@ if (!$torneo) {
 
 $rondas         = (new Enfrentamiento())->listarRondasConEnfrentamientos($torneoId);
 $puedeGestionar = puedeGestionarTorneo($torneo);
+$puedeCorregir  = puedeCorregirResultados($torneo);
+if ($torneo['estado'] === 'cancelado') {
+    $puedeGestionar = false;
+    $puedeCorregir  = false;
+}
 $etiquetasFormato = ['liga' => 'Liga', 'eliminacion' => 'Eliminación directa', 'suizo' => 'Sistema suizo'];
 $unidad = $torneo['modalidad'] === 'individual' ? 'participantes' : 'equipos';
 
@@ -54,19 +59,11 @@ $tituloPagina = 'Calendario — ' . $torneo['nombre'] . ' — PrimeCup';
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <script>
-    // Aplica el modo oscuro ANTES de que se pinte la página, para evitar el
-    // destello blanco al cargar/cambiar de página.
-    (function () {
-      if (localStorage.getItem('sgdm-tema') === 'oscuro') {
-        document.documentElement.classList.add('modo-oscuro');
-      }
-    })();
-  </script>
+  <script src="tema.js?v=1"></script>
   <?= metaCsrf() ?>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title><?= escapar($tituloPagina) ?></title>
-  <link rel="stylesheet" href="styles.css?v=29" />
+  <link rel="stylesheet" href="styles.css?v=32" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 </head>
 <body>
@@ -154,6 +151,6 @@ $tituloPagina = 'Calendario — ' . $torneo['nombre'] . ' — PrimeCup';
     </div>
   </footer>
 
-<script src="script.js?v=28"></script>
+<script src="script.js?v=33"></script>
 </body>
 </html>

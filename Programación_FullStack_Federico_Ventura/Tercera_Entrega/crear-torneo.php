@@ -2,6 +2,7 @@
 session_start();
 require_once __DIR__ . '/app/Helpers/manejador_errores.php';
 require_once __DIR__ . '/app/Helpers/csrf.php';
+require_once __DIR__ . '/app/Models/Configuracion.php';
 exigirCsrf('crear-torneo.php');
 require_once __DIR__ . '/app/Helpers/roles.php';
 require_once __DIR__ . '/app/Models/Deporte.php';
@@ -29,7 +30,7 @@ $valores = $_POST;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $controlador = new TorneoController();
-    [$errores, $idTorneo] = $controlador->procesarCreacion($_POST, (int) $_SESSION['usuario_id']);
+    [$errores, $idTorneo] = $controlador->procesarCreacion($_POST, (int) $_SESSION['usuario_id'], $_FILES);
 
     if (empty($errores)) {
         // Va directo a asignarle un organizador, que es el paso lógico siguiente.
@@ -40,6 +41,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $deportes = (new Deporte())->listarTodos();
 $hoy = (new DateTimeImmutable('now', new DateTimeZone('America/Montevideo')))->format('Y-m-d');
+
+// Módulos habilitados y cupo máximo: los define el administrador en Configuración.
+$configuracion       = new Configuracion();
+$formatosHabilitados = $configuracion->formatosHabilitados();
+$maxParticipantes    = $configuracion->maxParticipantes();
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -47,22 +53,13 @@ $hoy = (new DateTimeImmutable('now', new DateTimeZone('America/Montevideo')))->f
   <!-- HEAD: contiene informacion para el navegador; no se muestra como contenido principal de la pagina. -->
   <!-- charset define la codificacion para que tildes y eñes se lean correctamente. -->
   <meta charset="UTF-8" />
-  <script>
-    // Aplica el modo oscuro ANTES de que se pinte la página, para evitar el
-    // destello blanco al cargar/cambiar de página (si no, se ve un instante
-    // en claro y recién después salta a oscuro).
-    (function () {
-      if (localStorage.getItem('sgdm-tema') === 'oscuro') {
-        document.documentElement.classList.add('modo-oscuro');
-      }
-    })();
-  </script>
+  <script src="tema.js?v=1"></script>
   <!-- viewport adapta el ancho de la pagina a celulares, tablets y PC. -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <!-- title es el texto que aparece en la pestaña del navegador. -->
   <title>Crear torneo — SGDM</title>
   <!-- styles.css guarda todos los estilos visuales del sitio. -->
-  <link rel="stylesheet" href="styles.css?v=29" />
+  <link rel="stylesheet" href="styles.css?v=32" />
   <!-- Font Awesome aporta los iconos usados en botones, tarjetas y menus. -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 </head>
@@ -232,30 +229,30 @@ $hoy = (new DateTimeImmutable('now', new DateTimeZone('America/Montevideo')))->f
           <label class="form-label-p">Tipo de torneo</label>
           <div class="radio-group">
 
-            <label class="radio-card">
-              <input type="radio" name="tipo" value="liga" required />
+            <label class="radio-card<?= in_array('liga', $formatosHabilitados, true) ? '' : ' radio-card-deshabilitada' ?>">
+              <input type="radio" name="tipo" value="liga" required <?= in_array('liga', $formatosHabilitados, true) ? '' : 'disabled' ?> />
               <div class="radio-card-inner">
                 <i class="fa-solid fa-table"></i>
                 <span class="radio-card-titulo">Liga</span>
-                <span class="radio-card-desc">Todos contra todos. Puntos por resultado.</span>
+                <span class="radio-card-desc">Todos contra todos. Puntos por resultado.<?= in_array('liga', $formatosHabilitados, true) ? '' : ' (Deshabilitado por el administrador)' ?></span>
               </div>
             </label>
 
-            <label class="radio-card">
-              <input type="radio" name="tipo" value="eliminacion" />
+            <label class="radio-card<?= in_array('eliminacion', $formatosHabilitados, true) ? '' : ' radio-card-deshabilitada' ?>">
+              <input type="radio" name="tipo" value="eliminacion" required <?= in_array('eliminacion', $formatosHabilitados, true) ? '' : 'disabled' ?> />
               <div class="radio-card-inner">
                 <i class="fa-solid fa-sitemap"></i>
                 <span class="radio-card-titulo">Eliminación directa</span>
-                <span class="radio-card-desc">El perdedor queda eliminado. Llaves automáticas.</span>
+                <span class="radio-card-desc">El perdedor queda eliminado. Llaves automáticas.<?= in_array('eliminacion', $formatosHabilitados, true) ? '' : ' (Deshabilitado por el administrador)' ?></span>
               </div>
             </label>
 
-            <label class="radio-card">
-              <input type="radio" name="tipo" value="suizo" />
+            <label class="radio-card<?= in_array('suizo', $formatosHabilitados, true) ? '' : ' radio-card-deshabilitada' ?>">
+              <input type="radio" name="tipo" value="suizo" required <?= in_array('suizo', $formatosHabilitados, true) ? '' : 'disabled' ?> />
               <div class="radio-card-inner">
                 <i class="fa-solid fa-shuffle"></i>
                 <span class="radio-card-titulo">Sistema suizo</span>
-                <span class="radio-card-desc">Emparejamiento por rendimiento acumulado.</span>
+                <span class="radio-card-desc">Emparejamiento por rendimiento acumulado.<?= in_array('suizo', $formatosHabilitados, true) ? '' : ' (Deshabilitado por el administrador)' ?></span>
               </div>
             </label>
 
@@ -273,10 +270,10 @@ $hoy = (new DateTimeImmutable('now', new DateTimeZone('America/Montevideo')))->f
               class="form-input-p"
               placeholder="Ej: 16"
               min="2"
-              max="512"
+              max="<?= (int) $maxParticipantes ?>"
               required
             />
-            <span class="form-hint-p">Entre 2 y 512.</span>
+            <span class="form-hint-p">Entre 2 y <?= (int) $maxParticipantes ?>.</span>
           </div>
 
           <div class="form-group">
@@ -559,6 +556,6 @@ $hoy = (new DateTimeImmutable('now', new DateTimeZone('America/Montevideo')))->f
     </div>
   </footer>
 
-<script src="script.js?v=28"></script>
+<script src="script.js?v=33"></script>
 </body>
 </html>

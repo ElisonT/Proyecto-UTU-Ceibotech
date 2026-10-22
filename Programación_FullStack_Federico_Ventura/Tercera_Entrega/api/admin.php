@@ -10,6 +10,11 @@
  *   GET  ?accion=auditoria&filtro=&q=&pagina=    historial de auditoría
  *   GET  ?accion=resumen                         números del dashboard
  *   POST accion=estado_usuario (usuario_id, activo, csrf)   suspender / reactivar
+ *   POST accion=crear_usuario  (usuario, nombre, email, rol_id, password, confirm, csrf)
+ *   POST accion=editar_usuario (usuario_id, nombre, email, rol_id, csrf)
+ *   POST accion=baja_usuario   (usuario_id, csrf)           dar de baja (anonimizar) la cuenta
+ *   POST accion=modulo         (formato, habilitado=1|0, csrf)   habilitar / deshabilitar un formato
+ *   POST accion=guardar_configuracion (max_participantes_por_torneo, permitir_registro=1|0, csrf)
  */
 session_start();
 require_once __DIR__ . '/../app/Helpers/manejador_errores.php';
@@ -18,6 +23,7 @@ require_once __DIR__ . '/../app/Helpers/csrf.php';
 require_once __DIR__ . '/../app/Helpers/api.php';
 require_once __DIR__ . '/../app/Models/Panel.php';
 require_once __DIR__ . '/../app/Models/Auditoria.php';
+require_once __DIR__ . '/../app/Controllers/AdministracionController.php';
 
 if (empty($_SESSION['usuario_id'])) {
     responderError('Tu sesión expiró. Volvé a iniciar sesión.', 401);
@@ -96,6 +102,49 @@ if ($accion === 'estado_usuario') {
         'activo'   => $activar,
         'resumen'  => $panel->resumen(),
     ]);
+}
+
+$administracion = new AdministracionController();
+$actorId        = (int) $_SESSION['usuario_id'];
+
+if ($accion === 'crear_usuario') {
+    $resultado = $administracion->crearUsuario($_POST, $actorId);
+    if (!empty($resultado['errores'])) {
+        responderJson(['ok' => false, 'mensajes' => $resultado['errores']], 422);
+    }
+    responderJson(['ok' => true, 'mensajes' => ['Cuenta creada.'], 'id' => $resultado['id'], 'resumen' => $panel->resumen()]);
+}
+
+if ($accion === 'editar_usuario') {
+    $errores = $administracion->editarUsuario((int) ($_POST['usuario_id'] ?? 0), $_POST, $actorId);
+    if (!empty($errores)) {
+        responderJson(['ok' => false, 'mensajes' => $errores], 422);
+    }
+    responderJson(['ok' => true, 'mensajes' => ['Cambios guardados.'], 'resumen' => $panel->resumen()]);
+}
+
+if ($accion === 'baja_usuario') {
+    $errores = $administracion->darDeBaja((int) ($_POST['usuario_id'] ?? 0), $actorId);
+    if (!empty($errores)) {
+        responderJson(['ok' => false, 'mensajes' => $errores], 422);
+    }
+    responderJson(['ok' => true, 'mensajes' => ['Cuenta dada de baja.'], 'resumen' => $panel->resumen()]);
+}
+
+if ($accion === 'modulo') {
+    $errores = $administracion->cambiarModulo((string) ($_POST['formato'] ?? ''), ($_POST['habilitado'] ?? '') === '1', $actorId);
+    if (!empty($errores)) {
+        responderJson(['ok' => false, 'mensajes' => $errores], 422);
+    }
+    responderJson(['ok' => true, 'mensajes' => [($_POST['habilitado'] ?? '') === '1' ? 'Módulo habilitado.' : 'Módulo deshabilitado.']]);
+}
+
+if ($accion === 'guardar_configuracion') {
+    $resultado = $administracion->guardarConfiguracion($_POST, $actorId);
+    if (!empty($resultado['errores'])) {
+        responderJson(['ok' => false, 'mensajes' => $resultado['errores']], 422);
+    }
+    responderJson(['ok' => true, 'mensajes' => [$resultado['mensaje']]]);
 }
 
 responderError('Acción desconocida.', 404);

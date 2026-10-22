@@ -91,10 +91,54 @@ class Torneo
      */
     public function asignarOrganizador(int $torneoId, ?int $organizadorId): bool
     {
+        // La autorización para corregir resultados es de la persona asignada: si cambia el
+        // organizador (o se lo quita), vuelve a 0. Va ANTES que la otra columna porque MySQL y
+        // MariaDB evalúan el SET de izquierda a derecha y necesitan comparar con el valor viejo.
         $consulta = $this->conexion->prepare(
-            'UPDATE torneos SET organizador_asignado_id = :organizador WHERE id = :torneo'
+            'UPDATE torneos
+                SET correccion_autorizada   = IF(organizador_asignado_id <=> :nuevo_a, correccion_autorizada, 0),
+                    organizador_asignado_id = :nuevo_b
+              WHERE id = :torneo'
         );
-        return $consulta->execute(['organizador' => $organizadorId, 'torneo' => $torneoId]);
+        return $consulta->execute(['nuevo_a' => $organizadorId, 'nuevo_b' => $organizadorId, 'torneo' => $torneoId]);
+    }
+
+    /** Actualiza los datos editables de un torneo (nombre, cupos y fechas). */
+    public function actualizarDatos(int $torneoId, array $d): bool
+    {
+        $consulta = $this->conexion->prepare(
+            'UPDATE torneos
+                SET nombre = :nombre, cupos = :cupos, fecha_apertura_inscripcion = :apertura,
+                    fecha_cierre_inscripcion = :cierre, fecha_inicio = :inicio, fecha_fin = :fin,
+                    tipo_premio = :tipo_premio, monto_premio = :monto_premio, desc_premio = :desc_premio,
+                    reglas_texto = :reglas_texto, visibilidad = :visibilidad
+              WHERE id = :id AND estado IN (\'inscripciones_abiertas\', \'en_curso\')'
+        );
+        return $consulta->execute([
+            'nombre' => $d['nombre'], 'cupos' => $d['cupos'], 'apertura' => $d['apertura'],
+            'cierre' => $d['cierre'], 'inicio' => $d['inicio'], 'fin' => $d['fin'],
+            'tipo_premio' => $d['tipo_premio'], 'monto_premio' => $d['monto_premio'], 'desc_premio' => $d['desc_premio'],
+            'reglas_texto' => $d['reglas_texto'], 'visibilidad' => $d['visibilidad'], 'id' => $torneoId,
+        ]);
+    }
+
+    /** Pasa a 'cancelado' un torneo que todavía no terminó. Devuelve false si no estaba en un estado cancelable. */
+    public function cancelar(int $torneoId): bool
+    {
+        $consulta = $this->conexion->prepare(
+            "UPDATE torneos SET estado = 'cancelado' WHERE id = :id AND estado IN ('inscripciones_abiertas', 'en_curso')"
+        );
+        $consulta->execute(['id' => $torneoId]);
+        return $consulta->rowCount() > 0;
+    }
+
+    /** Habilita (o quita) que el organizador asignado pueda corregir resultados de este torneo. */
+    public function establecerAutorizacionCorreccion(int $torneoId, bool $autorizada): bool
+    {
+        $consulta = $this->conexion->prepare(
+            'UPDATE torneos SET correccion_autorizada = :valor WHERE id = :id'
+        );
+        return $consulta->execute(['valor' => $autorizada ? 1 : 0, 'id' => $torneoId]);
     }
 
     /** Lista todos los torneos con el nombre de quién lo creó y quién lo gestiona (para el admin). */
@@ -152,31 +196,76 @@ class Torneo
         ?int $jugadoresPorEquipo = null,
         ?string $aperturaInscripcion = null,
         ?string $cierreInscripcion = null,
-        ?string $fechaFin = null
+        ?string $fechaFin = null,
+        array $extras = []
     ): int|false
     {
+        // $extras trae premio, reglas y visibilidad (ver TorneoController::validarExtras); el PDF de reglas,
+        // si hay, va en $extras['pdf']. Todo se guarda junto o no se guarda nada.
+        try {
+            $this->conexion->beginTransaction();
+
+            $consulta = $this->conexion->prepare(
+                'INSERT INTO torneos (nombre, deporte, formato, fecha_inicio, creado_por, modalidad, cupos, jugadores_por_equipo,
+                                     fecha_apertura_inscripcion, fecha_cierre_inscripcion, fecha_fin,
+                                     tipo_premio, monto_premio, desc_premio, reglas_texto, visibilidad)
+                 VALUES (:nombre, :deporte, :formato, :fecha_inicio, :creado_por, :modalidad, :cupos, :jugadores,
+                         :apertura, :cierre, :fin, :tipo_premio, :monto_premio, :desc_premio, :reglas_texto, :visibilidad)'
+            );
+            $consulta->execute([
+                'nombre'       => $nombre,
+                'deporte'      => $deporte,
+                'formato'      => $formato,
+                'fecha_inicio' => $fechaInicio,
+                'creado_por'   => $creadoPor,
+                'modalidad'    => $modalidad,
+                'cupos'        => $cupos,
+                'jugadores'    => $jugadoresPorEquipo,
+                'apertura'     => $aperturaInscripcion,
+                'cierre'       => $cierreInscripcion,
+                'fin'          => $fechaFin,
+                'tipo_premio'  => $extras['tipo_premio']  ?? 'ninguno',
+                'monto_premio' => $extras['monto_premio'] ?? null,
+                'desc_premio'  => $extras['desc_premio']  ?? null,
+                'reglas_texto' => $extras['reglas_texto'] ?? null,
+                'visibilidad'  => $extras['visibilidad']  ?? 'publico',
+            ]);
+            $id = (int) $this->conexion->lastInsertId();
+
+            if (!empty($extras['pdf'])) {
+                $this->guardarReglasPdfSinTransaccion($id, $extras['pdf']);
+            }
+            $this->conexion->commit();
+            return $id;
+        } catch (Throwable $error) {
+            if ($this->conexion->inTransaction()) {
+                $this->conexion->rollBack();
+            }
+            error_log('No se pudo crear el torneo: ' . $error->getMessage());
+            return false;
+        }
+    }
+
+    /** @param array{nombre: string, tamano: int, contenido: string} $pdf */
+    private function guardarReglasPdfSinTransaccion(int $torneoId, array $pdf): void
+    {
         $consulta = $this->conexion->prepare(
-            'INSERT INTO torneos (nombre, deporte, formato, fecha_inicio, creado_por, modalidad, cupos, jugadores_por_equipo,
-                                 fecha_apertura_inscripcion, fecha_cierre_inscripcion, fecha_fin)
-             VALUES (:nombre, :deporte, :formato, :fecha_inicio, :creado_por, :modalidad, :cupos, :jugadores,
-                     :apertura, :cierre, :fin)'
+            'INSERT INTO torneo_reglas_pdf (torneo_id, nombre_archivo, tamano, contenido)
+             VALUES (:id, :nombre, :tamano, :contenido)'
         );
+        $consulta->bindValue('id', $torneoId, PDO::PARAM_INT);
+        $consulta->bindValue('nombre', $pdf['nombre']);
+        $consulta->bindValue('tamano', $pdf['tamano'], PDO::PARAM_INT);
+        $consulta->bindValue('contenido', $pdf['contenido'], PDO::PARAM_LOB);
+        $consulta->execute();
+    }
 
-        $exito = $consulta->execute([
-            'nombre'       => $nombre,
-            'deporte'      => $deporte,
-            'formato'      => $formato,
-            'fecha_inicio' => $fechaInicio,
-            'creado_por'   => $creadoPor,
-            'modalidad'    => $modalidad,
-            'cupos'        => $cupos,
-            'jugadores'    => $jugadoresPorEquipo,
-            'apertura'     => $aperturaInscripcion,
-            'cierre'       => $cierreInscripcion,
-            'fin'          => $fechaFin,
-        ]);
-
-        return $exito ? (int) $this->conexion->lastInsertId() : false;
+    /** PDF de reglas de un torneo, o false si no tiene. */
+    public function obtenerReglasPdf(int $torneoId): array|false
+    {
+        $consulta = $this->conexion->prepare('SELECT nombre_archivo, tamano, contenido FROM torneo_reglas_pdf WHERE torneo_id = :id');
+        $consulta->execute(['id' => $torneoId]);
+        return $consulta->fetch();
     }
 
     /** Torneos que un Organizador tiene asignados para gestionar (ver letra 5.2). */
@@ -201,7 +290,8 @@ class Torneo
                     creador.nombre_completo     AS nombre_creador,
                     organizador.nombre_completo AS nombre_organizador,
                     (SELECT COUNT(*) FROM inscripciones i
-                      WHERE i.torneo_id = t.id AND i.estado_inscripcion = 'activa') AS cantidad_participantes
+                      WHERE i.torneo_id = t.id AND i.estado_inscripcion = 'activa') AS cantidad_participantes,
+                    (SELECT COUNT(*) FROM torneo_reglas_pdf p WHERE p.torneo_id = t.id) AS tiene_reglas_pdf
                FROM torneos t
                JOIN usuarios creador          ON creador.id = t.creado_por
           LEFT JOIN usuarios organizador      ON organizador.id = t.organizador_asignado_id
@@ -219,6 +309,7 @@ class Torneo
                     (SELECT COUNT(*) FROM inscripciones i
                       WHERE i.torneo_id = t.id AND i.estado_inscripcion = 'activa') AS cantidad_participantes
                FROM torneos t
+              WHERE t.visibilidad = 'publico'      -- los privados solo se alcanzan con el link directo
               ORDER BY t.fecha_creacion DESC"
         );
         return $consulta->fetchAll();

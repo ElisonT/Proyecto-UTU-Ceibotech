@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../../Helpers/csrf.php';
 /**
  * app/Views/partials/nav_links.php
  *
@@ -73,8 +74,10 @@ $puedeCrearTorneo = $haySesion && in_array((int) ($_SESSION['usuario_rol'] ?? 0)
       </a>
     <?php endif; ?>
 
-    <a href="logout.php" class="nav-link-visible" title="Cerrar sesión">
-      <i class="fa-solid fa-right-from-bracket nav-link-icon"></i>Cerrar sesión
-    </a>
+    <form method="post" action="logout.php" class="nav-form-salir"> <?= campoCsrf() ?>
+      <button type="submit" class="nav-boton-salir" title="Cerrar sesión">
+        <i class="fa-solid fa-right-from-bracket nav-link-icon"></i>Cerrar sesión
+      </button>
+    </form>
   <?php endif; ?>
 </div>

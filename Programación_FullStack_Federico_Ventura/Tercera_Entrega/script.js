@@ -437,8 +437,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ===== VISTAS DEL PANEL ADMIN (Dashboard / Usuarios / Torneos, sin recargar la página) =====
   let alMostrarVista = null; // lo define el panel admin más abajo (carga las listas con fetch)
-  const VISTAS_VALIDAS = ['dashboard', 'usuarios', 'torneos', 'auditoria', 'modulos'];
-  const TITULOS_VISTA = { dashboard: 'Dashboard', usuarios: 'Usuarios', torneos: 'Torneos', auditoria: 'Auditoría', modulos: 'Formatos de competencia' };
+  const VISTAS_VALIDAS = ['dashboard', 'usuarios', 'torneos', 'auditoria', 'reportes', 'modulos', 'configuracion'];
+  const TITULOS_VISTA = { dashboard: 'Dashboard', usuarios: 'Usuarios', torneos: 'Torneos', auditoria: 'Auditoría', reportes: 'Reportes', modulos: 'Módulos de competencia', configuracion: 'Configuración' };
   const tituloPagina = document.querySelector('.admin-page-titulo');
 
   function mostrarVista(vista, hacerScroll) {
@@ -468,7 +468,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ===== NAVEGACIÓN DEL SIDEBAR Y ENLACES RELACIONADOS =====
   // Cualquier link del panel que apunte a #dashboard, #usuarios o #torneos cambia de vista;
-  // #modulos/#reportes/#exportar todavía no tienen sección propia, así que avisamos en vez de fallar en silencio.
+  // Un ancla que no es una vista del panel todavía no tiene sección propia: se avisa en vez de fallar en silencio.
   document.querySelectorAll('.admin-nav-link, .section-link, .admin-acceso').forEach((link) => {
     const destino = link.getAttribute('href');
     if (!destino || !destino.startsWith('#')) return; // links a otras páginas reales (Configuración, Crear torneo) siguen de largo
@@ -517,6 +517,12 @@ document.addEventListener('DOMContentLoaded', () => {
     toastTimeout = setTimeout(() => {
       toast.classList.remove('visible');
     }, Math.max(2500, mensaje.length * 70));
+  }
+
+  // Política de contraseñas (la misma que app/Helpers/contrasena.php): sirve para avisar rápido;
+  // la validación que cuenta es la del servidor.
+  function cumplePoliticaContrasena(valor) {
+    return /^(?=.*\p{Ll})(?=.*\p{Lu})(?=.*[0-9]).{8,}$/u.test(valor) && new TextEncoder().encode(valor).length <= 72;
   }
 
   // ===== COMUNICACIÓN ASINCRÓNICA (fetch) =====
@@ -630,9 +636,21 @@ document.addEventListener('DOMContentLoaded', () => {
       else estado = insignia('estado-rojo', 'Suspendido');
       fila.append(principal, rol, estado);
 
-      // Se puede suspender/reactivar a cualquiera menos a uno mismo, a otro admin o a una cuenta dada de baja
+      // Editar: cualquier cuenta que no esté dada de baja (el servidor protege el rol de los administradores)
+      if (Number(u.eliminado) !== 1) {
+        const editar = crear('button', 'admin-btn-icono');
+        editar.type = 'button';
+        editar.title = 'Editar';
+        editar.setAttribute('aria-label', 'Editar a ' + u.nombre_completo);
+        editar.innerHTML = '<i class="fa-solid fa-pen"></i>';
+        editar.addEventListener('click', () => abrirFormUsuario(u));
+        fila.append(editar);
+      }
+
+      // Se puede suspender, reactivar o dar de baja a cualquiera menos a uno mismo, a otro admin o a una cuenta ya dada de baja
       const esAdmin = Number(u.rol_id) === 1;
       if (Number(u.eliminado) !== 1 && !esAdmin && String(u.id) !== miId) {
+
         const activo = Number(u.activo) === 1;
         const boton = crear('button', 'admin-btn-icono' + (activo ? ' admin-btn-danger' : ''));
         boton.type = 'button';
@@ -641,6 +659,14 @@ document.addEventListener('DOMContentLoaded', () => {
         boton.innerHTML = activo ? '<i class="fa-solid fa-ban"></i>' : '<i class="fa-solid fa-rotate-left"></i>';
         boton.addEventListener('click', () => cambiarEstadoUsuario(u, !activo, boton));
         fila.append(boton);
+
+        const baja = crear('button', 'admin-btn-icono admin-btn-danger');
+        baja.type = 'button';
+        baja.title = 'Dar de baja';
+        baja.setAttribute('aria-label', 'Dar de baja a ' + u.nombre_completo);
+        baja.innerHTML = '<i class="fa-solid fa-user-xmark"></i>';
+        baja.addEventListener('click', () => darDeBajaUsuario(u, baja));
+        fila.append(baja);
       }
       return fila;
     }
@@ -731,6 +757,147 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
 
+    function actualizarResumen(resumen) {
+      Object.entries(resumen).forEach(([campo, valor]) => {
+        document.querySelectorAll('[data-resumen="' + campo + '"]').forEach((n) => { n.textContent = valor; });
+      });
+    }
+
+    // ----- Alta y edición de usuarios (formulario del panel) -----
+    const formUsuario = document.getElementById('formUsuario');
+    const listaErroresForm = document.getElementById('erroresFormUsuario');
+
+    function mostrarErroresForm(mensajes) {
+      listaErroresForm.replaceChildren(...mensajes.map((m) => crear('li', '', m)));
+      listaErroresForm.hidden = mensajes.length === 0;
+    }
+
+    // Sin argumento: alta. Con un usuario: edición (el nombre de usuario y la contraseña no se cambian acá).
+    function abrirFormUsuario(usuario) {
+      const edicion = Boolean(usuario);
+      formUsuario.reset();
+      mostrarErroresForm([]);
+      document.getElementById('tituloFormUsuario').textContent = edicion ? 'Editar usuario' : 'Nuevo usuario';
+      formUsuario.elements.usuario_id.value = edicion ? usuario.id : '';
+      if (edicion) {
+        formUsuario.elements.nombre.value = usuario.nombre_completo;
+        formUsuario.elements.usuario.value = usuario.nombre_usuario;
+        formUsuario.elements.email.value = usuario.email;
+        formUsuario.elements.rol_id.value = usuario.rol_id;
+      }
+      formUsuario.elements.usuario.readOnly = edicion;
+      formUsuario.querySelectorAll('[data-solo-alta]').forEach((grupo) => {
+        grupo.hidden = edicion;
+        grupo.querySelectorAll('input').forEach((campo) => { campo.disabled = edicion; campo.required = !edicion; });
+      });
+      formUsuario.hidden = false;
+      formUsuario.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      formUsuario.elements.nombre.focus();
+    }
+
+    document.getElementById('btnNuevoUsuario').addEventListener('click', () => abrirFormUsuario());
+    document.getElementById('cancelarFormUsuario').addEventListener('click', () => { formUsuario.hidden = true; });
+
+    formUsuario.addEventListener('submit', async (evento) => {
+      evento.preventDefault();
+      if (!formUsuario.reportValidity()) return;
+
+      const edicion = formUsuario.elements.usuario_id.value !== '';
+      const datos = new FormData(formUsuario);
+      datos.set('accion', edicion ? 'editar_usuario' : 'crear_usuario');
+      datos.set('csrf', tokenCsrf);
+
+      const boton = formUsuario.querySelector('button[type="submit"]');
+      boton.disabled = true;
+      const respuesta = await pedirJson('api/admin.php', { method: 'POST', body: datos });
+      boton.disabled = false;
+
+      if (!respuesta.ok) {
+        mostrarErroresForm(respuesta.mensajes);
+        return;
+      }
+      mostrarErroresForm([]);
+      formUsuario.hidden = true;
+      mostrarToast(respuesta.mensajes[0]);
+      actualizarResumen(respuesta.resumen);
+      cargarPanel('usuarios');
+      estadoPaneles.auditoria = null; // la próxima vez que se abra se recarga con la acción nueva
+    });
+
+    async function darDeBajaUsuario(usuario, boton) {
+      if (!confirm('¿Dar de baja a ' + usuario.nombre_completo + '? Se borran sus datos personales y la cuenta deja de existir. ' +
+                   'Se conserva el historial de torneos y resultados. No se puede deshacer.')) return;
+      boton.disabled = true;
+      const datos = new FormData();
+      datos.set('accion', 'baja_usuario');
+      datos.set('usuario_id', usuario.id);
+      datos.set('csrf', tokenCsrf);
+      const respuesta = await pedirJson('api/admin.php', { method: 'POST', body: datos });
+      boton.disabled = false;
+
+      mostrarToast(respuesta.mensajes.join(' '));
+      if (!respuesta.ok) return;
+      actualizarResumen(respuesta.resumen);
+      cargarPanel('usuarios');
+      estadoPaneles.auditoria = null;
+    }
+
+    // ----- Módulos de competencia: interruptores -----
+    document.querySelectorAll('input[data-modulo]').forEach((interruptor) => {
+      interruptor.addEventListener('change', async () => {
+        const habilitar = interruptor.checked;
+        interruptor.disabled = true;
+        const datos = new FormData();
+        datos.set('accion', 'modulo');
+        datos.set('formato', interruptor.dataset.modulo);
+        datos.set('habilitado', habilitar ? '1' : '0');
+        datos.set('csrf', tokenCsrf);
+        const respuesta = await pedirJson('api/admin.php', { method: 'POST', body: datos });
+        interruptor.disabled = false;
+
+        mostrarToast(respuesta.mensajes.join(' '));
+        if (!respuesta.ok) {
+          interruptor.checked = !habilitar; // el servidor lo rechazó: vuelve a como estaba
+          return;
+        }
+        interruptor.closest('.interruptor').querySelector('.interruptor-texto').textContent = habilitar ? 'Habilitado' : 'Deshabilitado';
+        estadoPaneles.auditoria = null;
+      });
+    });
+
+    // ----- Configuración general -----
+    const formConfiguracion = document.getElementById('formConfiguracion');
+    const erroresConfiguracion = document.getElementById('erroresFormConfiguracion');
+    const interruptorRegistro = document.getElementById('cfg-registro');
+    interruptorRegistro.addEventListener('change', () => {
+      interruptorRegistro.closest('.interruptor').querySelector('.interruptor-texto').textContent =
+        interruptorRegistro.checked ? 'Permitido' : 'Solo el administrador crea cuentas';
+    });
+    const interruptorValidar = document.getElementById('cfg-validar');
+    interruptorValidar.addEventListener('change', () => {
+      interruptorValidar.closest('.interruptor').querySelector('.interruptor-texto').textContent =
+        interruptorValidar.checked ? 'Los resultados de organizadores esperan tu validación' : 'Los resultados valen apenas se cargan';
+    });
+    formConfiguracion.addEventListener('submit', async (evento) => {
+      evento.preventDefault();
+      if (!formConfiguracion.reportValidity()) return;
+      const datos = new FormData(formConfiguracion);
+      datos.set('accion', 'guardar_configuracion');
+      datos.set('permitir_registro', interruptorRegistro.checked ? '1' : '0');
+      datos.set('validar_resultados', interruptorValidar.checked ? '1' : '0');
+      datos.set('csrf', tokenCsrf);
+      const boton = formConfiguracion.querySelector('button[type="submit"]');
+      boton.disabled = true;
+      const respuesta = await pedirJson('api/admin.php', { method: 'POST', body: datos });
+      boton.disabled = false;
+      erroresConfiguracion.replaceChildren(...(respuesta.ok ? [] : respuesta.mensajes.map((m) => crear('li', '', m))));
+      erroresConfiguracion.hidden = respuesta.ok;
+      if (respuesta.ok) {
+        mostrarToast(respuesta.mensajes[0]);
+        estadoPaneles.auditoria = null;
+      }
+    });
+
     // Se llama desde mostrarVista(): la primera vez que se abre una lista, se pide al servidor
     alMostrarVista = (vista) => {
       if (PANELES[vista] && !estadoPaneles[vista]) cargarPanel(vista, 1);
@@ -755,9 +922,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!respuesta.ok) return;
 
       // Actualiza el número del dashboard y vuelve a pedir la lista (el estado quedó guardado en el servidor)
-      Object.entries(respuesta.resumen).forEach(([campo, valor]) => {
-        document.querySelectorAll('[data-resumen="' + campo + '"]').forEach((n) => { n.textContent = valor; });
-      });
+      actualizarResumen(respuesta.resumen);
       cargarPanel('usuarios');
       if (estadoPaneles.auditoria) estadoPaneles.auditoria = null; // la próxima vez que se abra se recarga con la acción nueva
     }
@@ -1042,7 +1207,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       ok = validarCampo(
         password, 'error-password',
-        (v) => v.length >= 8, 'La contraseña debe tener al menos 8 caracteres.'
+        cumplePoliticaContrasena, 'La contraseña debe tener entre 8 y 72 caracteres, con una mayúscula, una minúscula y un número.'
       ) && ok;
 
       ok = validarCampo(
@@ -1376,45 +1541,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // ---- Formularios de configuración ----
-  const formContacto = document.querySelector('#formContacto');
-  if (formContacto) {
-    formContacto.addEventListener('submit', (evento) => {
-      evento.preventDefault();
-      if (!formContacto.checkValidity()) {
-        formContacto.reportValidity();
-        return;
-      }
-      // TODO (backend PHP): enviar correo/celular actualizados al servidor.
-      mostrarToast('Datos de contacto actualizados. (Conexión con el servidor pendiente)');
-    });
-  }
-
-  const formPassword = document.querySelector('#formPassword');
-  if (formPassword) {
-    formPassword.addEventListener('submit', (evento) => {
-      evento.preventDefault();
-
-      if (!formPassword.checkValidity()) {
-        formPassword.reportValidity();
-        return;
-      }
-
-      // El navegador no puede comparar dos campos entre sí con "pattern"; lo validamos a mano.
-      const nueva = document.querySelector('#pass-nueva');
-      const confirmar = document.querySelector('#pass-confirmar');
-      if (nueva.value !== confirmar.value) {
-        confirmar.setCustomValidity('Las contraseñas no coinciden.');
-        confirmar.reportValidity();
-        confirmar.addEventListener('input', () => confirmar.setCustomValidity(''), { once: true });
-        return;
-      }
-
-      // TODO (backend PHP): validar la contraseña actual contra la base y actualizar el hash.
-      mostrarToast('Contraseña actualizada. (Conexión con el servidor pendiente)');
-      formPassword.reset();
-    });
-  }
+  // (El cambio de contraseña y de datos de contacto del perfil se manda como formulario normal
+  // a perfil.php: lo valida y lo guarda el servidor, con la misma política de contraseñas.)
 
   // ===== TEMA VISUAL POR DEPORTE (ícono + color) =====
   // Un solo lugar con la "personalidad" de cada deporte. Cualquier elemento
@@ -1461,3 +1589,14 @@ document.addEventListener('DOMContentLoaded', () => {
   aplicarTemaDeporte();
 
 });
+
+/* Confirmaciones de formularios: <form data-confirmar="¿Seguro?"> pregunta antes de enviar.
+   Va en un manejador único (y no en atributos onsubmit) para que la política de contenido pueda
+   prohibir el JavaScript incrustado en el HTML. Se registra en captura para correr antes que cualquier otro. */
+document.addEventListener('submit', (evento) => {
+  const mensaje = evento.target instanceof HTMLFormElement ? evento.target.dataset.confirmar : '';
+  if (mensaje && !window.confirm(mensaje)) {
+    evento.preventDefault();
+    evento.stopImmediatePropagation();
+  }
+}, true);

@@ -223,10 +223,10 @@ class CompetenciaController
      *
      * @return string[] Lista de errores. Vacía si se cargó bien.
      */
-    public function cargarResultado(int $enfrentamientoId, int $puntajeLocal, int $puntajeVisitante, int $actorId): array
+    public function cargarResultado(int $enfrentamientoId, int $puntajeLocal, int $puntajeVisitante, int $actorId, bool $validado = true): array
     {
         $info = null;
-        $errores = $this->enTransaccion(function () use ($enfrentamientoId, $puntajeLocal, $puntajeVisitante, &$info) {
+        $errores = $this->enTransaccion(function () use ($enfrentamientoId, $puntajeLocal, $puntajeVisitante, $validado, &$info) {
             $enf = $this->modeloEnfrentamiento->obtenerConFormato($enfrentamientoId, true);
             if (!$enf) {
                 return ['El enfrentamiento no existe.'];
@@ -242,23 +242,20 @@ class CompetenciaController
             }
 
             $ganadorId = $this->ganadorDe($enf, $puntajeLocal, $puntajeVisitante);
-            $this->modeloEnfrentamiento->guardarResultado($enfrentamientoId, $puntajeLocal, $puntajeVisitante, $ganadorId);
+            // Si la validación está activa y quien carga es un organizador, el resultado queda pendiente:
+            // no entra en la tabla ni deja avanzar de ronda hasta que un administrador lo valide.
+            $this->modeloEnfrentamiento->guardarResultado($enfrentamientoId, $puntajeLocal, $puntajeVisitante, $ganadorId, $validado);
             $this->modeloPosiciones->recalcularDesdeResultados((int) $enf['torneo_id'], $enf['formato']);
 
-            // Liga: cuando no queda ningún partido sin resultado, el torneo se cierra solo.
-            if ($enf['formato'] === 'liga'
-                && $this->modeloEnfrentamiento->contarPendientesTorneo((int) $enf['torneo_id']) === 0) {
-                $campeonId = $this->campeonPorTabla((int) $enf['torneo_id']);
-                $this->modeloTorneo->finalizar((int) $enf['torneo_id'], $campeonId);
-                $info = ['campeon' => $campeonId];
-            }
+            $campeonId = $this->cerrarLigaSiCorresponde($enf);
+            $info = $campeonId !== null ? ['campeon' => $campeonId] : [];
             $info['torneo_id'] = (int) $enf['torneo_id'];
             return [];
         });
 
         if (empty($errores)) {
             $this->auditoria->registrar($actorId, 'CARGA_RESULTADO', 'enfrentamientos', $enfrentamientoId,
-                "Resultado {$puntajeLocal} - {$puntajeVisitante}");
+                "Resultado {$puntajeLocal} - {$puntajeVisitante}" . ($validado ? '' : ' (pendiente de validación)'));
             if (!empty($info['campeon'])) {
                 $this->auditoria->registrar($actorId, 'FINALIZACION_TORNEO', 'torneos', $info['torneo_id'],
                     "Campeón: inscripción #{$info['campeon']}");
@@ -267,22 +264,84 @@ class CompetenciaController
         return $errores;
     }
 
+    /** Liga: cuando no queda ningún partido sin resultado validado, el torneo se cierra solo. Devuelve el campeón o null. */
+    private function cerrarLigaSiCorresponde(array $enf): ?int
+    {
+        if ($enf['formato'] !== 'liga'
+            || $this->modeloEnfrentamiento->contarPendientesTorneo((int) $enf['torneo_id']) !== 0) {
+            return null;
+        }
+        $campeonId = $this->campeonPorTabla((int) $enf['torneo_id']);
+        $this->modeloTorneo->finalizar((int) $enf['torneo_id'], $campeonId);
+        return $campeonId;
+    }
+
+    /**
+     * Un Administrador valida un resultado que cargó un organizador mientras la validación de resultados
+     * estaba activa: recién ahí suma a la tabla, deja avanzar de ronda y, en liga, puede cerrar el torneo.
+     *
+     * @return string[] errores (vacía si se validó)
+     */
+    public function validarResultado(int $enfrentamientoId, int $actorId): array
+    {
+        $campeon = null;
+        $errores = $this->enTransaccion(function () use ($enfrentamientoId, &$campeon) {
+            $enf = $this->modeloEnfrentamiento->obtenerConFormato($enfrentamientoId, true);
+            if (!$enf) {
+                return ['El enfrentamiento no existe.'];
+            }
+            if (!$this->modeloEnfrentamiento->marcarValidado($enfrentamientoId)) {
+                return ['Ese resultado no está pendiente de validación.'];
+            }
+            $this->modeloPosiciones->recalcularDesdeResultados((int) $enf['torneo_id'], $enf['formato']);
+            $campeon = $this->cerrarLigaSiCorresponde($enf);
+            return [];
+        });
+
+        if (empty($errores)) {
+            $this->auditoria->registrar($actorId, 'VALIDACION_RESULTADO', 'enfrentamientos', $enfrentamientoId, 'Resultado validado');
+            if ($campeon !== null) {
+                $torneoId = (int) $this->modeloEnfrentamiento->obtenerConFormato($enfrentamientoId)['torneo_id'];
+                $this->auditoria->registrar($actorId, 'FINALIZACION_TORNEO', 'torneos', $torneoId, "Campeón: inscripción #{$campeon}");
+            }
+        }
+        return $errores;
+    }
+
+    /**
+     * Valida todos los resultados pendientes de un torneo (de a uno, en el orden en que se cargaron).
+     * @return array{errores: string[], validados: int}
+     */
+    public function validarPendientes(int $torneoId, int $actorId): array
+    {
+        $validados = 0;
+        foreach ($this->modeloEnfrentamiento->listarPendientesDeValidacion($torneoId) as $enfrentamientoId) {
+            $errores = $this->validarResultado($enfrentamientoId, $actorId);
+            if (!empty($errores)) {
+                return ['errores' => $errores, 'validados' => $validados];
+            }
+            $validados++;
+        }
+        return ['errores' => [], 'validados' => $validados];
+    }
+
     /**
      * Corrige un resultado que ya estaba cargado (letra: el Administrador y el
      * Organizador pueden corregir resultados). Reglas para no romper el torneo:
      *  - Si lo que cambia es solo el marcador pero gana el mismo (o sigue el empate),
      *    siempre se puede: nada de lo que se armó después depende de eso.
      *  - Si cambia quién gana (o pasa de empate a victoria) y ya se generó la ronda
-     *    siguiente en eliminación o suizo, NO se puede: esa ronda se emparejó con el
-     *    resultado viejo. En liga siempre se puede, porque no hay rondas que dependan.
+     *    siguiente en eliminación o suizo: si en esa ronda todavía no se jugó ningún
+     *    partido, se la rearma con el ganador correcto; si ya hay partidos jugados, NO
+     *    se puede. En liga siempre se puede, porque no hay rondas que dependan.
      * Si el torneo ya estaba finalizado, se vuelve a determinar el campeón.
      *
      * @return string[] Lista de errores. Vacía si se corrigió bien.
      */
-    public function corregirResultado(int $enfrentamientoId, int $puntajeLocal, int $puntajeVisitante, int $actorId): array
+    public function corregirResultado(int $enfrentamientoId, int $puntajeLocal, int $puntajeVisitante, int $actorId, bool $validaAhora = true): array
     {
         $detalle = '';
-        $errores = $this->enTransaccion(function () use ($enfrentamientoId, $puntajeLocal, $puntajeVisitante, $actorId, &$detalle) {
+        $errores = $this->enTransaccion(function () use ($enfrentamientoId, $puntajeLocal, $puntajeVisitante, $actorId, $validaAhora, &$detalle) {
             $enf = $this->modeloEnfrentamiento->obtenerConFormato($enfrentamientoId, true);
             if (!$enf) {
                 return ['El enfrentamiento no existe.'];
@@ -304,14 +363,36 @@ class CompetenciaController
             }
 
             $cambiaGanador = $ganadorNuevo !== $ganadorViejo;
+            $rearmar       = false;
             if ($cambiaGanador && in_array($enf['formato'], ['eliminacion', 'suizo'], true)
                 && $this->modeloEnfrentamiento->existeRondaPosterior($torneoId, (int) $enf['ronda_numero'])) {
-                return ['No se puede cambiar quién ganó: la ronda siguiente ya se armó con el resultado anterior. '
-                      . 'Sí podés corregir el marcador si gana el mismo.'];
+                // La ronda siguiente se armó con el resultado viejo. Si todavía no se jugó ningún partido
+                // en ella se la borra y se la arma de nuevo con el ganador correcto; si ya se jugó algo,
+                // no se puede (habría que deshacer partidos que ya tienen resultado).
+                if ($this->modeloEnfrentamiento->contarResultadosEnRondasPosteriores($torneoId, (int) $enf['ronda_numero']) > 0) {
+                    return ['No se puede cambiar quién ganó: ya se jugaron partidos de la ronda siguiente con el resultado anterior. '
+                          . 'Sí podés corregir el marcador si gana el mismo.'];
+                }
+                $rearmar = true;
             }
 
-            $this->modeloEnfrentamiento->actualizarResultado($enfrentamientoId, $puntajeLocal, $puntajeVisitante, $ganadorNuevo, $actorId);
+            $this->modeloEnfrentamiento->actualizarResultado($enfrentamientoId, $puntajeLocal, $puntajeVisitante, $ganadorNuevo, $actorId, $validaAhora);
+            if ($rearmar) {
+                $this->modeloEnfrentamiento->eliminarRondasPosteriores($torneoId, (int) $enf['ronda_numero']);
+            }
             $this->modeloPosiciones->recalcularDesdeResultados($torneoId, $enf['formato']);
+            if ($rearmar) {
+                // Misma operación que el botón "Avanzar de ronda", ahora con el ganador corregido.
+                $errores = $enf['formato'] === 'eliminacion'
+                    ? $this->avanzarRondaEliminacion($torneoId, $actorId)
+                    : $this->avanzarRondaSuizo($torneoId, $actorId);
+                if (!empty($errores)) {
+                    return $errores;   // se revierte todo: la corrección no queda a medias
+                }
+                // En suizo la ronda nueva puede traer un bye, que suma a la tabla.
+                $this->modeloPosiciones->recalcularDesdeResultados($torneoId, $enf['formato']);
+                $detalle = ' (se rearmó la ronda siguiente con el ganador corregido)';
+            }
 
             // Si el torneo ya tenía campeón, puede haber cambiado.
             if ($enf['torneo_estado'] === 'finalizado' && $cambiaGanador) {

@@ -4,7 +4,8 @@
  *
  * Carga o corrige un resultado sin recargar la página (lo llama script.js con
  * fetch). Misma lógica y mismos permisos que gestionar-torneo.php: solo el
- * Administrador general o el Organizador asignado a ese torneo.
+ * Administrador general o el Organizador asignado a ese torneo; para corregir,
+ * el organizador además necesita la autorización del administrador.
  *
  * POST: accion = cargar | corregir, torneo_id, enfrentamiento_id,
  *       puntaje_local, puntaje_visitante, csrf
@@ -51,6 +52,9 @@ $visitante        = filter_var($_POST['puntaje_visitante'] ?? '', FILTER_VALIDAT
 if (!in_array($accion, ['cargar', 'corregir'], true)) {
     responderError('Acción desconocida.');
 }
+if ($accion === 'corregir' && !puedeCorregirResultados($torneo)) {
+    responderError('No tenés autorización para corregir resultados en este torneo. Pedísela al administrador.', 403);
+}
 if ($local === false || $visitante === false) {
     responderError('Los puntajes tienen que ser números enteros.');
 }
@@ -64,8 +68,8 @@ if (!$enf || (int) $enf['torneo_id'] !== $torneoId) {
 $competencia = new CompetenciaController();
 $actorId     = (int) $_SESSION['usuario_id'];
 $errores     = $accion === 'corregir'
-    ? $competencia->corregirResultado($enfrentamientoId, $local, $visitante, $actorId)
-    : $competencia->cargarResultado($enfrentamientoId, $local, $visitante, $actorId);
+    ? $competencia->corregirResultado($enfrentamientoId, $local, $visitante, $actorId, resultadoQuedaValidado())
+    : $competencia->cargarResultado($enfrentamientoId, $local, $visitante, $actorId, resultadoQuedaValidado());
 
 if (!empty($errores)) {
     responderJson(['ok' => false, 'mensajes' => $errores], 422);
@@ -90,6 +94,7 @@ foreach ($rondas as $r) {
 }
 
 $puedeGestionar = true;
+$puedeCorregir  = puedeCorregirResultados($torneo);
 $ronda          = $rondaAfectada;
 ob_start();
 include __DIR__ . '/../app/Views/partials/ronda.php';
@@ -112,7 +117,7 @@ $recargar = $torneoDespues['estado'] !== $torneo['estado']
 
 responderJson([
     'ok'        => true,
-    'mensajes'  => [$accion === 'corregir' ? 'Resultado corregido.' : 'Resultado guardado.'],
+    'mensajes'  => [$accion === 'corregir' ? 'Resultado corregido.' : (resultadoQuedaValidado() ? 'Resultado guardado.' : 'Resultado guardado: queda pendiente de validación del administrador.')],
     'rondaId'   => (int) $rondaAfectada['id'],
     'rondaHtml' => $rondaHtml,
     'tablaHtml' => $tablaHtml,

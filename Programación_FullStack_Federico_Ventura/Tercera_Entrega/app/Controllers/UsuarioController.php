@@ -7,18 +7,24 @@
  * queda en la Vista (register.php / login.php).
  */
 
+require_once __DIR__ . '/../Helpers/contrasena.php';
+require_once __DIR__ . '/../Helpers/validaciones_usuario.php';
+require_once __DIR__ . '/../Models/Configuracion.php';
 require_once __DIR__ . '/../Models/Usuario.php';
 require_once __DIR__ . '/../Models/Auditoria.php';
+require_once __DIR__ . '/../Models/IntentoLogin.php';
 
 class UsuarioController
 {
     private Usuario $modeloUsuario;
     private Auditoria $auditoria;
+    private IntentoLogin $intentosLogin;
 
     public function __construct()
     {
         $this->modeloUsuario = new Usuario();
         $this->auditoria     = new Auditoria();
+        $this->intentosLogin = new IntentoLogin();
     }
 
     /**
@@ -40,17 +46,14 @@ class UsuarioController
         // ---- Validaciones del lado del servidor ----
         // (el HTML ya valida en el navegador, pero eso se puede saltear,
         //  así que estas son las que realmente importan).
-        if (!preg_match('/^[a-zA-Z0-9_]+$/', $nombreUsuario)) {
-            $errores[] = 'El nombre de usuario solo puede tener letras, números y guion bajo.';
+        // El administrador puede cerrar el registro público (Configuración): entonces solo él crea cuentas.
+        if (!(new Configuracion())->registroPermitido()) {
+            return ['El registro de cuentas nuevas está deshabilitado. Pedile al administrador que te cree una.'];
         }
-        if ($nombreCompleto === '' || !str_contains(trim($nombreCompleto), ' ')) {
-            $errores[] = 'Ingresá tu nombre y apellido.';
-        }
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $errores[] = 'El correo electrónico no es válido.';
-        }
-        if (strlen($contrasena) < 8) {
-            $errores[] = 'La contraseña debe tener al menos 8 caracteres.';
+
+        $errores = erroresDatosCuenta($nombreUsuario, $nombreCompleto, $email);
+        if ($errorClave = errorPoliticaContrasena($contrasena)) {
+            $errores[] = $errorClave;
         }
         if ($contrasena !== $confirmacion) {
             $errores[] = 'Las contraseñas no coinciden.';
@@ -235,8 +238,8 @@ class UsuarioController
             $errores[] = 'La contraseña actual no es correcta.';
         }
 
-        if (!preg_match('/^(?=.*[A-Z])(?=.*[0-9]).{8,}$/', $nueva)) {
-            $errores[] = 'La nueva contraseña debe tener al menos 8 caracteres, una mayúscula y un número.';
+        if ($errorClave = errorPoliticaContrasena($nueva)) {
+            $errores[] = $errorClave;
         }
         if ($nueva !== $confirmar) {
             $errores[] = 'Las contraseñas nuevas no coinciden.';
@@ -303,9 +306,24 @@ class UsuarioController
             return 'Completá usuario/correo y contraseña.';
         }
 
+        // Freno a la fuerza bruta: tras varios fallos seguidos no se prueba ni la contraseña (aunque sea la
+        // correcta) hasta que pase la ventana. Se responde igual exista o no la cuenta.
+        $ip     = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+        $espera = $this->intentosLogin->segundosDeBloqueo($login, $ip);
+        if ($espera > 0) {
+            $minutos = (int) ceil($espera / 60);
+            return "Demasiados intentos fallidos. Esperá {$minutos} " . ($minutos === 1 ? 'minuto' : 'minutos') . ' y volvé a probar.';
+        }
+
         $usuario = $this->modeloUsuario->buscarPorLogin($login);
 
         if (!$usuario || !$this->modeloUsuario->verificarContrasena($contrasena, $usuario['contrasena_hash'])) {
+            $this->intentosLogin->registrarFallo($login, $ip);
+            // Si este fallo fue el que completó el límite y la cuenta existe, queda en auditoría.
+            if ($usuario && $this->intentosLogin->segundosDeBloqueo($login, $ip) > 0) {
+                $this->auditoria->registrar((int) $usuario['id'], 'LOGIN_BLOQUEADO', 'usuarios', (int) $usuario['id'],
+                    'Se alcanzó el máximo de intentos fallidos de inicio de sesión desde esta IP');
+            }
             // Mensaje genérico a propósito: no decimos si falló el usuario
             // o la contraseña, para no facilitarle el trabajo a un atacante.
             return 'Usuario o contraseña incorrectos.';
@@ -314,6 +332,8 @@ class UsuarioController
         if (!$usuario['activo']) {
             return 'Esta cuenta está suspendida. Contactate con un administrador.';
         }
+
+        $this->intentosLogin->limpiar($login, $ip);
 
         // Al iniciar sesión se cambia el id de la sesión (evita "fijación de sesión": que alguien
         // que conocía el id de antes del login herede la sesión ya autenticada) y se renueva el token CSRF.

@@ -50,14 +50,21 @@ class Inscripcion
     // Operaciones (escriben, dentro de una transacción)
     // ---------------------------------------------------------
 
-    /** Inscribe a un usuario como participante individual. Devuelve el id de la inscripción. */
-    public function crearIndividual(int $torneoId, int $usuarioId): int
+    /**
+     * Inscribe a un usuario como participante individual. Devuelve el id de la inscripción.
+     * $porOrganizador = true cuando lo inscribe quien gestiona el torneo (letra 5.2): en ese caso no
+     * se controla la ventana de fechas (el torneo sigue abierto hasta que se genera el fixture) y los
+     * mensajes hablan de "esa persona" en vez de "vos".
+     */
+    public function crearIndividual(int $torneoId, int $usuarioId, bool $porOrganizador = false): int
     {
-        return $this->enTransaccion(function () use ($torneoId, $usuarioId) {
+        return $this->enTransaccion(function () use ($torneoId, $usuarioId, $porOrganizador) {
             $torneo = $this->bloquearTorneo($torneoId);
-            $this->exigirInscripcionesAbiertas($torneo);
+            $this->exigirInscripcionesAbiertas($torneo, !$porOrganizador);
             if ($torneo['modalidad'] !== 'individual') {
-                throw new DomainException('Este torneo es por equipos: creá un equipo o unite a uno.');
+                throw new DomainException($porOrganizador
+                    ? 'Este torneo es por equipos: inscribí un equipo, no una persona.'
+                    : 'Este torneo es por equipos: creá un equipo o unite a uno.');
             }
 
             $consulta = $this->conexion->prepare(
@@ -67,10 +74,12 @@ class Inscripcion
             $previa = $consulta->fetch();
 
             if ($previa && $previa['estado_inscripcion'] === 'activa') {
-                throw new DomainException('Ya estás inscripto en este torneo.');
+                throw new DomainException($porOrganizador ? 'Esa persona ya está inscripta en este torneo.' : 'Ya estás inscripto en este torneo.');
             }
             if ($previa && $previa['estado_inscripcion'] === 'descalificada') {
-                throw new DomainException('Fuiste descalificado de este torneo y no podés volver a inscribirte.');
+                throw new DomainException($porOrganizador
+                    ? 'Esa persona fue descalificada de este torneo y no puede volver a inscribirse.'
+                    : 'Fuiste descalificado de este torneo y no podés volver a inscribirte.');
             }
             $this->exigirCupo($torneo);
 
@@ -97,9 +106,26 @@ class Inscripcion
      */
     public function inscribirEquipo(int $torneoId, int $equipoId, int $usuarioId): int
     {
-        return $this->enTransaccion(function () use ($torneoId, $equipoId, $usuarioId) {
+        return $this->inscribirEquipoEn($torneoId, $equipoId, $usuarioId);
+    }
+
+    /**
+     * Lo mismo, pero lo inscribe quien gestiona el torneo (Administrador u Organizador asignado,
+     * letra 5.2): no hace falta ser el capitán y no se controla la ventana de fechas. Las demás reglas
+     * (deporte, tamaño, plantel completo, integrantes repetidos, cupo) son las mismas.
+     */
+    public function inscribirEquipoPorOrganizador(int $torneoId, int $equipoId): int
+    {
+        return $this->inscribirEquipoEn($torneoId, $equipoId, null);
+    }
+
+    /** $capitanId null = lo inscribe el organizador (sin exigir capitán ni ventana de fechas). */
+    private function inscribirEquipoEn(int $torneoId, int $equipoId, ?int $capitanId): int
+    {
+        $porOrganizador = $capitanId === null;
+        return $this->enTransaccion(function () use ($torneoId, $equipoId, $capitanId, $porOrganizador) {
             $torneo = $this->bloquearTorneo($torneoId);
-            $this->exigirInscripcionesAbiertas($torneo);
+            $this->exigirInscripcionesAbiertas($torneo, !$porOrganizador);
             if ($torneo['modalidad'] !== 'equipo') {
                 throw new DomainException('Este torneo es individual: no se inscriben equipos.');
             }
@@ -108,17 +134,20 @@ class Inscripcion
             $consulta = $this->conexion->prepare('SELECT id, capitan_id, deporte, jugadores_por_equipo FROM equipos WHERE id = :id FOR UPDATE');
             $consulta->execute(['id' => $equipoId]);
             $equipo = $consulta->fetch();
-            if (!$equipo || (int) $equipo['capitan_id'] !== $usuarioId) {
+            if (!$equipo) {
+                throw new DomainException('El equipo no existe.');
+            }
+            if (!$porOrganizador && (int) $equipo['capitan_id'] !== $capitanId) {
                 throw new DomainException('Solo el capitán puede inscribir al equipo a un torneo.');
             }
 
             // El equipo tiene que ser del mismo deporte que el torneo, del mismo tamaño
             // y estar completo (los "Otro" se comparan por el nombre que se escribió).
             if ($equipo['deporte'] === null || $equipo['jugadores_por_equipo'] === null) {
-                throw new DomainException('Este equipo no tiene un deporte asignado: disolvelo y creá uno nuevo en "Mis equipos".');
+                throw new DomainException($porOrganizador ? 'Ese equipo no tiene un deporte asignado.' : 'Este equipo no tiene un deporte asignado: disolvelo y creá uno nuevo en "Mis equipos".');
             }
             if (mb_strtolower(trim($equipo['deporte'])) !== mb_strtolower(trim($torneo['deporte']))) {
-                throw new DomainException("Tu equipo es de {$equipo['deporte']} y este torneo es de {$torneo['deporte']}.");
+                throw new DomainException(($porOrganizador ? 'El equipo' : 'Tu equipo') . " es de {$equipo['deporte']} y este torneo es de {$torneo['deporte']}.");
             }
 
             $requeridos = (int) ($torneo['jugadores_por_equipo'] ?? 0);
@@ -127,7 +156,7 @@ class Inscripcion
             }
             if ((int) $equipo['jugadores_por_equipo'] !== $requeridos) {
                 throw new DomainException(
-                    "{$torneo['deporte']} se juega en este torneo de a {$requeridos} y tu equipo es de {$equipo['jugadores_por_equipo']}."
+                    "{$torneo['deporte']} se juega en este torneo de a {$requeridos} y " . ($porOrganizador ? 'el equipo' : 'tu equipo') . " es de {$equipo['jugadores_por_equipo']}."
                 );
             }
 
@@ -136,8 +165,8 @@ class Inscripcion
             $integrantes = (int) $consulta->fetch()['total'];
             if ($integrantes !== $requeridos) {
                 throw new DomainException(
-                    "El torneo pide equipos de {$requeridos} y tu equipo tiene {$integrantes}. "
-                    . 'Completá el plantel en "Mis equipos".'
+                    "El torneo pide equipos de {$requeridos} y " . ($porOrganizador ? 'ese equipo' : 'tu equipo') . " tiene {$integrantes}. "
+                    . ($porOrganizador ? 'El capitán tiene que completar el plantel en "Mis equipos".' : 'Completá el plantel en "Mis equipos".')
                 );
             }
 
@@ -206,6 +235,40 @@ class Inscripcion
                            ->execute(['id' => $inscripcion['id']]);
             return (int) $inscripcion['id'];
         });
+    }
+
+    /**
+     * Quien gestiona el torneo retira una inscripción (individual o de equipo) mientras todavía no se
+     * generó el fixture. Queda "retirada", igual que cuando se da de baja el propio participante.
+     * Devuelve el nombre de lo retirado (para la auditoría).
+     */
+    public function retirarPorOrganizador(int $torneoId, int $inscripcionId): string
+    {
+        $nombre = '';
+        $this->enTransaccion(function () use ($torneoId, $inscripcionId, &$nombre) {
+            $torneo = $this->bloquearTorneo($torneoId);
+            $this->exigirInscripcionesAbiertas($torneo, false);
+
+            $consulta = $this->conexion->prepare(
+                "SELECT i.id, COALESCE(u.nombre_completo, eq.nombre_equipo) AS nombre
+                   FROM inscripciones i
+              LEFT JOIN usuarios u  ON u.id  = i.usuario_id
+              LEFT JOIN equipos  eq ON eq.id = i.equipo_id
+                  WHERE i.id = :id AND i.torneo_id = :torneo AND i.estado_inscripcion = 'activa'
+                    FOR UPDATE"
+            );
+            $consulta->execute(['id' => $inscripcionId, 'torneo' => $torneoId]);
+            $inscripcion = $consulta->fetch();
+            if (!$inscripcion) {
+                throw new DomainException('Esa inscripción no existe o ya estaba retirada.');
+            }
+            $nombre = (string) $inscripcion['nombre'];
+
+            $this->conexion->prepare("UPDATE inscripciones SET estado_inscripcion = 'retirada' WHERE id = :id")
+                           ->execute(['id' => $inscripcionId]);
+            return $inscripcionId;
+        });
+        return $nombre;
     }
 
     // ---------------------------------------------------------

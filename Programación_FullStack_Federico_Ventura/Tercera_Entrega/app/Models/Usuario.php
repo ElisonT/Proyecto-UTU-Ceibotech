@@ -41,7 +41,7 @@ class Usuario
         return (bool) $consulta->fetch();
     }
 
-    public function registrar(array $datos): int|false
+    public function registrar(array $datos, int $rolId = self::ROL_PARTICIPANTE): int|false
     {
         $hash = password_hash($datos['contrasena'], PASSWORD_DEFAULT);
 
@@ -59,7 +59,7 @@ class Usuario
             'celular'         => $datos['celular'] ?: null,
             'hash'            => $hash,
             'genero'          => $datos['genero'],
-            'rol_id'          => self::ROL_PARTICIPANTE,
+            'rol_id'          => $rolId,
         ]);
 
         return $exito ? (int) $this->conexion->lastInsertId() : false;
@@ -181,6 +181,31 @@ class Usuario
               WHERE id = :id"
         );
         return $consulta->execute(['id' => $id, 'hash' => $hashInvalido]);
+    }
+
+    /** Cambia nombre, correo y rol de una cuenta (lo usa el administrador desde el panel). */
+    public function actualizarDatosAdmin(int $id, string $nombreCompleto, string $email, int $rolId): bool
+    {
+        $consulta = $this->conexion->prepare(
+            'UPDATE usuarios SET nombre_completo = :nombre, email = :email, rol_id = :rol WHERE id = :id'
+        );
+        return $consulta->execute(['nombre' => $nombreCompleto, 'email' => $email, 'rol' => $rolId, 'id' => $id]);
+    }
+
+    /** Cuántos torneos sin finalizar tiene asignados este organizador. */
+    public function contarTorneosSinFinalizar(int $organizadorId): int
+    {
+        $consulta = $this->conexion->prepare(
+            "SELECT COUNT(*) FROM torneos WHERE organizador_asignado_id = :id AND estado IN ('inscripciones_abiertas', 'en_curso')"
+        );
+        $consulta->execute(['id' => $organizadorId]);
+        return (int) $consulta->fetchColumn();
+    }
+
+    /** true si la cuenta ya fue dada de baja (anonimizada). */
+    public function estaDadaDeBaja(array $usuario): bool
+    {
+        return str_starts_with($usuario['nombre_usuario'], 'usuario_eliminado_');
     }
 
     public function verificarContrasena(string $contrasenaPlano, string $hashGuardado): bool

@@ -41,18 +41,10 @@ $tituloPagina = 'Mis equipos — PrimeCup';
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <script>
-    // Aplica el modo oscuro ANTES de que se pinte la página, para evitar el
-    // destello blanco al cargar/cambiar de página.
-    (function () {
-      if (localStorage.getItem('sgdm-tema') === 'oscuro') {
-        document.documentElement.classList.add('modo-oscuro');
-      }
-    })();
-  </script>
+  <script src="tema.js?v=1"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title><?= escapar($tituloPagina) ?></title>
-  <link rel="stylesheet" href="styles.css?v=29" />
+  <link rel="stylesheet" href="styles.css?v=32" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 </head>
 <body>
@@ -188,7 +180,7 @@ $tituloPagina = 'Mis equipos — PrimeCup';
               </div>
               <?php if ($esCapitan && (int) $m['es_capitan'] !== 1 && !$equipo['torneo_bloqueante']): ?>
                 <form method="post" action="gestionar-equipo.php" class="equipo-fila-acciones"
-                      onsubmit="return confirm('¿Sacar a esta persona del equipo?');"> <?= campoCsrf() ?>
+                      data-confirmar="¿Sacar a esta persona del equipo?"> <?= campoCsrf() ?>
                   <input type="hidden" name="accion" value="quitar_miembro" />
                   <input type="hidden" name="equipo_id" value="<?= (int) $equipo['id'] ?>" />
                   <input type="hidden" name="usuario_id" value="<?= (int) $m['usuario_id'] ?>" />
@@ -236,14 +228,14 @@ $tituloPagina = 'Mis equipos — PrimeCup';
         <div class="equipo-fila-acciones" style="margin-top: 1rem;">
           <?php if ($esCapitan): ?>
             <form method="post" action="gestionar-equipo.php"
-                  onsubmit="return confirm('¿Disolver el equipo? No se puede deshacer.');"> <?= campoCsrf() ?>
+                  data-confirmar="¿Disolver el equipo? No se puede deshacer."> <?= campoCsrf() ?>
               <input type="hidden" name="accion" value="disolver_equipo" />
               <input type="hidden" name="equipo_id" value="<?= (int) $equipo['id'] ?>" />
               <button type="submit" class="btn"><i class="fa-solid fa-trash"></i> Disolver equipo</button>
             </form>
           <?php else: ?>
             <form method="post" action="gestionar-equipo.php"
-                  onsubmit="return confirm('¿Seguro que querés abandonar este equipo?');"> <?= campoCsrf() ?>
+                  data-confirmar="¿Seguro que querés abandonar este equipo?"> <?= campoCsrf() ?>
               <input type="hidden" name="accion" value="salir_equipo" />
               <input type="hidden" name="equipo_id" value="<?= (int) $equipo['id'] ?>" />
               <button type="submit" class="btn"><i class="fa-solid fa-right-from-bracket"></i> Abandonar equipo</button>
@@ -270,6 +262,6 @@ $tituloPagina = 'Mis equipos — PrimeCup';
     </div>
   </footer>
 
-<script src="script.js?v=28"></script>
+<script src="script.js?v=33"></script>
 </body>
 </html>

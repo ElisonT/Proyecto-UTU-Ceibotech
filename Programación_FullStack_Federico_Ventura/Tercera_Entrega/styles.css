@@ -4118,3 +4118,57 @@ a.nav-logo {
   .hero-con-imagen .hero-actions { justify-content: flex-start; }
   .hero-imagen { max-width: 460px; flex-shrink: 0; }
 }
+
+/* ===== Alta y edición de usuarios en el panel ===== */
+.panel-form {
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-bg);
+  padding: 1rem;
+  margin: 0.5rem 0 1rem;
+}
+.panel-form[hidden] { display: none; }
+.panel-form-titulo { margin: 0 0 0.75rem; font-size: 1rem; }
+.panel-form-grid { display: grid; grid-template-columns: 1fr; gap: 0.5rem 1rem; }
+.panel-form-grid [hidden] { display: none; }
+.panel-form-errores {
+  margin: 0.5rem 0; padding: 0.6rem 0.9rem 0.6rem 1.8rem; border-radius: 8px;
+  background: var(--estado-rojo-bg); color: var(--estado-rojo-color); font-size: 0.9rem;
+}
+.panel-form-errores[hidden] { display: none; }
+.panel-form-acciones { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.75rem; }
+@media (min-width: 601px) {
+  .panel-form-grid { grid-template-columns: 1fr 1fr; }
+}
+
+/* ===== Interruptores (módulos y configuración) ===== */
+.admin-ayuda { margin: 0 0 1rem; color: var(--color-text-muted); font-size: 0.9rem; }
+.interruptor { display: inline-flex; align-items: center; gap: 0.6rem; cursor: pointer; }
+.interruptor input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.interruptor-pista {
+  position: relative; flex: 0 0 auto; width: 44px; height: 24px; border-radius: 999px;
+  background: var(--color-border); transition: background 0.2s;
+}
+.interruptor-pista::after {
+  content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%;
+  background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3); transition: transform 0.2s;
+}
+.interruptor input:checked + .interruptor-pista { background: #1E5BFF; }
+.interruptor input:checked + .interruptor-pista::after { transform: translateX(20px); }
+.interruptor input:focus-visible + .interruptor-pista { outline: 2px solid #1E5BFF; outline-offset: 2px; }
+.interruptor input:disabled + .interruptor-pista { opacity: 0.5; }
+.interruptor-texto { font-size: 0.9rem; }
+
+/* Formato deshabilitado en "Crear torneo" */
+.radio-card-deshabilitada { opacity: 0.5; cursor: not-allowed; }
+.radio-card-deshabilitada * { cursor: not-allowed; }
+
+/* Cerrar sesión: formulario POST con un botón que se ve como un link del menú. */
+.nav-form-salir { margin: 0; }
+.nav-links .nav-boton-salir {
+  display: flex; align-items: center; width: 100%; padding: 14px 1.25rem;
+  font: inherit; font-size: 14px; text-align: left; cursor: pointer;
+  color: var(--color-text-muted); background: none; border: 0;
+  transition: background 0.15s, color 0.15s;
+}
+.nav-links .nav-boton-salir:hover { color: var(--color-text); background: var(--color-primary-light); }
